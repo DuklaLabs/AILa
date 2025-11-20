@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: agent_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
+      POSTGRES_DB: agentdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - agentnet
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    entrypoint: >
+      sh -c "
+        echo 'Stahuji model Qwen2.5 14B...' &&
+        ollama pull qwen2.5:14b &&
+        echo 'Model nahrán. Spouštím Ollamu...' &&
+        ollama serve
+      "
+    networks:
+      - agentnet
+
+  general:
+    build: ./General
+    container_name: general
+    depends_on:
+      - ollama
+      - skladnik
+      - nakupcik
+    environment:
+      OLLAMA_URL: http://ollama:11434
+    ports:
+      - "8000:8000"
+    networks:
+      - agentnet
+
+  skladnik:
+    build: ./Skladník
+    container_name: skladnik
+    ports:
+      - "8001:8001"
+    networks:
+      - agentnet
+
+  nakupcik:
+    build: ./Nakupcik
+    container_name: nakupcik
+    ports:
+      - "8002:8002"
+    networks:
+      - agentnet
+
+  ui:
+    build: ./UI
+    container_name: ui
+    depends_on:
+      - general
+    ports:
+      - "5173:80"
+    networks:
+      - agentnet
+
+networks:
+  agentnet:
+
+volumes:
+  postgres_data:
+  ollama-data:
