@@ -95,12 +95,10 @@ def add_item(img: Path, labels: list):
 # ======================================================
 
 def load_printwatch():
-    url = "https://printwatch.s3.amazonaws.com/datasets/printwatch-dataset-v1.zip"
-    z = RAW / "printwatch.zip"
-    download(url, z)
-    unzip(z, RAW / "printwatch")
+    z= RAW/"3d-printing-errors.zip"
+    unzip(z, RAW / "3d-printing-errors")
 
-    base = RAW / "printwatch"
+    base = RAW / "3d-printing-errors"
     for img in (base / "images").glob("*.jpg"):
         lbl = base / "labels" / (img.stem + ".txt")
         if not lbl.exists():
@@ -118,12 +116,11 @@ def load_printwatch():
 # ======================================================
 
 def load_smartfdm():
-    url = "https://github.com/smartfdm/smartfdm-dataset/releases/download/v1/SmartFDM.zip"
-    z = RAW / "smartfdm.zip"
-    download(url, z)
-    unzip(z, RAW / "_smartfdm")
+  
+    z = RAW / "3d-printing-failure-detection.zip"
+    unzip(z, RAW / "3d-printing-failure-detection")
 
-    base = RAW / "_smartfdm"
+    base = RAW / "3d-printing-failure-detection"
     imgdir = base / "images"
     lbldir = base / "labels"
 
@@ -149,12 +146,11 @@ def load_smartfdm():
 # ======================================================
 
 def load_layershift():
-    url = "https://github.com/TheSpaghettiDetective/fdm-dataset/releases/download/v2/layershift.zip"
-    z = RAW / "layershift.zip"
-    download(url, z)
-    unzip(z, RAW / "_layershift")
+   
+    z = RAW / "3d-printing-success-failure-dataset-finetuned.zip"
+    unzip(z, RAW / "success-failure-dataset")
 
-    base = RAW / "_layershift"
+    base = RAW / "success-failure-dataset"
 
     for img in (base / "images").glob("*.jpg"):
         label_path = base / "labels" / (img.stem + ".txt")
@@ -167,33 +163,6 @@ def load_layershift():
             add_item(img, [(int(cls_id), xc, yc, bw, bh)])
         add_item(img, items)
 
-# ======================================================
-# 4) DATASET: STRINGING/BLOBS/PARTS (community)
-# ======================================================
-
-def load_polymerprint():
-    url = "https://github.com/PolymerPrint/3dprint-defects/raw/main/dataset.zip"
-    z = RAW / "polymerprint.zip"
-    download(url, z)
-    unzip(z, RAW / "_polymerprint")
-
-    base = RAW / "_polymerprint"
-    for img in base.glob("*.jpg"):
-        lbl = base / (img.stem + ".txt")
-        if not lbl.exists():
-            continue
-
-        items = []
-        for line in lbl.read_text().split("\n"):
-            parts = line.split()
-            cls_name = parts[0].lower()
-            if cls_name not in CLASS_MAP:
-                continue
-            cls_id = CLASS_MAP[cls_name]
-            xc, yc, bw, bh = map(float, parts[1:])
-            items.append((cls_id, xc, yc, bw, bh))
-
-        add_item(img, items)
 
 # ======================================================
 # STÁHNEME + PŘEVEDEME VŠE
@@ -202,8 +171,6 @@ def load_polymerprint():
 load_printwatch()
 load_smartfdm()
 load_layershift()
-load_polymerprint()
-
 print(f"📊 Celkem obrázků po sloučení: {len(ALL)}")
 
 # ======================================================
