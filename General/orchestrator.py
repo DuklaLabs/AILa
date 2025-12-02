@@ -21,6 +21,7 @@ Odpověz pouze samotným názvem akce. Nic jiného!
 INVENTORY_URL = "http://skladnik:8001"
 PROCUREMENT_URL = "http://nakupcik:8002"
 
+
 async def run_general_command(user_input: str):
 
     intent = await ask_model(f"""

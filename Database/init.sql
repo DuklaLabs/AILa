@@ -1,3 +1,5 @@
+CREATE SCHEMA IF NOT EXISTS auth;
+
 CREATE TABLE auth.users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(64) UNIQUE NOT NULL,
@@ -38,6 +40,8 @@ CREATE TABLE auth.permissions (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+CREATE SCHEMA IF NOT EXISTS lab;
+
 CREATE TABLE lab.machines (
     id SERIAL PRIMARY KEY,
     name VARCHAR(128) NOT NULL,
@@ -70,6 +74,8 @@ CREATE TABLE lab.reservations (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE SCHEMA IF NOT EXISTS inventory;
+
 CREATE TABLE inventory.materials (
     id SERIAL PRIMARY KEY,
     name VARCHAR(128),
@@ -87,6 +93,8 @@ CREATE TABLE inventory.stock (
     quantity NUMERIC NOT NULL DEFAULT 0,
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE SCHEMA IF NOT EXISTS orders;
 
 CREATE TABLE orders.vendors (
     id SERIAL PRIMARY KEY,
@@ -114,6 +122,8 @@ CREATE TABLE orders.order_items (
     price NUMERIC,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE SCHEMA IF NOT EXISTS events;
 
 CREATE TABLE events.logs (
     id SERIAL PRIMARY KEY,

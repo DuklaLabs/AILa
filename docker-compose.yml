@@ -15,22 +15,111 @@ services:
     networks:
       - agentnet
 
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      GENERIC_TIMEZONE: "Europe/Prague"
+      TZ: "Europe/Prague"
+
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_RUNNERS_ENABLED: "true"
+
+      DB_TYPE: "postgresdb"
+      DB_POSTGRESDB_DATABASE: "agentdb"
+      DB_POSTGRESDB_HOST: "postgres"
+      DB_POSTGRESDB_PORT: "5432"
+      DB_POSTGRESDB_USER: "agent" 
+      DB_POSTGRESDB_PASSWORD: "agentpass"
+      DB_POSTGRESDB_SCHEMA: "events"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - postgres
+    networks:
+      - agentnet
+
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
+    restart: always
     ports:
       - "11434:11434"
     volumes:
       - ollama-data:/root/.ollama
-    entrypoint: >
-      sh -c "
-        echo 'Stahuji model Qwen2.5 14B...' &&
-        ollama pull qwen2.5:14b &&
-        echo 'Model nahrán. Spouštím Ollamu...' &&
-        ollama serve
-      "
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     networks:
       - agentnet
+
+  printguard:
+    image: ghcr.io/oliverbravery/printguard:latest
+    container_name: printguard
+    privileged: true   # potřebné pro kamery
+    ports:
+      - "7999:8000"    # host 7999 → container 8000
+    volumes:
+      - ./data:/data   # persistentní úložiště
+    environment:
+      - SECRET_KEY=change_me_to_anything
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    runtime: nvidia
+    networks:
+      - agentnet
+
+      #version: "3.9"
+
+
+  #printer-ai:
+  # build: .
+  #  container_name: printer-ai
+  #  restart: unless-stopped
+  #  ports:
+  #    - "8000:8000"
+  #  volumes:
+  #    - ./weights:/app/weights
+  #    - ./data:/app/data
+  #    - ./feedback:/app/feedback
+  #  environment:
+  #    # případně nějaké env proměnné, když budeš chtít
+  #    # - LOG_LEVEL=info
+  #    PYTHONUNBUFFERED: "1"
+
+
+
+  error-listener:
+    build: ./listener
+    container_name: error_listener
+    depends_on:
+      - postgres
+    networks:
+      - agentnet
+    environment:
+      POSTGRES_DB: agentdb
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
+      POSTGRES_HOST: postgres
+      N8N_WEBHOOK_URL: http://n8n:5678/webhook-test/webhook/error-alert
 
   general:
     build: ./General
@@ -78,3 +167,4 @@ networks:
 volumes:
   postgres_data:
   ollama-data:
+  n8n_data:
