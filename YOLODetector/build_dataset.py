@@ -95,10 +95,10 @@ def add_item(img: Path, labels: list):
 # ======================================================
 
 def load_printwatch():
-    z= RAW/"3d-printing-errors.zip"
-    unzip(z, RAW / "3d-printing-errors")
+    z= "3d-printing-errors.zip"
+    unzip(z, "3d-printing-errors")
 
-    base = RAW / "3d-printing-errors"
+    base = "3d-printing-errors"
     for img in (base / "images").glob("*.jpg"):
         lbl = base / "labels" / (img.stem + ".txt")
         if not lbl.exists():
@@ -117,10 +117,10 @@ def load_printwatch():
 
 def load_smartfdm():
   
-    z = RAW / "3d-printing-failure-detection.zip"
-    unzip(z, RAW / "3d-printing-failure-detection")
+    z = "3d-printing-failure-detection.zip"
+    unzip(z, "3d-printing-failure-detection")
 
-    base = RAW / "3d-printing-failure-detection"
+    base = "3d-printing-failure-detection"
     imgdir = base / "images"
     lbldir = base / "labels"
 
@@ -147,10 +147,10 @@ def load_smartfdm():
 
 def load_layershift():
    
-    z = RAW / "3d-printing-success-failure-dataset-finetuned.zip"
-    unzip(z, RAW / "success-failure-dataset")
+    z = "3d-printing-success-failure-dataset-finetuned.zip"
+    unzip(z, "success-failure-dataset")
 
-    base = RAW / "success-failure-dataset"
+    base = "success-failure-dataset"
 
     for img in (base / "images").glob("*.jpg"):
         label_path = base / "labels" / (img.stem + ".txt")
