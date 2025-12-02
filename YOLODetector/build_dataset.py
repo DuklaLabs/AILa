@@ -95,7 +95,7 @@ def add_item(img: Path, labels: list):
 # ======================================================
 
 def load_printwatch():
-    url = "https://github.com/tjkirch/spaghetti-dataset/releases/download/v1/spaghetti_dataset.zip"
+    url = "https://printwatch.s3.amazonaws.com/datasets/printwatch-dataset-v1.zip"
     z = RAW / "printwatch.zip"
     download(url, z)
     unzip(z, RAW / "printwatch")
