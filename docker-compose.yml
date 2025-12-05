@@ -151,6 +151,14 @@ services:
     networks:
       - agentnet
 
+  security-agent:
+    build: ./Sekuriták
+    container_name: security_agent
+    ports:
+      - "8003:8003"
+    networks:
+      - agentnet
+
   ui:
     build: ./UI
     container_name: ui

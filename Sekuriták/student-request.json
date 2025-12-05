@@ -1,0 +1,426 @@
+{
+  "name": "STUDENT_ACCESS_REQUEST",
+  "nodes": [
+    {
+      "id": "Webhook_Student",
+      "name": "Webhook Student Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "student-request",
+        "responseMode": "onLastNode",
+        "options": {}
+      },
+      "webhookId": "student-request-webhook"
+    },
+    {
+      "id": "FN_Parse",
+      "name": "Parse Request",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "parameters": {
+        "functionCode": "const body = items[0].json;\n// Očekávaný vstup: { first_name, last_name, trida, dukla_id, email, termin }\n// termin: 'YYYY-MM-DD_HODINA' nebo si to upravíš podle sebe\nlet request_date = null;\nlet lesson = null;\nif (body.termin) {\n  const [d, h] = body.termin.split('_');\n  request_date = d;\n  lesson = parseInt(h, 10);\n} else {\n  request_date = body.request_date;\n  lesson = parseInt(body.lesson, 10);\n}\nreturn [{ json: { ...body, request_date, lesson } }];"
+      }
+    },
+    {
+      "id": "PG_GetStudent",
+      "name": "Postgres Get Student",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [750, 260],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM students WHERE dukla_id = '{{$json[\"dukla_id\"]}}';"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "cred_DL_access_manager"
+        }
+      }
+    },
+    {
+      "id": "IF_StudentAllowed",
+      "name": "IF Student Allowed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1000, 260],
+      "parameters": {
+        "conditions": {
+          "boolean": [],
+          "number": [],
+          "string": [
+            {
+              "value1": "={{$item(0).$node[\"Postgres Get Student\"].json[\"allowed\"]}}",
+              "operation": "equal",
+              "value2": "1"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "FN_NoPermission",
+      "name": "Prepare No Permission Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1250, 120],
+      "parameters": {
+        "functionCode": "const student = $item(0).$node[\"Postgres Get Student\"].json;\nconst req = $item(0).$node[\"Parse Request\"].json;\nreturn [{ json: { reason: 'rejected_permission', student, req } }];"
+      }
+    },
+
+    {
+      "id": "PG_InsertRejectPermission",
+      "name": "Insert Reject Permission",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1500, 120],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO release_requests (student_id, semester_id, subject_id, request_date, lesson, status, reason)\nVALUES ({{$json[\"student\"][\"id\"]}}, {{1}}, NULL, '{{$json[\"req\"][\"request_date\"]}}'::DATE, {{$json[\"req\"][\"lesson\"]}}, 'rejected_permission', 'Student nemá obecné povolení.');"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "cred_DL_access_manager"
+        }
+      }
+    },
+
+    {
+      "id": "FN_MailBot_NoPermission",
+      "name": "MailBot NoPermission (AI placeholder)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1750, 120],
+      "parameters": {
+        "functionCode": "const s = $json.student;\nconst r = $json.req;\n// Tady můžeš místo Function použít OpenAI node\nconst subject = `DuklaLabs – přístup zamítnut (bez povolení)`;\nconst body = `Ahoj ${s.first_name},\\n\\nTvoje žádost o vstup do DuklaLabs dne ${r.request_date} byla zamítnuta.\\nV systému nemáš aktuálně povolený přístup.\\n\\nProsím kontaktuj třídního učitele a vedoucího DuklaLabs pro získání povolení.\\n\\nDuklaLabs automat`; \nreturn [{ json: { to: r.email, subject, body } }];"
+      }
+    },
+
+    {
+      "id": "Email_NoPermission",
+      "name": "Email NoPermission",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [2000, 120],
+      "parameters": {
+        "fromEmail": "dukla@skola.cz",
+        "toEmail": "={{$json[\"to\"]}}",
+        "subject": "={{$json[\"subject\"]}}",
+        "text": "={{$json[\"body\"]}}"
+      }
+    },
+
+    {
+      "id": "PG_GetSubject",
+      "name": "Postgres Get Subject from Timetable",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1250, 380],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT t.*, s.id AS subject_id, s.name AS subject_name, te.id AS teacher_id, te.email AS teacher_email\nFROM timetable t\nJOIN subjects s ON s.id = t.subject_id\nJOIN teachers te ON te.id = t.teacher_id\nWHERE t.class = '{{$node[\"Parse Request\"].json[\"trida\"]}}'\n  AND t.day_of_week = EXTRACT(DOW FROM '{{$node[\"Parse Request\"].json[\"request_date\"]}}'::DATE)::INT\n  AND t.lesson = {{$node[\"Parse Request\"].json[\"lesson\"]}};"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "cred_DL_access_manager"
+        }
+      }
+    },
+
+    {
+      "id": "PG_CountUsed",
+      "name": "Postgres Count Used Hours",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1500, 380],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) AS used\nFROM release_requests rr\nJOIN semesters se ON se.id = rr.semester_id\nWHERE rr.student_id = {{$node[\"Postgres Get Student\"].json[\"id\"]}}\n  AND rr.subject_id = {{$node[\"Postgres Get Subject from Timetable\"].json[\"subject_id\"]}}\n  AND rr.status = 'approved'\n  AND CURRENT_DATE BETWEEN se.start_date AND se.end_date;"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "cred_DL_access_manager"
+        }
+      }
+    },
+
+    {
+      "id": "IF_Limit",
+      "name": "IF Over Limit",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1750, 380],
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$item(0).$node[\"Postgres Count Used Hours\"].json[\"used\"]}}",
+              "operation": "largerEqual",
+              "value2": "={{$item(0).$node[\"Postgres Get Student\"].json[\"max_hours_per_subject\"]}}"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "FN_RejectLimit",
+      "name": "Prepare Reject Limit",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2000, 260],
+      "parameters": {
+        "functionCode": "const st = $item(0).$node[\"Postgres Get Student\"].json;\nconst sub = $item(0).$node[\"Postgres Get Subject from Timetable\"].json;\nconst req = $item(0).$node[\"Parse Request\"].json;\nreturn [{ json: { st, sub, req } }];"
+      }
+    },
+
+    {
+      "id": "PG_InsertRejectLimit",
+      "name": "Postgres Insert Reject Limit",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [2250, 260],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO release_requests (student_id, semester_id, subject_id, request_date, lesson, status, reason)\nVALUES ({{$json[\"st\"][\"id\"]}}, 1, {{$json[\"sub\"][\"subject_id\"]}}, '{{$json[\"req\"][\"request_date\"]}}'::DATE, {{$json[\"req\"][\"lesson\"]}}, 'rejected_limit', 'Překročen limit hodin za pololetí.');"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "cred_DL_access_manager"
+        }
+      }
+    },
+
+    {
+      "id": "FN_MailBot_RejectLimit",
+      "name": "MailBot RejectLimit",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2500, 260],
+      "parameters": {
+        "functionCode": "const st = $json.st;\nconst sub = $json.sub;\nconst req = $json.req;\nconst subject = `DuklaLabs – žádost zamítnuta (limit hodin)`;\nconst body = `Ahoj ${st.first_name},\\n\\nTvoje žádost o uvolnění z předmětu ${sub.subject_name} dne ${req.request_date} byla zamítnuta.\\nPřekročil jsi maximální povolený počet hodin za pololetí.\\n\\nDuklaLabs automat`;\nreturn [{ json: { to: req.email, subject, body } }];"
+      }
+    },
+
+    {
+      "id": "Email_RejectLimit",
+      "name": "Email RejectLimit",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [2750, 260],
+      "parameters": {
+        "fromEmail": "dukla@skola.cz",
+        "toEmail": "={{$json[\"to\"]}}",
+        "subject": "={{$json[\"subject\"]}}",
+        "text": "={{$json[\"body\"]}}"
+      }
+    },
+
+    {
+      "id": "PG_CheckCapacity",
+      "name": "Postgres Check Capacity",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [2000, 500],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH cap AS (\n  SELECT capacity FROM open_hours\n  WHERE day_of_week = EXTRACT(DOW FROM '{{$node[\"Parse Request\"].json[\"request_date\"]}}'::DATE)::INT\n    AND lesson = {{$node[\"Parse Request\"].json[\"lesson\"]}}\n    AND active_to IS NULL\n  LIMIT 1\n), used AS (\n  SELECT COUNT(*) AS cnt\n  FROM release_requests\n  WHERE request_date = '{{$node[\"Parse Request\"].json[\"request_date\"]}}'::DATE\n    AND lesson = {{$node[\"Parse Request\"].json[\"lesson\"]}}\n    AND status = 'approved'\n)\nSELECT cap.capacity, used.cnt AS used\nFROM cap, used;"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "cred_DL_access_manager"
+        }
+      }
+    },
+
+    {
+      "id": "IF_Capacity",
+      "name": "IF Capacity Full",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2250, 500],
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$item(0).$node[\"Postgres Check Capacity\"].json[\"used\"]}}",
+              "operation": "largerEqual",
+              "value2": "={{$item(0).$node[\"Postgres Check Capacity\"].json[\"capacity\"]}}"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "FN_RejectCapacity",
+      "name": "Prepare Reject Capacity",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2500, 420],
+      "parameters": {
+        "functionCode": "const st = $item(0).$node[\"Postgres Get Student\"].json;\nconst req = $item(0).$node[\"Parse Request\"].json;\nreturn [{ json: { st, req } }];"
+      }
+    },
+
+    {
+      "id": "PG_InsertRejectCapacity",
+      "name": "Postgres Insert Reject Capacity",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [2750, 420],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO release_requests (student_id, semester_id, subject_id, request_date, lesson, status, reason)\nVALUES ({{$json[\"st\"][\"id\"]}}, 1, NULL, '{{$json[\"req\"][\"request_date\"]}}'::DATE, {{$json[\"req\"][\"lesson\"]}}, 'rejected_capacity', 'Kapacita laboratoře je plná.');"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "cred_DL_access_manager"
+        }
+      }
+    },
+
+    {
+      "id": "FN_MailBot_RejectCapacity",
+      "name": "MailBot RejectCapacity",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [3000, 420],
+      "parameters": {
+        "functionCode": "const st = $json.st;\nconst req = $json.req;\nconst subject = `DuklaLabs – žádost zamítnuta (kapacita plná)`;\nconst body = `Ahoj ${st.first_name},\\n\\nPro termín ${req.request_date} (${req.lesson}. hodina) už je DuklaLabs plně obsazená.\\nZkus prosím jiný termín.\\n\\nDuklaLabs automat`;\nreturn [{ json: { to: req.email, subject, body } }];"
+      }
+    },
+
+    {
+      "id": "Email_RejectCapacity",
+      "name": "Email RejectCapacity",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [3250, 420],
+      "parameters": {
+        "fromEmail": "dukla@skola.cz",
+        "toEmail": "={{$json[\"to\"]}}",
+        "subject": "={{$json[\"subject\"]}}",
+        "text": "={{$json[\"body\"]}}"
+      }
+    },
+
+    {
+      "id": "FN_Sekuritak",
+      "name": "Sekuritak Decision (AI placeholder)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2500, 620],
+      "parameters": {
+        "functionCode": "// Tady můžeš použít OpenAI node místo Function\n// pro začátek necháme vše OK.\nreturn [{ json: { ok: true } }];"
+      }
+    },
+
+    {
+      "id": "PG_InsertApproved",
+      "name": "Postgres Insert Approved",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [2750, 620],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO release_requests (student_id, semester_id, subject_id, request_date, lesson, status, reason)\nVALUES ({{$node[\"Postgres Get Student\"].json[\"id\"]}}, 1, {{$node[\"Postgres Get Subject from Timetable\"].json[\"subject_id\"]}}, '{{$node[\"Parse Request\"].json[\"request_date\"]}}'::DATE, {{$node[\"Parse Request\"].json[\"lesson\"]}}, 'approved', NULL)\nRETURNING id;"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "cred_DL_access_manager"
+        }
+      }
+    },
+
+    {
+      "id": "Outlook_CreateEvent",
+      "name": "Outlook Create Event",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 1,
+      "position": [3000, 620],
+      "parameters": {
+        "operation": "create",
+        "calendar": "DuklaLabs",
+        "subject": "={{'DuklaLabs – ' + $node[\"Postgres Get Student\"].json[\"first_name\"] + ' ' + $node[\"Postgres Get Student\"].json[\"last_name\"] + ' (' + $node[\"Postgres Get Student\"].json[\"class\"] + ')'}}",
+        "start": "={{$node[\"Parse Request\"].json[\"request_date\"] + 'T08:00:00'}}",
+        "end": "={{$node[\"Parse Request\"].json[\"request_date\"] + 'T08:45:00'}}"
+      },
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "",
+          "name": "Outlook_DuklaLabs"
+        }
+      }
+    },
+
+    {
+      "id": "FN_MailBot_Approved",
+      "name": "MailBot Approved",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [3250, 620],
+      "parameters": {
+        "functionCode": "const st = $node[\"Postgres Get Student\"].json;\nconst sub = $node[\"Postgres Get Subject from Timetable\"].json;\nconst req = $node[\"Parse Request\"].json;\nconst subject = `DuklaLabs – žádost schválena`;\nconst body_student = `Ahoj ${st.first_name},\\n\\nTvoje žádost o uvolnění z předmětu ${sub.subject_name} dne ${req.request_date} (${req.lesson}. hodina) byla schválena.\\nMůžeš přijít do DuklaLabs.\\n\\nDuklaLabs automat`;\nconst body_admin = `Student ${st.first_name} ${st.last_name} (${st.class}) bude v DuklaLabs dne ${req.request_date}, ${req.lesson}. hodina. Předmět: ${sub.subject_name}.`;\nreturn [{ json: { student_email: req.email, subject_student: subject, body_student, admin_email: 'tvuj.mail@skola.cz', body_admin } }];"
+      }
+    },
+
+    {
+      "id": "Email_Approved_Student",
+      "name": "Email Approved Student",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [3500, 580],
+      "parameters": {
+        "fromEmail": "dukla@skola.cz",
+        "toEmail": "={{$json[\"student_email\"]}}",
+        "subject": "={{$json[\"subject_student\"]}}",
+        "text": "={{$json[\"body_student\"]}}"
+      }
+    },
+
+    {
+      "id": "Email_Approved_Admin",
+      "name": "Email Approved Admin",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [3500, 660],
+      "parameters": {
+        "fromEmail": "dukla@skola.cz",
+        "toEmail": "={{$json[\"admin_email\"]}}",
+        "subject": "={{'DuklaLabs – příchod studenta'}}",
+        "text": "={{$json[\"body_admin\"]}}"
+      }
+    }
+
+  ],
+  "connections": {
+    "Webhook Student Request": {
+      "main": [
+        [
+          {
+            "node": "Parse Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+   },
+  "settings": {},
+  "active": false,
+  "versionId": "student-request-v1"
+}

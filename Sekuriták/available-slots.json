@@ -1,0 +1,73 @@
+{
+  "name": "AVAILABLE_SLOTS_API",
+  "nodes": [
+    {
+      "id": "Webhook_Slots",
+      "name": "Webhook Available Slots",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "available-slots",
+        "responseMode": "onLastNode",
+        "options": {}
+      },
+      "webhookId": "available-slots-webhook"
+    },
+    {
+      "id": "PG_GetSlots",
+      "name": "Postgres Get Open Slots",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [550, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT day_of_week, lesson, capacity FROM open_hours WHERE active_to IS NULL ORDER BY day_of_week, lesson;"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "cred_DL_access_manager"
+        }
+      }
+    },
+    {
+      "id": "FN_BuildSlotsResponse",
+      "name": "Build Slots Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "parameters": {
+        "functionCode": "const out = [];\nfor (const item of items) {\n  const r = item.json;\n  out.push({\n    den_v_tydnu: r.day_of_week,\n    hodina: r.lesson,\n    kapacita: r.capacity,\n    obsazeno: 0\n  });\n}\nreturn [{ json: out }];"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Available Slots": {
+      "main": [
+        [
+          {
+            "node": "Postgres Get Open Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Get Open Slots": {
+      "main": [
+        [
+          {
+            "node": "Build Slots Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "active": false,
+  "versionId": "available-slots-v1"
+}

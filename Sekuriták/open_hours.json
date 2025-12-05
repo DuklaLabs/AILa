@@ -1,0 +1,122 @@
+{
+  "name": "CONFIG_OPEN_HOURS",
+  "nodes": [
+    {
+      "id": "Webhook_Config",
+      "name": "Webhook Config Open Hours",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "config-open-hours",
+        "responseMode": "onLastNode",
+        "options": {}
+      },
+      "webhookId": "config-open-hours-webhook"
+    },
+    {
+      "id": "PG_CloseOld",
+      "name": "Postgres Close Old Slots",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [550, 220],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE open_hours SET active_to = NOW()::DATE WHERE active_to IS NULL;"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "cred_DL_access_manager"
+        }
+      }
+    },
+    {
+      "id": "FN_PrepareSlots",
+      "name": "Prepare Slots",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [800, 300],
+      "parameters": {
+        "functionCode": "const body = items[0].json;\n// body = { platnost_od, dny:[], hodiny:[], kapacita }\nconst slots = [];\nfor (const d of body.dny) {\n  for (const h of body.hodiny) {\n    slots.push({\n      day_of_week: parseInt(d, 10),\n      lesson: parseInt(h, 10),\n      capacity: parseInt(body.kapacita, 10),\n      active_from: body.platnost_od\n    });\n  }\n}\nreturn slots.map(s => ({ json: s }));"
+      }
+    },
+    {
+      "id": "PG_InsertSlots",
+      "name": "Postgres Insert Slots",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1050, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO open_hours (day_of_week, lesson, capacity, active_from, active_to)\nVALUES ({{$json[\"day_of_week\"]}}, {{$json[\"lesson\"]}}, {{$json[\"capacity\"]}}, '{{$json[\"active_from\"]}}'::DATE, NULL);"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "cred_DL_access_manager"
+        }
+      }
+    },
+    {
+      "id": "FN_Response",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1300, 300],
+      "parameters": {
+        "functionCode": "return [{ json: { success: true, message: 'Open hours updated', inserted: items.length } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Config Open Hours": {
+      "main": [
+        [
+          {
+            "node": "Postgres Close Old Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Close Old Slots": {
+      "main": [
+        [
+          {
+            "node": "Prepare Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Slots": {
+      "main": [
+        [
+          {
+            "node": "Postgres Insert Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Insert Slots": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "active": false,
+  "versionId": "config-open-hours-v1"
+}

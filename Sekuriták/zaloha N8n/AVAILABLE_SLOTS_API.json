@@ -1,0 +1,84 @@
+{
+  "name": "AVAILABLE_SLOTS_API",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "available-slots",
+        "responseMode": "onLastNode",
+        "options": {}
+      },
+      "id": "2dd3bf85-5e88-40a7-9b82-e48ae013e81b",
+      "name": "Webhook Available Slots",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "available-slots-webhook"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT day_of_week, lesson, capacity FROM open_hours WHERE active_to IS NULL ORDER BY day_of_week, lesson;",
+        "additionalFields": {}
+      },
+      "id": "798702a4-4263-4a42-a0b6-c389f3b3a09f",
+      "name": "Postgres Get Open Slots",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        304,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const out = [];\nfor (const item of items) {\n  const r = item.json;\n  out.push({\n    den_v_tydnu: r.day_of_week,\n    hodina: r.lesson,\n    kapacita: r.capacity,\n    obsazeno: 0\n  });\n}\nreturn [{ json: out }];"
+      },
+      "id": "013f6638-70f7-47e3-b55a-40c711e22466",
+      "name": "Build Slots Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        608,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Available Slots": {
+      "main": [
+        [
+          {
+            "node": "Postgres Get Open Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Get Open Slots": {
+      "main": [
+        [
+          {
+            "node": "Build Slots Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "87e71f86-5074-45c2-8258-e7d937cde980",
+  "meta": {
+    "instanceId": "70208db74a1f1bfd74e72655ac4a8225d6e8b6e19e787bc32473039ccd1575b7"
+  },
+  "id": "s1l6Y0UGqo4E2TEf",
+  "tags": []
+}

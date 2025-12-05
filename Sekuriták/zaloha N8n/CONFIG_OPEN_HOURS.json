@@ -1,0 +1,230 @@
+{
+  "name": "CONFIG_OPEN_HOURS",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "config-open-hours",
+        "responseMode": "onLastNode",
+        "options": {}
+      },
+      "id": "2c6a3341-8669-486c-88b7-abbf17361168",
+      "name": "Webhook Config Open Hours",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        128,
+        -656
+      ],
+      "webhookId": "config-open-hours-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "const body = items[0].json;\n// body = { platnost_od, dny:[], hodiny:[], kapacita }\nconst slots = [];\nfor (const d of body.dny) {\n  for (const h of body.hodiny) {\n    slots.push({\n      day_of_week: parseInt(d, 10),\n      lesson: parseInt(h, 10),\n      capacity: parseInt(body.kapacita, 10),\n      active_from: body.platnost_od\n    });\n  }\n}\nreturn slots.map(s => ({ json: s }));"
+      },
+      "id": "395281bd-b096-48c1-a88a-ee3e15394fb6",
+      "name": "Prepare Slots",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        896,
+        -656
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { success: true, message: 'Open hours updated', inserted: items.length } }];"
+      },
+      "id": "e732077d-5b1a-450a-b373-977b1ec77cd1",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        -656
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Jsi agent Sekuriťák pro DuklaLabs. \nAnalyzuj nové nastavení otevřených hodin. \nZkontroluj, zda nedává smysl zvýšit nebo snížit kapacitu, \nnebo upozorni na možné konflikty (např. nedostatek hodin).",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        1072,
+        -656
+      ],
+      "id": "c04a9af0-4ab6-4552-a0a1-e6de87265164",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:14b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        -352
+      ],
+      "id": "9a43976f-c1d7-4c7e-99fc-210c7d6e9830",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "aH7vJzSaCRf2BmqL",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"success\": true,\n  \"ai_message\": \"...\",\n  \"inserted\": 12\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1232,
+        -352
+      ],
+      "id": "746e83c1-9f28-4177-bfcc-5a33cf58e276",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE open_hours SET active_to = NOW()::DATE WHERE active_to IS NULL;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        512,
+        -656
+      ],
+      "id": "36139206-6fef-4d47-a687-056317e1a49f",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "hhH77a7uZ2V2lx9s",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO open_hours (day_of_week, lesson, capacity, active_from, active_to)\nVALUES ({{$json[\"day_of_week\"]}}, {{$json[\"lesson\"]}}, {{$json[\"capacity\"]}}, '{{$json[\"active_from\"]}}'::DATE, NULL);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        720,
+        -656
+      ],
+      "id": "8a0d58ce-d327-440a-8a22-33a446d0e2d2",
+      "name": "Execute a SQL query1",
+      "credentials": {
+        "postgres": {
+          "id": "hhH77a7uZ2V2lx9s",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Config Open Hours": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Slots": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "261081fd-c7c5-4db3-8a5a-de80a40cc772",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "70208db74a1f1bfd74e72655ac4a8225d6e8b6e19e787bc32473039ccd1575b7"
+  },
+  "id": "bRfxcYsGEQJ91UqV",
+  "tags": []
+}
