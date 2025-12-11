@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+jinja2
+httpx
+asyncpg
+python-multipart

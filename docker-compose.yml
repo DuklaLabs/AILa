@@ -15,33 +15,6 @@ services:
     networks:
       - agentnet
 
-  n8n:
-    image: docker.n8n.io/n8nio/n8n
-    container_name: n8n
-    restart: always
-    ports:
-      - "5678:5678"
-    environment:
-      GENERIC_TIMEZONE: "Europe/Prague"
-      TZ: "Europe/Prague"
-
-      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
-      N8N_RUNNERS_ENABLED: "true"
-
-      DB_TYPE: "postgresdb"
-      DB_POSTGRESDB_DATABASE: "agentdb"
-      DB_POSTGRESDB_HOST: "postgres"
-      DB_POSTGRESDB_PORT: "5432"
-      DB_POSTGRESDB_USER: "agent" 
-      DB_POSTGRESDB_PASSWORD: "agentpass"
-      DB_POSTGRESDB_SCHEMA: "events"
-    volumes:
-      - n8n_data:/home/node/.n8n
-    depends_on:
-      - postgres
-    networks:
-      - agentnet
-
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -151,6 +124,40 @@ services:
     networks:
       - agentnet
 
+  access-request-server:
+    build: ./AccessRequest
+    container_name: AccessRequestServer
+    ports:
+      - "8003:8003"
+    networks:
+      - agentnet
+    environment:
+      POSTGRES_DB: agentdb
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
+      POSTGRES_HOST: postgres
+
+  security-agent:
+    build:  
+      context: ./Security_agent
+      dockerfile: Dockerfile
+    container_name: security-agent
+    ports:    
+      - "8004:8004"
+    depends_on:
+      - postgres
+      - ollama
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
+      POSTGRES_DB: agentdb
+      OLLAMA_HOST: http://ollama:11434
+    env_file:
+      - ./SECURITY_AGENT/.env
+
+
+
   ui:
     build: ./UI
     container_name: ui
@@ -167,4 +174,3 @@ networks:
 volumes:
   postgres_data:
   ollama-data:
-  n8n_data:

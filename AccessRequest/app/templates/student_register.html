@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>DuklaLabs – Registrace studenta</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/forms.css">
+  <link rel="stylesheet" href="/static/css/buttons.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+
+  <script src="/static/js/validate.js" defer></script>
+  <script src="/static/js/loader.js" defer></script>
+</head>
+
+<body>
+<div class="center-page">
+  <div class="card" style="max-width:420px;">
+    <h1>Registrace studenta</h1>
+    <p class="subtitle">Zadej své údaje pro registraci do systému DuklaLabs.</p>
+
+    <form id="studentForm" method="POST" onsubmit="return validateStudentForm();">
+      <label for="first_name">Jméno</label>
+      <input id="first_name" name="first_name" required />
+
+      <label for="last_name">Příjmení</label>
+      <input id="last_name" name="last_name" required />
+
+      <label for="email">Školní e-mail</label>
+      <input id="email" name="email" type="email" required />
+
+      <label for="class_group">Třída</label>
+      <select id="class_group" name="class_group" required>
+          <option value="">-- vyber třídu --</option>
+          <option value="1.EM">1.EM</option>
+          <option value="1.ER">1.ER</option>
+          <option value="1.EE">1.EE</option>
+          <option value="1.S">1.S</option>
+          <option value="2.EM">2.EM</option>
+          <option value="2.ER">2.ER</option>
+          <option value="2.EE">2.EE</option>
+          <option value="2.S">2.S</option>
+          <option value="3.EM">3.EM</option>
+          <option value="3.ER">3.ER</option>
+          <option value="3.EE">3.EE</option>
+          <option value="3.S">3.S</option>
+          <option value="4.EM">4.EM</option>
+          <option value="4.ER">4.ER</option>
+          <option value="4.EE">4.EE</option>
+          <option value="4.S">4.S</option>
+      </select>
+
+
+
+      <button class="btn btn-primary" style="width:100%; margin-top:10px;">Odeslat registraci</button>
+    </form>
+
+    <div id="loader" class="loader hidden"></div>
+  </div>
+</div>
+</body>
+</html>

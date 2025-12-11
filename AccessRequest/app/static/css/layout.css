@@ -1,0 +1,28 @@
+.center-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.logo-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    font-size: 22px;
+    font-weight: 800;
+    box-shadow: 0 16px 40px rgba(239,68,68,0.45);
+    margin: 0 auto 12px;
+}
+
+.container-narrow {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px;
+}

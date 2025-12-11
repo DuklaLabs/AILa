@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "vapid_public_key": null,
+  "vapid_subject": null,
+  "startup_mode": null,
+  "site_domain": null,
+  "tunnel_provider": null,
+  "push_subscriptions": [],
+  "camera_states": {}
+}

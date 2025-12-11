@@ -1,0 +1,96 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f2f4f7;
+    color: #222;
+}
+
+header {
+    background: #1a202c;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+main {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 10px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+.card h2 {
+    margin-top: 0;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 8px;
+    color: #2d3748;
+}
+
+.form-row {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+input, select {
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 15px;
+}
+
+.btn-primary {
+    background: #3182ce;
+    color: white;
+    border: none;
+    padding: 12px 16px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-primary:hover {
+    background: #2b6cb0;
+}
+
+#openHoursList table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#openHoursList th, #openHoursList td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.delete-btn {
+    background: #e53e3e;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    background: #c53030;
+}
+
+#formMessage {
+    margin-top: 10px;
+    font-weight: bold;
+}

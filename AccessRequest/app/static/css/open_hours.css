@@ -1,0 +1,73 @@
+/* Karta v admin panelu */
+.card {
+    background: #ffffff0d;
+    padding: 20px;
+    border-radius: 12px;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 30px;
+}
+
+.card h2 {
+    margin-top: 0;
+    color: #fff;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding-bottom: 6px;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group label {
+    color: #ddd;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #1a1a1a;
+    color: white;
+}
+
+.form-row-2 {
+    display: flex;
+    gap: 20px;
+}
+
+#openHoursList table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#openHoursList th,
+#openHoursList td {
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding: 8px;
+    color: white;
+}
+
+.delete-btn {
+    background: #aa2a2a;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+}
+
+.delete-btn:hover {
+    background: #d13737;
+}
+
+.form-message {
+    margin-top: 10px;
+    font-weight: bold;
+}

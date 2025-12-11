@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8" />
+    <title>DuklaLabs – Admin panel</title>
+    <link rel="stylesheet" href="/static/css/base.css" />
+    <link rel="stylesheet" href="/static/css/layout.css" />
+    <link rel="stylesheet" href="/static/css/buttons.css" />
+    <link rel="stylesheet" href="/static/css/forms.css" />
+
+    <!-- Specifický styl pro open hours -->
+    <link rel="stylesheet" href="/static/css/open_hours.css" />
+</head>
+
+<body>
+
+<header class="topbar">
+    <h1>⚙️ Admin panel – Otevřené hodiny</h1>
+</header>
+
+<main class="container">
+
+    <!-- FORM -->
+    <section class="card">
+        <h2>Přidat otevřenou hodinu</h2>
+
+        <form id="openHoursForm" class="form">
+
+            <div class="form-group">
+                <label for="date">Datum</label>
+                <input id="date" name="date" type="date" required>
+            </div>
+
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label for="start_time">Začátek</label>
+                    <input id="start_time" name="start_time" type="time" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="end_time">Konec</label>
+                    <input id="end_time" name="end_time" type="time" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="capacity">Kapacita</label>
+                <input id="capacity" name="capacity" type="number" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="note">Poznámka</label>
+                <input id="note" name="note" type="text">
+            </div>
+
+            <button class="btn-primary" type="submit">💾 Uložit</button>
+        </form>
+
+        <div id="formMessage" class="form-message"></div>
+    </section>
+
+    <!-- LIST -->
+    <section class="card">
+        <h2>Nastavené otevřené hodiny</h2>
+        <div id="openHoursList">Načítám...</div>
+    </section>
+
+</main>
+
+<script src="/static/js/open_hours.js"></script>
+</body>
+</html>

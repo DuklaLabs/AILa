@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <title>Přihlášení – DuklaLabs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/forms.css">
+  <link rel="stylesheet" href="/static/css/buttons.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+</head>
+<body>
+
+  <div class="center-page">
+    <div class="card" style="max-width:380px; text-align:center;">
+      <div class="logo-pill">DL</div>
+      <h1>Přihlášení</h1>
+      <p class="subtitle">Vstup pouze pro správce DuklaLabs</p>
+
+      {% if error %}
+        <div style="color:#fecaca; margin-bottom:10px; font-size:13px;">
+          {{ error }}
+        </div>
+      {% endif %}
+
+      <form method="POST" action="/login-check" style="text-align:left; margin-top:10px;">
+        <label for="username">Uživatel</label>
+        <input id="username" name="username" type="text" required />
+
+        <label for="password">Heslo</label>
+        <input id="password" name="password" type="password" required />
+
+        <button type="submit" class="btn btn-primary" style="margin-top:10px; width:100%;">Pokračovat</button>
+      </form>
+
+      <p style="margin-top:10px; font-size:12px; color:#9ca3af;">
+        Výchozí: <code>admin / admin</code> (viz <code>app/data/users.json</code>)
+      </p>
+    </div>
+  </div>
+
+</body>
+</html>

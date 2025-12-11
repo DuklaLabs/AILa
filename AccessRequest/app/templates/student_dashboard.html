@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>DuklaLabs – Studentský dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+  <link rel="stylesheet" href="/static/css/buttons.css">
+  <link rel="stylesheet" href="/static/css/forms.css">
+
+  <script src="/static/js/loader.js" defer></script>
+</head>
+
+<body>
+  <div class="center-page">
+    <div class="card" style="max-width:800px; width:100%;">
+      <h1>Studentský dashboard</h1>
+      <p class="subtitle">Seznam registrovaných studentů v databázi (Postgres).</p>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="reloadStudents()">🔄 Aktualizovat</button>
+        <a href="/student-register" class="btn btn-ghost">✍️ Registrovat dalšího studenta</a>
+      </div>
+
+      <div id="loader" class="loader hidden"></div>
+
+      <div id="studentsTable" style="margin-top:10px;">
+        {% if students and students|length > 0 %}
+          <table style="width:100%; border-collapse:collapse; font-size:14px;">
+            <thead>
+              <tr style="border-bottom:1px solid rgba(148,163,184,0.4);">
+                <th style="text-align:left; padding:6px;">ID</th>
+                <th style="text-align:left; padding:6px;">Jméno</th>
+                <th style="text-align:left; padding:6px;">E-mail</th>
+                <th style="text-align:left; padding:6px;">Registrace</th>
+                <th style="text-align:left; padding:6px;">Třída</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in students %}
+                <tr style="border-bottom:1px solid rgba(31,41,55,0.7);">
+                  <td style="padding:6px;">{{ s.student_id }}</td>
+                  <td style="padding:6px;">{{ s.first_name }} {{ s.last_name }}</td>
+                  <td style="padding:6px;">{{ s.email }}</td>
+                  <td style="padding:6px;">{{ s.registration_date }}</td>
+                  <td style="padding:6px;">{{ s.class_group }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p style="color:#9ca3af; font-size:14px;">Zatím žádní studenti v databázi.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+<script>
+async function reloadStudents() {
+    const loader = document.getElementById("loader");
+    const tableDiv = document.getElementById("studentsTable");
+    loader.classList.remove("hidden");
+
+    try {
+        const res = await fetch("/api/students");
+        if (!res.ok) throw new Error("Chyba při načítání dat");
+        const data = await res.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+            tableDiv.innerHTML = '<p style="color:#9ca3af; font-size:14px;">Zatím žádní studenti v databázi.</p>';
+            loader.classList.add("hidden");
+            return;
+        }
+
+        let html = `
+          <table style="width:100%; border-collapse:collapse; font-size:14px;">
+            <thead>
+              <tr style="border-bottom:1px solid rgba(148,163,184,0.4);">
+                <th style="text-align:left; padding:6px;">ID</th>
+                <th style="text-align:left; padding:6px;">Jméno</th>
+                <th style="text-align:left; padding:6px;">E-mail</th>
+                <th style="text-align:left; padding:6px;">Registrace</th>
+                <th style="text-align:left; padding:6px;">Třída</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        data.forEach(s => {
+            html += `
+              <tr style="border-bottom:1px solid rgba(31,41,55,0.7);">
+                <td style="padding:6px;">${s.student_id}</td>
+                <td style="padding:6px;">${s.first_name} ${s.last_name}</td>
+                <td style="padding:6px;">${s.email}</td>
+                <td style="padding:6px;">${s.registration_date}</td>
+                <td style="padding:6px;">${s.class_group}</td>
+
+              </tr>
+            `;
+        });
+
+        html += `</tbody></table>`;
+        tableDiv.innerHTML = html;
+    } catch (err) {
+        tableDiv.innerHTML = `<p style="color:#fecaca; font-size:14px;">Nepodařilo se načíst studenty: ${err.message}</p>`;
+    } finally {
+        loader.classList.add("hidden");
+    }
+}
+</script>
+
+</body>
+</html>

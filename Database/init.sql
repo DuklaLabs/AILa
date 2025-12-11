@@ -39,7 +39,25 @@ CREATE TABLE auth.permissions (
     permission VARCHAR(64),
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+CREATE SCHEMA IF NOT EXISTS inventory;
 
+CREATE TABLE inventory.materials (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(128),
+    category VARCHAR(64),
+    unit VARCHAR(16),
+    sku VARCHAR(64),
+    reorder_level NUMERIC,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE inventory.stock (
+    id SERIAL PRIMARY KEY,
+    material_id INTEGER REFERENCES inventory.materials(id),
+    location VARCHAR(128),
+    quantity NUMERIC NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT NOW()
+);
 CREATE SCHEMA IF NOT EXISTS lab;
 
 CREATE TABLE lab.machines (
@@ -74,25 +92,7 @@ CREATE TABLE lab.reservations (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE SCHEMA IF NOT EXISTS inventory;
 
-CREATE TABLE inventory.materials (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(128),
-    category VARCHAR(64),
-    unit VARCHAR(16),
-    sku VARCHAR(64),
-    reorder_level NUMERIC,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE inventory.stock (
-    id SERIAL PRIMARY KEY,
-    material_id INTEGER REFERENCES inventory.materials(id),
-    location VARCHAR(128),
-    quantity NUMERIC NOT NULL DEFAULT 0,
-    updated_at TIMESTAMP DEFAULT NOW()
-);
 
 CREATE SCHEMA IF NOT EXISTS orders;
 
@@ -134,3 +134,47 @@ CREATE TABLE events.logs (
     data_json JSONB,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+
+CREATE SCHEMA IF NOT EXISTS internal;
+
+CREATE TABLE internal.students (
+    student_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    registration_date DATE NOT NULL DEFAULT CURRENT_DATE
+);
+
+CREATE TABLE IF NOT EXISTS internal.open_hours (
+    id SERIAL PRIMARY KEY,
+    weekday VARCHAR(16) NOT NULL,
+    date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    capacity INT NOT NULL,
+    note TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+
+CREATE TABLE internal.excused (
+    excuse_id SERIAL PRIMARY KEY,
+    student_id INT NOT NULL,
+    lesson_id INT NOT NULL, -- FK na lesson_hours
+    FOREIGN KEY (student_id) REFERENCES internal.students(student_id),
+    FOREIGN KEY (lesson_id) REFERENCES internal.lesson_hours(lesson_id)
+);
+
+CREATE TABLE internal.lesson_hours (
+    lesson_id SERIAL PRIMARY KEY,
+    weekday VARCHAR(16) NOT NULL,      -- např. 'Pondělí'
+    date DATE NOT NULL,               -- konkrétní datum lekce
+    class_name VARCHAR(50) NOT NULL,   -- např. '3.A'
+    subject_name VARCHAR(100) NOT NULL,-- např. 'Matematika'
+    teacher_name VARCHAR(100) NOT NULL,-- např. 'Mgr. Novák'
+    hour_number INT NOT NULL CHECK (hour_number BETWEEN 0 AND 12)
+);
+
+
