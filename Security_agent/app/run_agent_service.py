@@ -17,7 +17,7 @@ def run():
     
     email = data.get("email")
     hour = data.get("hour_id")
-
+    print (f"Received request to free student {email} for hour {hour}")
     user_message = {
         "role": "user",
         "content": f"Uvolni studenta s emailem {email} na hodinu ID {hour}."

@@ -4,3 +4,5 @@ jinja2
 httpx
 asyncpg
 python-multipart
+requests
+pydantic

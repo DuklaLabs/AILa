@@ -2,6 +2,8 @@ from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 import httpx
+from pydantic import BaseModel
+import requests
 
 from app.auth import require_login
 
@@ -11,6 +13,9 @@ templates = Jinja2Templates(directory="app/templates")
 # URL n8n (interní server nebo docker service)
 N8N_BASE = "http://n8n:5678"
 N8N_WEBHOOK_book_hour = f"{N8N_BASE}/webhook/book-hour"
+
+AGENT_URL = "http://security-agent:8004/run"
+
 
 # ---------------------------
 # HTML stránky (admin, agent)
@@ -54,21 +59,39 @@ async def forward_to_n8n(method: str, path: str, data=None):
 
     r.raise_for_status()
     return r.json()
-import requests
 
-AGENT_URL = "http://dukla-agent:8001/run"
 
 
 @api.post("/book-hour")
-async def send_excuse_request(email: str, hour_id: int):
-    payload = {
-        "email": email,
-        "hour_id": hour_id
+async def send_excuse_request(request: Request):
+    print("➡️ Endpoint /api/book-hour přijat")
+
+    try:
+        data = await request.json()
+        print("📥 Přijat JSON:", data)
+    except Exception as e:
+        print("💥 JSON error:", e)
+        return {"error": "JSON read failed", "detail": str(e)}
+
+    email = data.get("email")
+    hour_id = data.get("hour_id")
+
+    print("📧 email:", email)
+    print("🕒 hour_id:", hour_id)
+
+    payload = {"email": email, "hour_id": hour_id}
+
+    try:
+        agent_response = requests.post(AGENT_URL, json=payload, timeout=10)
+        print("📨 Odpověď agenta:", agent_response.text)
+    except Exception as e:
+        print("💥 Agent request failed:", e)
+        return {"error": "Agent unreachable", "detail": str(e)}
+
+    return {
+        "detail": "Přihláška byla odeslána ke zpracování.",
+        "agent_response": agent_response.text
     }
-
-    r = requests.post(AGENT_URL, json=payload, timeout=10)
-    return {"detail": "Přihláška byla odeslána ke zpracování."}
-
 
 @api.post("/config-open-hours")
 async def save_open_hours(request: Request):

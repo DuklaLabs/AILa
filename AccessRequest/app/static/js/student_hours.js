@@ -44,7 +44,7 @@ async function bookHour(id) {
     const studentEmail = prompt("Zadejte svůj školní e-mail:");
     if (!studentEmail) return;
 
-    const res = await fetch("/book-hour", {
+    const res = await fetch("/api/book-hour", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

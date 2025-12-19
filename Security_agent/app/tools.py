@@ -25,7 +25,7 @@ def db_query(query: str) -> dict:
     conn.commit()
     cur.close()
     conn.close()
-
+    print ("DB_QUERY RESULT:", result)
     return {"result": result}
 
 

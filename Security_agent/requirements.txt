@@ -3,3 +3,4 @@ apscheduler
 ollama
 orjson
 flask
+requests
