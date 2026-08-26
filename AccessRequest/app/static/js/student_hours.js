@@ -14,21 +14,22 @@ async function loadHours() {
                 <th>Datum</th>
                 <th>Od</th>
                 <th>Do</th>
-                <th>Kapacita</th>
+                <th>Volná místa</th>
                 <th></th>
             </tr>
     `;
 
     data.forEach(h => {
+        const full = h.free_spots <= 0;
         html += `
             <tr>
                 <td>${h.date}</td>
                 <td>${h.start_time}</td>
                 <td>${h.end_time}</td>
-                <td>${h.capacity}</td>
+                <td>${full ? "Obsazeno" : h.free_spots}</td>
                 <td>
-                    <button class="btn-primary" onclick="bookHour(${h.id})">
-                        Registrovat
+                    <button class="btn-primary" onclick="bookHour(${h.id})" ${full ? "disabled" : ""}>
+                        ${full ? "Obsazeno" : "Registrovat"}
                     </button>
                 </td>
             </tr>
@@ -41,21 +42,21 @@ async function loadHours() {
 }
 
 async function bookHour(id) {
-    const studentEmail = prompt("Zadejte svůj školní e-mail:");
-    if (!studentEmail) return;
-
     const res = await fetch("/api/book-hour", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            hour_id: id,
-            email: studentEmail
-        })
+        body: JSON.stringify({ hour_id: id })
     });
 
-    const reply = await res.json();
+    if (res.status === 401) {
+        alert("Musíš být přihlášený/á.");
+        window.location.href = "/login";
+        return;
+    }
 
+    const reply = await res.json();
     alert(reply.detail || "Hotovo!");
+    loadHours();
 }
 
 loadHours();

@@ -2,3 +2,11 @@ models/model.gguf
 models/qwen2.5-7b-instruct-q8_0-00001-of-00003.gguf
 models/qwen2.5-7b-instruct-q8_0-00002-of-00003.gguf
 models/qwen2.5-7b-instruct-q8_0-00003-of-00003.gguf
+
+__pycache__/
+*.pyc
+.venv/
+.venv-*/
+*.egg-info/
+.env
+

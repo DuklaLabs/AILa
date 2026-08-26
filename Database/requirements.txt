@@ -1,0 +1,4 @@
+alembic>=1.13.2
+psycopg2-binary>=2.9.10
+asyncpg>=0.29
+bcrypt>=4.1

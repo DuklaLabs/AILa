@@ -1,0 +1,18 @@
+[project]
+name = "ailacore"
+version = "0.1.0"
+description = "Shared DB pool, RFID/password SSO, and models for AILa services."
+requires-python = ">=3.11"
+dependencies = [
+    "asyncpg>=0.29",
+    "bcrypt>=4.1",
+    "fastapi>=0.110",
+    "pydantic>=2",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["ailacore"]

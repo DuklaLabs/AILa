@@ -15,7 +15,7 @@
 .btn-primary {
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     color: white;
-    box-shadow: 0 12px 30px rgba(239,68,68,0.45);
+    box-shadow: 0 12px 30px rgba(193,39,45,0.45);
 }
 
 .btn-primary:hover {

@@ -16,6 +16,11 @@ function validateStudentForm() {
         alert("Neplatný e-mail.");
         return false;
     }
+    const pw = document.getElementById("password").value;
+    if (pw.length < 8) {
+        alert("Heslo musí mít alespoň 8 znaků.");
+        return false;
+    }
     if (!cg || cg === "") {
     alert("Vyber třídu.");
     return false;

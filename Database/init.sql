@@ -1,3 +1,8 @@
+-- HISTORICAL REFERENCE ONLY — superseded by Database/migrations/ (Alembic).
+-- Postgres no longer auto-runs this file (see docker-compose.yml); schema
+-- setup is now `alembic upgrade head` from Database/. Kept here only so the
+-- original hand-written schema stays visible for reference.
+
 CREATE SCHEMA IF NOT EXISTS auth;
 
 CREATE TABLE auth.users (
@@ -159,14 +164,6 @@ CREATE TABLE IF NOT EXISTS internal.open_hours (
 );
 
 
-CREATE TABLE internal.excused (
-    excuse_id SERIAL PRIMARY KEY,
-    student_id INT NOT NULL,
-    lesson_id INT NOT NULL, -- FK na lesson_hours
-    FOREIGN KEY (student_id) REFERENCES internal.students(student_id),
-    FOREIGN KEY (lesson_id) REFERENCES internal.lesson_hours(lesson_id)
-);
-
 CREATE TABLE internal.lesson_hours (
     lesson_id SERIAL PRIMARY KEY,
     weekday VARCHAR(16) NOT NULL,      -- např. 'Pondělí'
@@ -175,6 +172,14 @@ CREATE TABLE internal.lesson_hours (
     subject_name VARCHAR(100) NOT NULL,-- např. 'Matematika'
     teacher_name VARCHAR(100) NOT NULL,-- např. 'Mgr. Novák'
     hour_number INT NOT NULL CHECK (hour_number BETWEEN 0 AND 12)
+);
+
+CREATE TABLE internal.excused (
+    excuse_id SERIAL PRIMARY KEY,
+    student_id INT NOT NULL,
+    lesson_id INT NOT NULL, -- FK na lesson_hours
+    FOREIGN KEY (student_id) REFERENCES internal.students(student_id),
+    FOREIGN KEY (lesson_id) REFERENCES internal.lesson_hours(lesson_id)
 );
 
 

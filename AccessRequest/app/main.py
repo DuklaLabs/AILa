@@ -3,6 +3,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from ailacore.db import close_pool
+
 from app.router import router as admin_router
 from app.auth import router_auth
 from app.students import router_students
@@ -11,6 +13,11 @@ from app.open_hours import router as open_hours_router
 
 
 app = FastAPI()
+
+
+@app.on_event("shutdown")
+async def _shutdown():
+    await close_pool()
 
 # statické soubory
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -24,7 +31,7 @@ async def read_root(request: Request):
     """
     Hlavní rozcestník – obsahuje odkazy na login, admin, student dashboard atd.
     """
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html")
 
 
 # připojení routerů

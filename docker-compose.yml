@@ -9,7 +9,6 @@ services:
       POSTGRES_DB: agentdb
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     networks:
@@ -41,12 +40,16 @@ services:
 
 
   access-request-server:
-    build: ./AccessRequest
+    build:
+      context: .
+      dockerfile: AccessRequest/Dockerfile
     container_name: AccessRequestServer
     ports:
       - "8003:8003"
     networks:
       - agentnet
+    depends_on:
+      - postgres
     environment:
       POSTGRES_DB: agentdb
       POSTGRES_USER: agent
@@ -72,7 +75,7 @@ services:
       POSTGRES_DB: agentdb
       OLLAMA_HOST: http://lmstudio:1234
     env_file:
-      - ./SECURITY_AGENT/.env
+      - ./Security_agent/.env
 
 
 

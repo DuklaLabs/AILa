@@ -20,6 +20,12 @@
     <h1>Registrace studenta</h1>
     <p class="subtitle">Zadej své údaje pro registraci do systému DuklaLabs.</p>
 
+    {% if error %}
+      <div style="color:#fecaca; margin-bottom:10px; font-size:13px;">
+        {{ error }}
+      </div>
+    {% endif %}
+
     <form id="studentForm" method="POST" onsubmit="return validateStudentForm();">
       <label for="first_name">Jméno</label>
       <input id="first_name" name="first_name" required />
@@ -29,6 +35,9 @@
 
       <label for="email">Školní e-mail</label>
       <input id="email" name="email" type="email" required />
+
+      <label for="password">Heslo</label>
+      <input id="password" name="password" type="password" minlength="8" required />
 
       <label for="class_group">Třída</label>
       <select id="class_group" name="class_group" required>
