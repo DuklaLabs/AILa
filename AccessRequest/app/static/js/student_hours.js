@@ -1,6 +1,9 @@
 async function loadHours() {
-    const res = await fetch("/api/open-hours/list");
-    const data = await res.json();
+    const [slotsRes, periods] = await Promise.all([
+        fetch("/api/open-hours/list"),
+        fetchPeriods(),
+    ]);
+    const data = await slotsRes.json();
 
     if (!Array.isArray(data)) {
         document.getElementById("hoursList").innerHTML =
@@ -8,37 +11,17 @@ async function loadHours() {
         return;
     }
 
-    let html = `
-        <table>
-            <tr>
-                <th>Datum</th>
-                <th>Od</th>
-                <th>Do</th>
-                <th>Volná místa</th>
-                <th></th>
-            </tr>
-    `;
-
-    data.forEach(h => {
-        const full = h.free_spots <= 0;
-        html += `
-            <tr>
-                <td>${h.date}</td>
-                <td>${h.start_time}</td>
-                <td>${h.end_time}</td>
-                <td>${full ? "Obsazeno" : h.free_spots}</td>
-                <td>
-                    <button class="btn-primary" onclick="bookHour(${h.id})" ${full ? "disabled" : ""}>
-                        ${full ? "Obsazeno" : "Registrovat"}
-                    </button>
-                </td>
-            </tr>
+    document.getElementById("hoursList").innerHTML = buildOpenHoursGrid(data, periods, slot => {
+        const full = slot.free_spots <= 0;
+        return `
+            <div class="tt-slot ${full ? "tt-full" : "tt-free"}">
+                <div class="tt-spots">${full ? "Obsazeno" : slot.free_spots + " volných"}</div>
+                <button class="btn-primary tt-book" onclick="bookHour(${slot.id})" ${full ? "disabled" : ""}>
+                    ${full ? "—" : "Registrovat"}
+                </button>
+            </div>
         `;
     });
-
-    html += "</table>";
-
-    document.getElementById("hoursList").innerHTML = html;
 }
 
 async function bookHour(id) {

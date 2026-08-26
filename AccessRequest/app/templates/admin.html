@@ -20,6 +20,12 @@
 
 <main class="container">
 
+    <!-- ČEKAJÍCÍ REGISTRACE -->
+    <section class="card" id="pendingCard" style="display:none;">
+        <h2>🔔 Čekající registrace (<span id="pendingCount">0</span>)</h2>
+        <div id="pendingList">Načítám...</div>
+    </section>
+
     <!-- FORM -->
     <section class="card">
         <h2>Přidat otevřenou hodinu</h2>
@@ -31,16 +37,22 @@
                 <input id="date" name="date" type="date" required>
             </div>
 
-            <div class="form-row-2">
-                <div class="form-group">
-                    <label for="start_time">Začátek</label>
-                    <input id="start_time" name="start_time" type="time" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="end_time">Konec</label>
-                    <input id="end_time" name="end_time" type="time" required>
-                </div>
+            <div class="form-group">
+                <label for="hour_number">Vyučovací hodina</label>
+                <select id="hour_number" name="hour_number" required>
+                    <option value="">-- vyber hodinu --</option>
+                    <option value="0">0. hodina (7:10–7:55)</option>
+                    <option value="1">1. hodina (8:00–8:45)</option>
+                    <option value="2">2. hodina (8:50–9:35)</option>
+                    <option value="3">3. hodina (9:55–10:40)</option>
+                    <option value="4">4. hodina (10:45–11:30)</option>
+                    <option value="5">5. hodina (11:40–12:25)</option>
+                    <option value="6">6. hodina (12:30–13:15)</option>
+                    <option value="7">7. hodina (13:20–14:05)</option>
+                    <option value="8">8. hodina (14:10–14:55)</option>
+                    <option value="9">9. hodina (15:00–15:45)</option>
+                    <option value="10">10. hodina (15:50–16:35)</option>
+                </select>
             </div>
 
             <div class="form-group">
@@ -67,6 +79,8 @@
 
 </main>
 
+<script src="/static/js/timetable.js"></script>
+<script src="/static/js/pending_students.js"></script>
 <script src="/static/js/open_hours.js"></script>
 </body>
 </html>

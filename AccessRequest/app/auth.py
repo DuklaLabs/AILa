@@ -7,6 +7,7 @@ from ailacore.auth import (
     SESSION_COOKIE,
     SESSION_TTL,
     authenticate_password,
+    authenticate_password_ignoring_active,
     authenticate_rfid,
     create_session,
     get_current_user,
@@ -46,6 +47,14 @@ async def login_check(
 ):
     user = await authenticate_password(username, password)
     if user is None:
+        pending = await authenticate_password_ignoring_active(username, password)
+        if pending is not None and not pending.is_active:
+            return templates.TemplateResponse(
+                request,
+                "login.html",
+                {"error": "Účet zatím čeká na schválení administrátorem."},
+                status_code=403,
+            )
         return templates.TemplateResponse(
             request,
             "login.html",

@@ -1,6 +1,9 @@
 async function loadOpenHours() {
-    const res = await fetch("/api/open-hours/list");
-    const data = await res.json();
+    const [slotsRes, periods] = await Promise.all([
+        fetch("/api/open-hours/list"),
+        fetchPeriods(),
+    ]);
+    const data = await slotsRes.json();
 
     if (!Array.isArray(data)) {
         document.getElementById("openHoursList").innerHTML =
@@ -8,35 +11,13 @@ async function loadOpenHours() {
         return;
     }
 
-    let html = `
-        <table>
-            <tr>
-                <th>Datum</th>
-                <th>Od</th>
-                <th>Do</th>
-                <th>Kapacita</th>
-                <th>Poznámka</th>
-                <th></th>
-            </tr>
-    `;
-
-    data.forEach(item => {
-        html += `
-            <tr>
-                <td>${item.date}</td>
-                <td>${item.start_time}</td>
-                <td>${item.end_time}</td>
-                <td>${item.capacity}</td>
-                <td>${item.note ?? ""}</td>
-                <td>
-                    <button class="delete-btn" onclick="deleteHour(${item.id})">Smazat</button>
-                </td>
-            </tr>
-        `;
-    });
-
-    html += "</table>";
-    document.getElementById("openHoursList").innerHTML = html;
+    document.getElementById("openHoursList").innerHTML = buildOpenHoursGrid(data, periods, slot => `
+        <div class="tt-slot ${slot.free_spots <= 0 ? "tt-full" : "tt-free"}">
+            <button class="tt-del" onclick="deleteHour(${slot.id})" title="Smazat">×</button>
+            <div class="tt-spots">${slot.free_spots}/${slot.capacity} volno</div>
+            ${slot.note ? `<div class="tt-note">${slot.note}</div>` : ""}
+        </div>
+    `);
 }
 
 document.getElementById("openHoursForm").addEventListener("submit", async (e) => {
@@ -64,7 +45,12 @@ document.getElementById("openHoursForm").addEventListener("submit", async (e) =>
 async function deleteHour(id) {
     if (!confirm("Opravdu smazat tuto otevřenou hodinu?")) return;
 
-    await fetch(`/api/open-hours/delete/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/open-hours/delete/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+        const err = await res.json();
+        alert(err.detail || "Nepodařilo se smazat.");
+        return;
+    }
     loadOpenHours();
 }
 

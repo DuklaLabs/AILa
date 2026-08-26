@@ -58,6 +58,28 @@ async def authenticate_password(username: str, password: str) -> Optional[User]:
     return User(**{field: row[field] for field in _USER_FIELDS})
 
 
+async def authenticate_password_ignoring_active(username: str, password: str) -> Optional[User]:
+    """Same check as authenticate_password but without the is_active
+    filter — lets a caller tell "wrong password" apart from "correct
+    password, account just isn't approved/active yet" so it can show an
+    accurate message. Only reveals that distinction to someone who already
+    proved they know the password, so it doesn't leak account existence
+    to a blind guesser."""
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            f"""
+            SELECT {_USER_COLUMNS}, password_hash
+            FROM auth.users
+            WHERE username = $1
+            """,
+            username,
+        )
+    if row is None or not verify_password(password, row["password_hash"]):
+        return None
+    return User(**{field: row[field] for field in _USER_FIELDS})
+
+
 async def authenticate_rfid(card_uid: str) -> Optional[User]:
     pool = await get_pool()
     async with pool.acquire() as conn:

@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Request, Form, HTTPException, Depends
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 import asyncpg
 
-from ailacore.auth import SESSION_COOKIE, SESSION_TTL, create_session, hash_password
+from ailacore.auth import hash_password, require_role
 from ailacore.db import get_pool
 
 router_students = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+
+_STAFF_ONLY = [Depends(require_role("admin", "staff"))]
 
 
 async def load_students():
@@ -24,12 +26,34 @@ async def load_students():
     return rows
 
 
+async def load_pending_students():
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT s.student_id, s.first_name, s.last_name, s.email, s.class_group,
+                   u.id AS user_id,
+                   to_char(s.registration_date, 'YYYY-MM-DD') AS registration_date
+            FROM internal.students s
+            JOIN auth.users u ON u.id = s.user_id
+            WHERE u.role = 'student' AND u.is_active = FALSE
+            ORDER BY s.student_id DESC
+            """
+        )
+    return rows
+
+
 async def register_student(
     first_name: str, last_name: str, email: str, class_group: str, password: str
 ) -> int:
     """Creates both the login account (auth.users, role='student') and the
     roster row (internal.students, used by bookings/excused/reports),
-    linked via internal.students.user_id — one identity, not two."""
+    linked via internal.students.user_id — one identity, not two.
+
+    New accounts start with is_active=FALSE: they can't log in — and so
+    can't reach /student-hours or /api/book-hour, both gated on a valid
+    session — until an admin/staff approves them (see /api/students/pending
+    + /approve below)."""
     password_hash = hash_password(password)
     pool = await get_pool()
     async with pool.acquire() as conn:
@@ -37,8 +61,8 @@ async def register_student(
             try:
                 user_id = await conn.fetchval(
                     """
-                    INSERT INTO auth.users (username, full_name, email, role, password_hash)
-                    VALUES ($1, $2, $3, 'student', $4)
+                    INSERT INTO auth.users (username, full_name, email, role, password_hash, is_active)
+                    VALUES ($1, $2, $3, 'student', $4, FALSE)
                     RETURNING id
                     """,
                     email,
@@ -94,21 +118,55 @@ async def register_submit(
             status_code=400,
         )
 
-    user_id = await register_student(first_name, last_name, email, class_group, password)
+    await register_student(first_name, last_name, email, class_group, password)
 
-    response = RedirectResponse(url="/student-hours", status_code=302)
-    token, _expires_at = await create_session(user_id)
-    response.set_cookie(
-        SESSION_COOKIE,
-        token,
-        httponly=True,
-        samesite="lax",
-        max_age=int(SESSION_TTL.total_seconds()),
+    return HTMLResponse(
+        "<h1>Registrace přijata</h1>"
+        "<p>Účet teď musí schválit administrátor DuklaLabs. "
+        "Až se to stane, budeš se moct přihlásit a zapsat na volné hodiny.</p>"
     )
-    return response
 
 
 @router_students.get("/api/students")
 async def api_get_students():
     students = await load_students()
     return [dict(s) for s in students]
+
+
+# ----------------------------------------------------------------------
+# SCHVALOVÁNÍ REGISTRACÍ (staff/admin only)
+# ----------------------------------------------------------------------
+
+@router_students.get("/api/students/pending", dependencies=_STAFF_ONLY)
+async def api_get_pending_students():
+    students = await load_pending_students()
+    return [dict(s) for s in students]
+
+
+@router_students.post("/api/students/{user_id}/approve", dependencies=_STAFF_ONLY)
+async def approve_student(user_id: int):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        result = await conn.execute(
+            "UPDATE auth.users SET is_active = TRUE WHERE id = $1 AND role = 'student'",
+            user_id,
+        )
+    if result == "UPDATE 0":
+        raise HTTPException(status_code=404, detail="Studentský účet nenalezen.")
+    return {"status": "ok", "msg": "Účet schválen."}
+
+
+@router_students.post("/api/students/{user_id}/reject", dependencies=_STAFF_ONLY)
+async def reject_student(user_id: int):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            await conn.execute(
+                "DELETE FROM internal.students WHERE user_id = $1", user_id
+            )
+            result = await conn.execute(
+                "DELETE FROM auth.users WHERE id = $1 AND role = 'student'", user_id
+            )
+    if result == "DELETE 0":
+        raise HTTPException(status_code=404, detail="Studentský účet nenalezen.")
+    return {"status": "ok", "msg": "Registrace zamítnuta."}
