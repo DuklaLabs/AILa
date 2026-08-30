@@ -8,14 +8,14 @@
     <link rel="stylesheet" href="/static/css/buttons.css" />
     <link rel="stylesheet" href="/static/css/forms.css" />
 
-    <!-- Specifický styl pro open hours -->
-    <link rel="stylesheet" href="/static/css/open_hours.css" />
+    <!-- Specifický styl pro open hours (?v = cache-buster při změnách) -->
+    <link rel="stylesheet" href="/static/css/open_hours.css?v=14" />
 </head>
 
 <body>
 
 <header class="topbar">
-    <h1>⚙️ Admin panel – Otevřené hodiny</h1>
+    <h1>⚙️ DuklaLabs – Otevřené hodiny</h1>
 </header>
 
 <main class="container">
@@ -26,61 +26,43 @@
         <div id="pendingList">Načítám...</div>
     </section>
 
-    <!-- FORM -->
+    <!-- TÝDENNÍ MŘÍŽKA -->
     <section class="card">
-        <h2>Přidat otevřenou hodinu</h2>
-
-        <form id="openHoursForm" class="form">
-
-            <div class="form-group">
-                <label for="date">Datum</label>
-                <input id="date" name="date" type="date" required>
+        <div class="card-head">
+            <h2>Otevřené hodiny</h2>
+            <div class="week-toggle">
+                <button type="button" data-week="0" class="active">Tento týden</button>
+                <button type="button" data-week="1">Příští týden</button>
             </div>
-
-            <div class="form-group">
-                <label for="hour_number">Vyučovací hodina</label>
-                <select id="hour_number" name="hour_number" required>
-                    <option value="">-- vyber hodinu --</option>
-                    <option value="0">0. hodina (7:10–7:55)</option>
-                    <option value="1">1. hodina (8:00–8:45)</option>
-                    <option value="2">2. hodina (8:50–9:35)</option>
-                    <option value="3">3. hodina (9:55–10:40)</option>
-                    <option value="4">4. hodina (10:45–11:30)</option>
-                    <option value="5">5. hodina (11:40–12:25)</option>
-                    <option value="6">6. hodina (12:30–13:15)</option>
-                    <option value="7">7. hodina (13:20–14:05)</option>
-                    <option value="8">8. hodina (14:10–14:55)</option>
-                    <option value="9">9. hodina (15:00–15:45)</option>
-                    <option value="10">10. hodina (15:50–16:35)</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="capacity">Kapacita</label>
-                <input id="capacity" name="capacity" type="number" min="1" required>
-            </div>
-
-            <div class="form-group">
-                <label for="note">Poznámka</label>
-                <input id="note" name="note" type="text">
-            </div>
-
-            <button class="btn-primary" type="submit">💾 Uložit</button>
-        </form>
-
-        <div id="formMessage" class="form-message"></div>
-    </section>
-
-    <!-- LIST -->
-    <section class="card">
-        <h2>Nastavené otevřené hodiny</h2>
-        <div id="openHoursList">Načítám...</div>
+        </div>
+        <p class="hint" id="gridHint"></p>
+        <div id="supFilter" class="sup-filter"></div>
+        <div id="weekGrid">Načítám...</div>
     </section>
 
 </main>
 
-<script src="/static/js/timetable.js"></script>
+<!-- Detail rezervací na jednu otevřenou hodinu (přehled „tento týden") -->
+<div id="ohModal" class="oh-modal" style="display:none;" onclick="if(event.target===this)closeOhModal()">
+    <div class="oh-modal-box">
+        <button type="button" class="oh-modal-close" onclick="closeOhModal()">×</button>
+        <div id="ohModalBody"></div>
+    </div>
+</div>
+
+<div id="toastHost" class="toast-host"></div>
+
+<!-- Celoobrazovkové okno pro chyby / potvrzení -->
+<div id="appDialog" class="app-dialog" style="display:none;">
+    <div class="app-dialog-box">
+        <div class="app-dialog-title" id="appDialogTitle"></div>
+        <div class="app-dialog-msg" id="appDialogMsg"></div>
+        <div class="app-dialog-actions" id="appDialogActions"></div>
+    </div>
+</div>
+
+<script src="/static/js/timetable.js?v=14"></script>
 <script src="/static/js/pending_students.js"></script>
-<script src="/static/js/open_hours.js"></script>
+<script src="/static/js/open_hours.js?v=14"></script>
 </body>
 </html>

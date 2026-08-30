@@ -71,3 +71,44 @@ async def book_hour(payload: BookHourRequest, user: User = Depends(get_current_u
                 )
 
     return {"detail": "Rezervace proběhla úspěšně."}
+
+
+@router.get("/my-bookings")
+async def my_bookings(user: User = Depends(get_current_user)):
+    """IDs of the open hours the logged-in student is booked into — the
+    registration grid uses this to mark cells the student already has."""
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        student = await conn.fetchrow(
+            "SELECT student_id FROM internal.students WHERE user_id = $1", user.id
+        )
+        if student is None:
+            return []
+        rows = await conn.fetch(
+            "SELECT open_hour_id FROM internal.bookings WHERE student_id = $1",
+            student["student_id"],
+        )
+    return [r["open_hour_id"] for r in rows]
+
+
+@router.delete("/book-hour/{hour_id}")
+async def cancel_hour(hour_id: int, user: User = Depends(get_current_user)):
+    """Student unregisters themselves from an open hour."""
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        student = await conn.fetchrow(
+            "SELECT student_id FROM internal.students WHERE user_id = $1", user.id
+        )
+        if student is None:
+            raise HTTPException(
+                status_code=404,
+                detail="K tomuto účtu není přiřazený studentský profil.",
+            )
+        result = await conn.execute(
+            "DELETE FROM internal.bookings WHERE student_id = $1 AND open_hour_id = $2",
+            student["student_id"],
+            hour_id,
+        )
+    if result == "DELETE 0":
+        raise HTTPException(status_code=404, detail="Tuto rezervaci nemáš.")
+    return {"detail": "Rezervace byla zrušena."}

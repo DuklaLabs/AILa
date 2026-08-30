@@ -118,6 +118,18 @@
     height: 70px;
 }
 
+/* buňka s bloky dozorů se musí umět natáhnout */
+.timetable tr:has(.tt-blocked) .tt-cell {
+    height: auto;
+}
+
+/* volná hodina + pod ní hodiny kolegů z rozvrhu */
+.tt-cellwrap {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
 .tt-slot {
     position: relative;
     border-radius: 8px;
@@ -157,6 +169,29 @@
     font-size: 12px;
 }
 
+/* studentská mřížka: hodina, na kterou je student přihlášený */
+.tt-mine {
+    border: 2px solid #22c55e;
+    background: rgba(34, 197, 94, 0.22);
+}
+
+.tt-mine .tt-spots {
+    color: #dcfce7;
+}
+
+.tt-cancel-book {
+    background: transparent;
+    border: 1px solid rgba(248, 113, 113, 0.6);
+    color: #fca5a5;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.tt-cancel-book:hover {
+    background: rgba(248, 113, 113, 0.15);
+    color: #fff;
+}
+
 .tt-del {
     position: absolute;
     top: 2px;
@@ -171,4 +206,491 @@
 
 .tt-del:hover {
     color: #fca5a5;
+}
+
+/* --- hlavička karty + přepínač týdnů --- */
+.card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.card-head h2 {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.week-toggle {
+    display: inline-flex;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.week-toggle button {
+    background: transparent;
+    border: none;
+    color: #ddd;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.week-toggle button:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.week-toggle button.active {
+    background: #2563eb;
+    color: #fff;
+}
+
+.hint {
+    color: #9ca3af;
+    font-size: 12px;
+    margin: 8px 0 16px;
+}
+
+/* --- prázdná buňka: velké "+" + dozor --- */
+.tt-add {
+    width: 100%;
+    min-height: 44px;
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #6b7280;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.tt-add:hover {
+    background: rgba(37, 99, 235, 0.15);
+    border-color: rgba(37, 99, 235, 0.5);
+    color: #fff;
+}
+
+.tt-sup {
+    margin-top: 4px;
+    font-size: 10px;
+    color: #9ca3af;
+    line-height: 1.2;
+}
+
+/* --- filtr dozorů --- */
+.sup-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.sup-filter-label {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.sup-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: transparent;
+    color: #9ca3af;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.sup-chip .sup-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--sup, #eab308);
+    opacity: 0.35;
+}
+
+.sup-chip.on {
+    color: #fff;
+    border-color: var(--sup, #eab308);
+    background: rgba(234, 179, 8, 0.16);
+    background: color-mix(in srgb, var(--sup, #eab308) 16%, transparent);
+}
+
+.sup-chip.on .sup-dot {
+    opacity: 1;
+}
+
+/* --- buňka blokovaná vlastní výukou (z duklamaps rozvrhu) --- */
+.tt-blocked-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.tt-blocked {
+    border-radius: 8px;
+    padding: 5px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: rgba(234, 179, 8, 0.12);
+    background: color-mix(in srgb, var(--sup, #eab308) 12%, transparent);
+    border: 1px solid rgba(234, 179, 8, 0.35);
+    border: 1px solid color-mix(in srgb, var(--sup, #eab308) 40%, transparent);
+    border-left: 3px solid var(--sup, #eab308);
+}
+
+.tt-blocked-main {
+    font-size: 11px;
+    font-weight: bold;
+    color: #f3f4f6;
+    line-height: 1.2;
+}
+
+.tt-blocked-sub {
+    font-size: 10px;
+    color: #9ca3af;
+    line-height: 1.2;
+}
+
+.tt-add-sm {
+    margin-top: 3px;
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.25);
+    border-radius: 5px;
+    color: #9ca3af;
+    font-size: 10px;
+    padding: 2px 6px;
+    cursor: pointer;
+}
+
+.tt-add-sm:hover {
+    background: rgba(37, 99, 235, 0.15);
+    color: #fff;
+}
+
+/* --- editace existující hodiny --- */
+.tt-edit {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    background: none;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.7;
+}
+
+.tt-edit:hover {
+    opacity: 1;
+}
+
+/* --- inline formulář v buňce --- */
+.tt-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tt-inline input,
+.tt-inline select {
+    width: 100%;
+    padding: 4px 6px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid #444;
+    background: #1a1a1a;
+    color: #fff;
+    box-sizing: border-box;
+}
+
+/* výběr jednoho / více dozorů v inline formuláři */
+.tt-sup-label {
+    font-size: 10px;
+    color: #9ca3af;
+}
+
+.tt-sup-multi {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tt-sup-opt {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+    cursor: pointer;
+}
+
+.tt-sup-opt.on {
+    color: #fff;
+    border-color: var(--sup, #eab308);
+    background: rgba(234, 179, 8, 0.16);
+    background: color-mix(in srgb, var(--sup, #eab308) 16%, transparent);
+}
+
+.tt-sup-opt.blocked {
+    opacity: 0.45;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.tt-sup-opt input {
+    width: auto;
+    margin: 0;
+    accent-color: var(--sup, #eab308);
+}
+
+/* přiřazení dozoři na uložené volné hodině (1 a více štítků) */
+.tt-slot-sups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: center;
+}
+
+.tt-slot-sup {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: bold;
+    line-height: 1.2;
+    padding: 1px 5px;
+    border-radius: 999px;
+    color: #f3f4f6;
+    background: rgba(234, 179, 8, 0.18);
+    background: color-mix(in srgb, var(--sup, #eab308) 22%, transparent);
+    border: 1px solid var(--sup, #eab308);
+}
+
+.oh-meta {
+    margin: -6px 0 14px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.tt-inline-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.tt-inline-actions button {
+    flex: 1;
+    padding: 4px 6px;
+    font-size: 11px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.tt-cancel {
+    background: #374151;
+    color: #fff;
+    border: none;
+}
+
+.tt-cancel:hover {
+    background: #4b5563;
+}
+
+/* --- toast hlášky (chyby / potvrzení) --- */
+.toast-host {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: min(360px, 90vw);
+}
+
+.toast {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.35;
+    color: #f3f4f6;
+    background: #1f2430;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-left: 3px solid #9ca3af;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    animation: toast-in 0.18s ease-out;
+}
+
+.toast-error {
+    border-left-color: #ef4444;
+}
+
+.toast-success {
+    border-left-color: #22c55e;
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateX(12px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* --- celoobrazovkové okno: chyba / potvrzení --- */
+.app-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.app-dialog-box {
+    width: min(440px, 90vw);
+    background: #1f2430;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: 4px solid #9ca3af;
+    border-radius: 12px;
+    padding: 22px 24px;
+    color: #f3f4f6;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: toast-in 0.15s ease-out;
+}
+
+.app-dialog-box.app-dialog-error { border-top-color: #ef4444; }
+.app-dialog-box.app-dialog-confirm { border-top-color: #eab308; }
+
+.app-dialog-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.app-dialog-error .app-dialog-title::before { content: "⚠ "; }
+
+.app-dialog-msg {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #d1d5db;
+    white-space: pre-wrap;
+}
+
+.app-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.app-dialog-actions button {
+    padding: 8px 18px;
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+}
+
+.app-dialog-cancel {
+    background: #374151;
+    color: #fff;
+}
+
+.app-dialog-cancel:hover {
+    background: #4b5563;
+}
+
+/* --- přehled „tento týden": klikací buňka + modal s přihlášenými --- */
+.tt-clickable {
+    cursor: pointer;
+}
+
+.tt-clickable:hover {
+    filter: brightness(1.25);
+}
+
+.oh-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.oh-modal-box {
+    position: relative;
+    background: #1f2430;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 22px 24px;
+    min-width: 320px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    color: #f3f4f6;
+}
+
+.oh-modal-box h3 {
+    margin: 0 0 14px;
+    font-size: 16px;
+}
+
+.oh-count {
+    color: #9ca3af;
+    font-weight: normal;
+    font-size: 13px;
+}
+
+.oh-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #9ca3af;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.oh-modal-close:hover {
+    color: #fff;
+}
+
+.oh-list {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.oh-list th,
+.oh-list td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 7px 10px;
+    text-align: left;
+    font-size: 13px;
+}
+
+.oh-list th {
+    color: #9ca3af;
+    font-weight: 600;
+}
+
+.oh-when {
+    color: #9ca3af;
+    white-space: nowrap;
+}
+
+.oh-empty {
+    color: #9ca3af;
 }

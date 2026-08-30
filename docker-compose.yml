@@ -13,6 +13,31 @@ services:
       - "5432:5432"
     networks:
       - agentnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent -d agentdb"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  db-migrate:
+    build:
+      context: ./Database
+      dockerfile: Dockerfile.migrate
+    container_name: agent_db_migrate
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
+      POSTGRES_DB: agentdb
+      # Bootstrap admin (username password). Remove/blank to skip seeding.
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin
+    networks:
+      - agentnet
 
   ollama:
     image: ollama/ollama:latest
@@ -49,25 +74,51 @@ services:
     networks:
       - agentnet
     depends_on:
-      - postgres
+      db-migrate:
+        condition: service_completed_successfully
+    # lets DUKLA_PG_HOST=host.docker.internal reach a DB on the Docker host
+    # (works out of the box on Docker Desktop; this line is for Linux).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       POSTGRES_DB: agentdb
       POSTGRES_USER: agent
       POSTGRES_PASSWORD: agentpass
       POSTGRES_HOST: postgres
+      # Separate read-only "duklamaps" timetable DB used by the admin
+      # open-hours grid to show supervising teachers' lessons. Leave
+      # DUKLA_PG_HOST empty to disable (grid still works without it).
+      # NOTE: inside the container "localhost" is the container itself —
+      # use host.docker.internal for a DB running on your machine.
+      DUKLA_PG_HOST: "host.docker.internal"
+      DUKLA_PG_PORT: "5433"
+      DUKLA_PG_DB: "duklamaps"
+      DUKLA_PG_USER: "duklamaps"
+      DUKLA_PG_PASSWORD: "duklamaps"
+      # Čárkou oddělená jména dozorů. Matchuje se po slovech bez ohledu na
+      # pořadí a tituly, takže "Bc. Jan Petrášek" sedne i na tvar
+      # "Petrášek Jan" v rozvrhu (viz .../supervisions/debug).
+      DUKLA_SUPERVISORS: "Bc. Jan Petrášek, Václav Hlaváč"          # "Novák Petr,Svoboda Jan"
+      DUKLA_DAY_BASE: "0"                            # day_index pondělí (0 nebo 1)
+      # "Tento týden" čte jen timetable_actual pro daný týden (week_date).
+      # Když je prázdný (prázdniny), mřížka je bez rozvrhu. Nastav na "1"
+      # jen pokud chceš v takovém případě spadnout na stálý rozvrh.
+      DUKLA_PERMANENT_FALLBACK: "0"
 
   security-agent:
     build:  
       context: ./Security_agent
       dockerfile: Dockerfile
     container_name: security-agent
-    ports:    
+    ports:
       - "8004:8004"
     networks:
       - agentnet
     depends_on:
-      - postgres
-      - ollama
+      db-migrate:
+        condition: service_completed_successfully
+      ollama:
+        condition: service_started
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_USER: agent

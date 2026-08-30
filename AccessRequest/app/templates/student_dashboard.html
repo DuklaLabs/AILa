@@ -10,6 +10,16 @@
   <link rel="stylesheet" href="/static/css/buttons.css">
   <link rel="stylesheet" href="/static/css/forms.css">
 
+  <style>
+    .booking-chips { display:flex; flex-wrap:wrap; gap:4px; }
+    .booking-chip {
+      display:inline-block; padding:2px 8px; border-radius:999px;
+      font-size:12px; background:rgba(34,197,94,0.18);
+      border:1px solid rgba(34,197,94,0.45); color:#dcfce7; white-space:nowrap;
+    }
+    .booking-none { color:#6b7280; font-size:13px; }
+  </style>
+
   <script src="/static/js/loader.js" defer></script>
 </head>
 
@@ -36,6 +46,7 @@
                 <th style="text-align:left; padding:6px;">E-mail</th>
                 <th style="text-align:left; padding:6px;">Registrace</th>
                 <th style="text-align:left; padding:6px;">Třída</th>
+                <th style="text-align:left; padding:6px;">Přihlášen na</th>
               </tr>
             </thead>
             <tbody>
@@ -46,6 +57,15 @@
                   <td style="padding:6px;">{{ s.email }}</td>
                   <td style="padding:6px;">{{ s.registration_date }}</td>
                   <td style="padding:6px;">{{ s.class_group }}</td>
+                  <td style="padding:6px;">
+                    {% if s.bookings %}
+                      <div class="booking-chips">
+                        {% for b in s.bookings %}<span class="booking-chip">{{ b.label }}</span>{% endfor %}
+                      </div>
+                    {% else %}
+                      <span class="booking-none">není přihlášen</span>
+                    {% endif %}
+                  </td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -83,20 +103,29 @@ async function reloadStudents() {
                 <th style="text-align:left; padding:6px;">E-mail</th>
                 <th style="text-align:left; padding:6px;">Registrace</th>
                 <th style="text-align:left; padding:6px;">Třída</th>
+                <th style="text-align:left; padding:6px;">Přihlášen na</th>
               </tr>
             </thead>
             <tbody>
         `;
 
+        const escHtml = t => String(t ?? "").replace(/[&<>"]/g, c => (
+            { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
         data.forEach(s => {
+            const bookings = Array.isArray(s.bookings) ? s.bookings : [];
+            const bookingsHtml = bookings.length
+                ? `<div class="booking-chips">${bookings.map(b =>
+                      `<span class="booking-chip">${escHtml(b.label)}</span>`).join("")}</div>`
+                : `<span class="booking-none">není přihlášen</span>`;
             html += `
               <tr style="border-bottom:1px solid rgba(31,41,55,0.7);">
                 <td style="padding:6px;">${s.student_id}</td>
-                <td style="padding:6px;">${s.first_name} ${s.last_name}</td>
-                <td style="padding:6px;">${s.email}</td>
-                <td style="padding:6px;">${s.registration_date}</td>
-                <td style="padding:6px;">${s.class_group}</td>
-
+                <td style="padding:6px;">${escHtml(s.first_name)} ${escHtml(s.last_name)}</td>
+                <td style="padding:6px;">${escHtml(s.email)}</td>
+                <td style="padding:6px;">${escHtml(s.registration_date)}</td>
+                <td style="padding:6px;">${escHtml(s.class_group)}</td>
+                <td style="padding:6px;">${bookingsHtml}</td>
               </tr>
             `;
         });

@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Request, Form, HTTPException, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -11,19 +13,46 @@ templates = Jinja2Templates(directory="app/templates")
 
 _STAFF_ONLY = [Depends(require_role("admin", "staff"))]
 
+# Per-student list of the open hours they're booked into, so the dashboard
+# can show *where* each student is already registered. Each entry has a
+# ready-made Czech `label` ("Po 1.9. · 3. h") used verbatim by both the
+# server-rendered table and the JS re-render.
+_STUDENTS_SQL = """
+    SELECT s.student_id, s.first_name, s.last_name, s.email, s.class_group,
+           to_char(s.registration_date, 'YYYY-MM-DD') AS registration_date,
+           COALESCE(
+               jsonb_agg(
+                   jsonb_build_object(
+                       'open_hour_id', oh.id,
+                       'date', to_char(oh.date, 'YYYY-MM-DD'),
+                       'hour_number', oh.hour_number,
+                       'label',
+                           (ARRAY['Ne','Po','Út','St','Čt','Pá','So'])[EXTRACT(DOW FROM oh.date)::int + 1]
+                           || ' ' || to_char(oh.date, 'FMDD.FMMM.')
+                           || ' · ' || COALESCE(oh.hour_number::text, '?') || '. h'
+                   ) ORDER BY oh.date, oh.start_time
+               ) FILTER (WHERE b.id IS NOT NULL),
+               '[]'::jsonb
+           ) AS bookings
+    FROM internal.students s
+    LEFT JOIN internal.bookings b ON b.student_id = s.student_id
+    LEFT JOIN internal.open_hours oh ON oh.id = b.open_hour_id
+    GROUP BY s.student_id
+    ORDER BY s.student_id DESC
+"""
+
 
 async def load_students():
     pool = await get_pool()
     async with pool.acquire() as conn:
-        rows = await conn.fetch(
-            """
-            SELECT student_id, first_name, last_name, email, class_group,
-                   to_char(registration_date, 'YYYY-MM-DD') AS registration_date
-            FROM internal.students
-            ORDER BY student_id DESC
-            """
-        )
-    return rows
+        rows = await conn.fetch(_STUDENTS_SQL)
+    out = []
+    for r in rows:
+        d = dict(r)
+        if isinstance(d.get("bookings"), str):
+            d["bookings"] = json.loads(d["bookings"])
+        out.append(d)
+    return out
 
 
 async def load_pending_students():

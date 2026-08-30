@@ -10,6 +10,7 @@ from app.auth import router_auth
 from app.students import router_students
 
 from app.open_hours import router as open_hours_router
+from app.dukla_db import close_dukla_pool
 
 
 app = FastAPI()
@@ -18,6 +19,7 @@ app = FastAPI()
 @app.on_event("shutdown")
 async def _shutdown():
     await close_pool()
+    await close_dukla_pool()
 
 # statické soubory
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

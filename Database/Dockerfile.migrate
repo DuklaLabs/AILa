@@ -1,0 +1,14 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Same proxy/MITM caveat as the other service images in this repo.
+ENV PIP_TRUSTED_HOST="pypi.org files.pythonhosted.org pypi.python.org"
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
+
+COPY . .
+RUN chmod +x docker-migrate.sh
+
+ENTRYPOINT ["./docker-migrate.sh"]

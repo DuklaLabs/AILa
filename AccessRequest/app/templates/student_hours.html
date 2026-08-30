@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/static/css/layout.css">
     <link rel="stylesheet" href="/static/css/forms.css">
     <link rel="stylesheet" href="/static/css/buttons.css">
-    <link rel="stylesheet" href="/static/css/open_hours.css">
+    <link rel="stylesheet" href="/static/css/open_hours.css?v=14">
 </head>
 
 <body>
@@ -19,14 +19,20 @@
 <main class="container">
 
     <section class="card">
-        <h2>Dostupné termíny</h2>
-
-        <div id="hoursList">Načítám...</div>
+        <div class="card-head">
+            <h2>Volné hodiny</h2>
+            <div class="week-toggle">
+                <button type="button" data-week="0" class="active">Tento týden</button>
+                <button type="button" data-week="1">Příští týden</button>
+            </div>
+        </div>
+        <p class="hint">Zeleně ✓ jsou hodiny, na které už jsi přihlášený/á.</p>
+        <div id="weekGrid">Načítám...</div>
     </section>
 
 </main>
 
-<script src="/static/js/timetable.js"></script>
-<script src="/static/js/student_hours.js"></script>
+<script src="/static/js/timetable.js?v=14"></script>
+<script src="/static/js/student_hours.js?v=14"></script>
 </body>
 </html>
