@@ -26,6 +26,10 @@ from email.mime.text import MIMEText
 from email.utils import formataddr
 from typing import Optional, Sequence
 
+import base64
+from email import encoders
+from email.mime.base import MIMEBase
+
 import httpx
 
 _AUTHORITY = "https://login.microsoftonline.com"
@@ -183,6 +187,9 @@ class Mailer:
         html: bool = False,
         cc: Optional[Sequence[str] | str] = None,
         bcc: Optional[Sequence[str] | str] = None,
+        ics: Optional[str] = None,
+        ics_name: str = "udalost.ics",
+        ics_method: str = "PUBLISH",
     ) -> dict:
         message = {
             "subject": subject,
@@ -196,6 +203,13 @@ class Mailer:
             message["ccRecipients"] = _recipients(_as_list(cc))
         if bcc:
             message["bccRecipients"] = _recipients(_as_list(bcc))
+        if ics:
+            message["attachments"] = [{
+                "@odata.type": "#microsoft.graph.fileAttachment",
+                "name": ics_name,
+                "contentType": f"text/calendar; method={ics_method}",
+                "contentBytes": base64.b64encode(ics.encode("utf-8")).decode(),
+            }]
         return {"message": message, "saveToSentItems": True}
 
     # -- send ------------------------------------------------------------
@@ -208,8 +222,12 @@ class Mailer:
         html: bool = False,
         cc: Optional[Sequence[str] | str] = None,
         bcc: Optional[Sequence[str] | str] = None,
+        ics: Optional[str] = None,
+        ics_name: str = "udalost.ics",
+        ics_method: str = "PUBLISH",
     ) -> dict:
         to_l, cc_l, bcc_l = _as_list(to), _as_list(cc), _as_list(bcc)
+        att = dict(ics=ics, ics_name=ics_name, ics_method=ics_method)
 
         redirected_from = None
         if self.config.redirect_to:
@@ -232,24 +250,26 @@ class Mailer:
                 "backend": self.config.backend,
                 "redirected_from": redirected_from,
                 "payload": self.build_payload(
-                    to_l, subject, body, html=html, cc=cc_l, bcc=bcc_l
+                    to_l, subject, body, html=html, cc=cc_l, bcc=bcc_l, **att
                 ),
             }
 
         try:
             if self.config.backend == "smtp":
-                result = self._send_smtp(to_l, subject, body, html, cc_l, bcc_l)
+                result = self._send_smtp(to_l, subject, body, html, cc_l, bcc_l, **att)
             else:
-                result = self._send_graph(to_l, subject, body, html, cc_l, bcc_l)
+                result = self._send_graph(to_l, subject, body, html, cc_l, bcc_l, **att)
         except MailerError as exc:
             result = {"status": "ERROR", "message": str(exc)}
         if redirected_from is not None:
             result["redirected_from"] = redirected_from
         return result
 
-    def _send_graph(self, to, subject, body, html, cc, bcc) -> dict:
+    def _send_graph(self, to, subject, body, html, cc, bcc,
+                    ics=None, ics_name="udalost.ics", ics_method="PUBLISH") -> dict:
         payload = self.build_payload(
-            to, subject, body, html=html, cc=cc, bcc=bcc
+            to, subject, body, html=html, cc=cc, bcc=bcc,
+            ics=ics, ics_name=ics_name, ics_method=ics_method,
         )
         try:
             token = self._get_token()
@@ -273,7 +293,8 @@ class Mailer:
             "message": f"Graph sendMail selhal ({resp.status_code}): {resp.text}",
         }
 
-    def _send_smtp(self, to, subject, body, html, cc, bcc) -> dict:
+    def _send_smtp(self, to, subject, body, html, cc, bcc,
+                   ics=None, ics_name="udalost.ics", ics_method="PUBLISH") -> dict:
         self.config.require_smtp_credentials()
 
         msg = MIMEMultipart()
@@ -288,6 +309,12 @@ class Mailer:
             msg["Cc"] = ", ".join(cc)
         msg["Subject"] = subject
         msg.attach(MIMEText(body, "html" if html else "plain", "utf-8"))
+        if ics:
+            part = MIMEBase("text", "calendar", method=ics_method, name=ics_name)
+            part.set_payload(ics.encode("utf-8"))
+            encoders.encode_base64(part)
+            part.add_header("Content-Disposition", "attachment", filename=ics_name)
+            msg.attach(part)
 
         envelope_to = [*to, *cc, *bcc]
         try:

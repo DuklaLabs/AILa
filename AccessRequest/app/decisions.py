@@ -142,6 +142,7 @@ async def _notify_students(conn, booking_ids: list[int]) -> None:
                 start_time=r["start_time"],
                 end_time=r["end_time"],
                 note=r["note"],
+                booking_id=r["id"],
             )
         except Exception:  # noqa: BLE001
             pass
@@ -502,15 +503,9 @@ def _item(r) -> dict:
     }
 
 
-@router_decisions.post(
-    "/api/decisions/send-digest",
-    dependencies=[Depends(require_role("admin", "staff"))],
-)
-async def send_digests(request: Request):
-    """Rozhodovací digest běžným učitelům (fallback dozorům). `?all=1` i těm,
-    co mají jen už rozhodnuté zápisy."""
-    send_all = (request.query_params.get("all") or "").lower() in {"1", "true", "yes"}
-
+async def run_teacher_digest(send_all: bool = False) -> dict:
+    """Rozhodovací digest běžným učitelům (fallback dozorům). Volá ji
+    HTTP endpoint i plánovač (čtvrtek 13:00)."""
     pool = await get_pool()
     async with pool.acquire() as conn:
         rows = await conn.fetch(_UPCOMING_SQL)
@@ -537,23 +532,28 @@ async def send_digests(request: Request):
     return {"sent": sent, "skipped": skipped, "errors": errors}
 
 
-@router_decisions.post(
-    "/api/decisions/send-supervisor-roster",
-    dependencies=[Depends(require_role("admin", "staff"))],
-)
-async def send_supervisor_rosters():
-    """Přehled docházky každému konfigurovanému dozorovi (jeho nadcházející zápisy
-    po dnech, s běžným učitelem a stavem rozhodnutí/docházky)."""
+async def run_supervisor_roster(
+    only_day: date | None = None, approved_only: bool = False
+) -> dict:
+    """Přehled docházky dozorům. `only_day` omezí na jeden den, `approved_only`
+    jen na uvolněné studenty (denní kontrola v 7:00)."""
     pool = await get_pool()
     async with pool.acquire() as conn:
         rows = await conn.fetch(_UPCOMING_SQL)
     _recipients, teachers = await _resolve(rows)
 
+    def _want(r):
+        if only_day is not None and r["date"] != only_day:
+            return False
+        if approved_only and r["approved"] is not True:
+            return False
+        return True
+
     sent, skipped, errors = [], [], []
     for name in configured_supervisors():
-        mine = [r for r in rows if supervisor_matches(r["supervisor"], name)]
+        mine = [r for r in rows if supervisor_matches(r["supervisor"], name) and _want(r)]
         if not mine:
-            skipped.append({"supervisor": name, "duvod": "žádné zápisy"})
+            skipped.append({"supervisor": name, "duvod": "nic k odeslání"})
             continue
         by_day: dict[date, list] = {}
         for r in mine:
@@ -579,6 +579,64 @@ async def send_supervisor_rosters():
             sent.append({"supervisor": name, "email": res["sent_to"],
                          "dnu": len(ordered)})
     return {"sent": sent, "skipped": skipped, "errors": errors}
+
+
+@router_decisions.post(
+    "/api/decisions/send-digest",
+    dependencies=[Depends(require_role("admin", "staff"))],
+)
+async def send_digests(request: Request):
+    """Rozhodovací digest učitelům. `?all=1` i těm, co mají jen rozhodnuté."""
+    send_all = (request.query_params.get("all") or "").lower() in {"1", "true", "yes"}
+    return await run_teacher_digest(send_all=send_all)
+
+
+@router_decisions.post(
+    "/api/decisions/send-supervisor-roster",
+    dependencies=[Depends(require_role("admin", "staff"))],
+)
+async def send_supervisor_rosters(request: Request):
+    """Přehled docházky dozorům. `?day=YYYY-MM-DD` omezí na den,
+    `?approved_only=1` jen uvolněné."""
+    q = request.query_params
+    only_day = None
+    if q.get("day"):
+        try:
+            only_day = datetime.date.fromisoformat(q["day"])
+        except ValueError:
+            only_day = None
+    approved_only = (q.get("approved_only") or "").lower() in {"1", "true", "yes"}
+    return await run_supervisor_roster(only_day=only_day, approved_only=approved_only)
+
+
+@router_decisions.get(
+    "/api/decisions/scheduler",
+    dependencies=[Depends(require_role("admin", "staff"))],
+)
+async def scheduler_status():
+    """Naplánované úlohy + čas příštího spuštění."""
+    from app.scheduler import get_jobs
+    return {"jobs": get_jobs()}
+
+
+@router_decisions.post(
+    "/api/decisions/run-teacher-digest",
+    dependencies=[Depends(require_role("admin", "staff"))],
+)
+async def run_teacher_digest_now():
+    """Ruční spuštění naplánované úlohy (test)."""
+    return await run_teacher_digest()
+
+
+@router_decisions.post(
+    "/api/decisions/run-supervisor-roster",
+    dependencies=[Depends(require_role("admin", "staff"))],
+)
+async def run_supervisor_roster_now(request: Request):
+    only_day = datetime.date.today()
+    if (request.query_params.get("all_days") or "").lower() in {"1", "true", "yes"}:
+        only_day = None
+    return await run_supervisor_roster(only_day=only_day, approved_only=True)
 
 
 @router_decisions.get(

@@ -10,3 +10,7 @@ class SendRequest(BaseModel):
     html: bool = False
     cc: Optional[Union[str, List[str]]] = None
     bcc: Optional[Union[str, List[str]]] = None
+    # Nepovinná kalendářní událost (raw iCalendar text) jako příloha .ics
+    ics: Optional[str] = None
+    ics_name: str = "udalost.ics"
+    ics_method: str = "PUBLISH"

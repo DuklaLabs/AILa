@@ -20,6 +20,9 @@ def send(req: SendRequest):
         html=req.html,
         cc=req.cc,
         bcc=req.bcc,
+        ics=req.ics,
+        ics_name=req.ics_name,
+        ics_method=req.ics_method,
     )
 
 

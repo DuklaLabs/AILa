@@ -13,13 +13,20 @@ from app.release import router_release
 
 from app.open_hours import router as open_hours_router
 from app.dukla_db import close_dukla_pool
+from app.scheduler import shutdown_scheduler, start_scheduler
 
 
 app = FastAPI()
 
 
+@app.on_event("startup")
+async def _startup():
+    start_scheduler()
+
+
 @app.on_event("shutdown")
 async def _shutdown():
+    shutdown_scheduler()
     await close_pool()
     await close_dukla_pool()
 

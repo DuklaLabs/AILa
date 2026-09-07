@@ -757,6 +757,48 @@ def build_student_decision_email(
     return subject, html_body
 
 
+def _ics_esc(s: str) -> str:
+    return (
+        str(s or "").replace("\\", "\\\\").replace("\n", "\\n")
+        .replace(",", "\\,").replace(";", "\\;")
+    )
+
+
+def build_release_ics(
+    *, uid: str, summary: str, day: date, start_time, end_time,
+    description: str = "", cancelled: bool = False,
+) -> str:
+    """iCalendar událost (floating local time) – student si ji přidá do
+    kalendáře. cancelled=True vygeneruje zrušení stejného UID."""
+    import datetime as _dt
+
+    dtstamp = _dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    if start_time and end_time:
+        ds = _dt.datetime.combine(day, start_time if isinstance(start_time, _dt.time)
+                                  else _dt.time.fromisoformat(str(start_time)[:5]))
+        de = _dt.datetime.combine(day, end_time if isinstance(end_time, _dt.time)
+                                  else _dt.time.fromisoformat(str(end_time)[:5]))
+        dtstart = "DTSTART:" + ds.strftime("%Y%m%dT%H%M%S")
+        dtend = "DTEND:" + de.strftime("%Y%m%dT%H%M%S")
+    else:
+        dtstart = "DTSTART;VALUE=DATE:" + day.strftime("%Y%m%d")
+        dtend = "DTEND;VALUE=DATE:" + (day + _dt.timedelta(days=1)).strftime("%Y%m%d")
+
+    lines = [
+        "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//DuklaLabs//uvolneni//CS",
+        "CALSCALE:GREGORIAN",
+        "METHOD:CANCEL" if cancelled else "METHOD:PUBLISH",
+        "BEGIN:VEVENT",
+        f"UID:{uid}", f"DTSTAMP:{dtstamp}", dtstart, dtend,
+        f"SUMMARY:{_ics_esc(summary)}",
+        f"DESCRIPTION:{_ics_esc(description)}",
+        "STATUS:CANCELLED" if cancelled else "STATUS:CONFIRMED",
+        f"SEQUENCE:{1 if cancelled else 0}",
+        "END:VEVENT", "END:VCALENDAR",
+    ]
+    return "\r\n".join(lines) + "\r\n"
+
+
 async def notify_student_decision(
     *,
     student_email: str,
@@ -767,8 +809,10 @@ async def notify_student_decision(
     start_time=None,
     end_time=None,
     note: str | None = None,
+    booking_id: int | None = None,
 ) -> dict:
-    """Pošle studentovi e-mail o tom, že dozor rozhodl. Best-effort."""
+    """Pošle studentovi e-mail o tom, že dozor rozhodl (+ .ics do kalendáře).
+    Best-effort."""
     result: dict = {"sent_to": None, "error": None}
     if not NOTIFY_ENABLED:
         result["error"] = "notifikace vypnuté (NOTIFY_ENABLED)"
@@ -786,9 +830,23 @@ async def notify_student_decision(
         end_time=end_time,
         note=note,
     )
-    err = await _send_via_messenger(
-        {"to": [student_email], "subject": subject, "body": body, "html": True}
-    )
+    payload = {"to": [student_email], "subject": subject, "body": body, "html": True}
+    if booking_id is not None:
+        hour = f"{hour_number}. hodina" if hour_number is not None else "hodina"
+        payload.update(
+            ics=build_release_ics(
+                uid=f"duklalabs-booking-{booking_id}@spssecb.cz",
+                summary="DuklaLabs – uvolnění z výuky",
+                day=day, start_time=start_time, end_time=end_time,
+                description=f"{hour}"
+                + (f" · {note}" if note else "")
+                + ("" if approved else " · ZAMÍTNUTO"),
+                cancelled=not approved,
+            ),
+            ics_name="duklalabs-uvolneni.ics",
+            ics_method="CANCEL" if not approved else "PUBLISH",
+        )
+    err = await _send_via_messenger(payload)
     if err:
         result["error"] = err
     else:

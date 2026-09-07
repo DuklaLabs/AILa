@@ -109,6 +109,13 @@ services:
       TEACHER_HOMEROOM_COLUMN: "homeroom_class"
       # Koordinátor uvolňování; prázdné = adresy z SUPERVISOR_EMAILS.
       RELEASE_COORDINATOR_EMAILS: ""
+      # Plánované rozesílání (APScheduler, in-process).
+      SCHEDULER_ENABLED: "true"
+      SCHEDULER_TZ: "Europe/Prague"
+      TEACHER_DIGEST_DOW: "thu"        # rozhodovací digest učitelům
+      TEACHER_DIGEST_HOUR: "13"
+      SUPERVISOR_ROSTER_HOUR: "7"      # denní seznam uvolněných dozorům
+      SUPERVISOR_ROSTER_MINUTE: "0"
       # BOOKING_NOTIFY_CC: "koordinator@spssecb.cz"   # nepovinná kopie
       # NOTIFY_ON_BOOKING: "true"    # i okamžitý e-mail při každém zápisu
       # NOTIFY_ENABLED: "false"      # úplně vypnout odchozí e-maily
