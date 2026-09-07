@@ -92,11 +92,26 @@ services:
       # DUKLA_SUPERVISORS na adresy (oddělovač ";", volitelně víc řádků).
       MESSENGER_URL: http://messenger:8005
       SUPERVISOR_EMAILS: "Bc. Jan Petrášek=petrasek@spssecb.cz"
-      # Veřejná URL serveru — odkazy s tlačítky Povolit/Zamítnout v e-mailu
-      # z ní vycházejí. V produkci nastavit na skutečnou (https) adresu.
+      # Veřejná URL serveru — odkazy v e-mailu (rozhodovací stránka) z ní
+      # vycházejí. V produkci nastavit na skutečnou (https) adresu.
       PUBLIC_BASE_URL: "http://localhost:8003"
+      # Podpis rozhodovacích odkazů. V produkci nastavit na náhodnou hodnotu;
+      # její změna zneplatní všechny dříve rozeslané odkazy.
+      DECISION_SECRET: "dev-decision-secret-zmen-v-produkci"
+      # E-mail běžného učitele: primárně z public.teachers.email v duklamaps,
+      # jinak odvození příjmení@TEACHER_EMAIL_DOMAIN. Výjimky:
+      # TEACHER_EMAIL_OVERRIDES="Příjmení Jméno=mail; ..."
+      TEACHER_EMAIL_DOMAIN: "spssecb.cz"
+      # Třídní učitel: nejdřív tato mapa, pak sloupec třídnictví v
+      # public.teachers (jméno sloupce TEACHER_HOMEROOM_COLUMN, přidá se do
+      # duklamaps). Bez třídního zůstává uvolňování blokované.
+      CLASS_TEACHERS: "4.ER=Hána Jiří; 2.EM=Fedorová Alena; 1.ER=Petrásek Jan"
+      TEACHER_HOMEROOM_COLUMN: "homeroom_class"
+      # Koordinátor uvolňování; prázdné = adresy z SUPERVISOR_EMAILS.
+      RELEASE_COORDINATOR_EMAILS: ""
       # BOOKING_NOTIFY_CC: "koordinator@spssecb.cz"   # nepovinná kopie
-      # NOTIFY_ENABLED: "false"                        # vypnout notifikace
+      # NOTIFY_ON_BOOKING: "true"    # i okamžitý e-mail při každém zápisu
+      # NOTIFY_ENABLED: "false"      # úplně vypnout odchozí e-maily
       # Separate read-only "duklamaps" timetable DB used by the admin
       # open-hours grid to show supervising teachers' lessons. Leave
       # DUKLA_PG_HOST empty to disable (grid still works without it).

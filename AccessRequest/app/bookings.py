@@ -8,16 +8,19 @@ Booking now requires login: the student is identified from their session
 (ailacore.auth), not from a freely-typed email — the old flow let anyone
 book on behalf of any registered email with zero proof of identity.
 """
+import datetime
 import secrets
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from ailacore.auth import get_current_user
 from ailacore.db import get_pool
 from ailacore.models import User
 
+from app import dukla_db
+from app.dukla_db import class_teachers, class_week
 from app.notify import notify_booking
 
 router = APIRouter(prefix="/api", tags=["Bookings"])
@@ -33,7 +36,8 @@ async def book_hour(payload: BookHourRequest, user: User = Depends(get_current_u
     async with pool.acquire() as conn:
         async with conn.transaction():
             student = await conn.fetchrow(
-                "SELECT student_id FROM internal.students WHERE user_id = $1",
+                "SELECT student_id, class_group, release_teacher_ok, release_coord_ok "
+                "FROM internal.students WHERE user_id = $1",
                 user.id,
             )
             if student is None:
@@ -46,11 +50,37 @@ async def book_hour(payload: BookHourRequest, user: User = Depends(get_current_u
             # so two concurrent bookings into the same slot can't both pass
             # the capacity check below before either commits.
             slot = await conn.fetchrow(
-                "SELECT id, capacity FROM internal.open_hours WHERE id = $1 FOR UPDATE",
+                "SELECT id, capacity, date, hour_number "
+                "FROM internal.open_hours WHERE id = $1 FOR UPDATE",
                 payload.hour_id,
             )
             if slot is None:
                 raise HTTPException(status_code=404, detail="Termín neexistuje.")
+
+            # Uvolňování z výuky: dokud nemá souhlas třídního učitele I
+            # koordinátora, student se nesmí zapsat na hodinu, kdy má podle
+            # rozvrhu vlastní výuku (na volné hodiny ano).
+            release_ok = (
+                student["release_teacher_ok"] is True
+                and student["release_coord_ok"] is True
+            )
+            if not release_ok and slot["hour_number"] is not None:
+                try:
+                    clash = await class_teachers(
+                        student["class_group"] or "", slot["date"], slot["hour_number"]
+                    )
+                except Exception:  # noqa: BLE001 - rozvrh nedostupný → neblokovat
+                    clash = []
+                if clash:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=(
+                            "V tuto dobu máš podle rozvrhu vlastní výuku a zatím "
+                            "nemáš schválené uvolňování z výuky (třídní učitel + "
+                            "koordinátor). Zapiš se na hodinu, kdy výuku nemáš, "
+                            "nebo počkej na schválení."
+                        ),
+                    )
 
             booked_count = await conn.fetchval(
                 "SELECT COUNT(*) FROM internal.bookings WHERE open_hour_id = $1",
@@ -136,6 +166,53 @@ async def my_bookings(user: User = Depends(get_current_user)):
             student["student_id"],
         )
     return [r["open_hour_id"] for r in rows]
+
+
+@router.get("/my-lessons")
+async def my_lessons(
+    user: User = Depends(get_current_user),
+    from_: str = Query(None, alias="from"),
+    to: str = Query(None),
+):
+    """Sloty (datum + číslo hodiny), kdy má přihlášený student podle rozvrhu
+    své třídy vlastní výuku – mřížka jimi zašedí buňky, na které se (bez
+    schváleného uvolňování) nejde zapsat. Plus `release_approved`."""
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        st = await conn.fetchrow(
+            "SELECT class_group, release_teacher_ok, release_coord_ok "
+            "FROM internal.students WHERE user_id = $1",
+            user.id,
+        )
+    if st is None:
+        return {"release_approved": False, "lessons": []}
+    release_ok = (
+        st["release_teacher_ok"] is True and st["release_coord_ok"] is True
+    )
+
+    try:
+        d_from = datetime.date.fromisoformat(from_) if from_ else datetime.date.today()
+        d_to = datetime.date.fromisoformat(to) if to else d_from + datetime.timedelta(days=6)
+    except ValueError:
+        return {"release_approved": release_ok, "lessons": []}
+
+    lessons: list[dict] = []
+    monday = d_from - datetime.timedelta(days=d_from.weekday())
+    while monday <= d_to:
+        try:
+            slots = await class_week(st["class_group"] or "", monday)
+        except Exception:  # noqa: BLE001
+            slots = []
+        for s in slots:
+            offset = s["day_index"] - dukla_db._DAY_BASE
+            if 0 <= offset <= 6:
+                day = monday + datetime.timedelta(days=offset)
+                if d_from <= day <= d_to:
+                    lessons.append(
+                        {"date": day.isoformat(), "hour_number": s["hour_index"]}
+                    )
+        monday += datetime.timedelta(days=7)
+    return {"release_approved": release_ok, "lessons": lessons}
 
 
 @router.delete("/book-hour/{hour_id}")

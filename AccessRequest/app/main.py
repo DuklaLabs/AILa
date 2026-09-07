@@ -9,6 +9,7 @@ from app.router import router as admin_router
 from app.auth import router_auth
 from app.students import router_students
 from app.decisions import router_decisions
+from app.release import router_release
 
 from app.open_hours import router as open_hours_router
 from app.dukla_db import close_dukla_pool
@@ -43,3 +44,4 @@ app.include_router(router_students)
 app.include_router(admin_router)
 app.include_router(open_hours_router)
 app.include_router(router_decisions)
+app.include_router(router_release)

@@ -1,4 +1,5 @@
 import json
+import secrets
 
 from fastapi import APIRouter, Request, Form, HTTPException, Depends
 from fastapi.responses import HTMLResponse
@@ -12,6 +13,9 @@ from ailacore.auth import (
     require_role,
 )
 from ailacore.db import get_pool
+
+from app.dukla_db import class_teacher
+from app.notify import send_release_requests
 
 router_students = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -94,7 +98,7 @@ async def load_pending_students():
 
 async def register_student(
     first_name: str, last_name: str, email: str, class_group: str, password: str
-) -> int:
+) -> dict:
     """Creates both the login account (auth.users, role='student') and the
     roster row (internal.students, used by bookings/excused/reports),
     linked via internal.students.user_id — one identity, not two.
@@ -119,20 +123,51 @@ async def register_student(
                     email,
                     password_hash,
                 )
-                await conn.execute(
+                student_id = await conn.fetchval(
                     """
-                    INSERT INTO internal.students (first_name, last_name, email, class_group, user_id)
-                    VALUES ($1, $2, $3, $4, $5)
+                    INSERT INTO internal.students
+                        (first_name, last_name, email, class_group, user_id, release_token)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    RETURNING student_id
                     """,
                     first_name,
                     last_name,
                     email,
                     class_group,
                     user_id,
+                    secrets.token_urlsafe(24),
                 )
             except asyncpg.UniqueViolationError:
                 raise HTTPException(status_code=400, detail="E-mail již existuje.")
-    return user_id
+    return {"user_id": user_id, "student_id": student_id}
+
+
+async def request_release_consent(student_id: int, class_group: str) -> dict:
+    """Po registraci: dohledá třídního učitele, uloží snapshot a rozešle
+    žádost o souhlas (třídní + koordinátor). Best-effort."""
+    try:
+        ct = await class_teacher(class_group)
+    except Exception:  # noqa: BLE001
+        ct = None
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "UPDATE internal.students SET release_class_teacher = $1 "
+            "WHERE student_id = $2 "
+            "RETURNING first_name, last_name, release_token",
+            (ct or {}).get("name"), student_id,
+        )
+    if row is None:
+        return {"error": "student nenalezen"}
+    try:
+        return await send_release_requests(
+            student_name=f"{row['first_name']} {row['last_name']}",
+            class_group=class_group,
+            release_token=row["release_token"],
+            class_teacher=ct,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"{type(exc).__name__}: {exc}"}
 
 
 @router_students.get("/student-dashboard")
@@ -167,12 +202,14 @@ async def register_submit(
             status_code=400,
         )
 
-    await register_student(first_name, last_name, email, class_group, password)
+    reg = await register_student(first_name, last_name, email, class_group, password)
+    await request_release_consent(reg["student_id"], class_group)
 
     return HTMLResponse(
         "<h1>Registrace přijata</h1>"
-        "<p>Účet teď musí schválit administrátor DuklaLabs. "
-        "Až se to stane, budeš se moct přihlásit a zapsat na volné hodiny.</p>"
+        "<p>Účet teď musí schválit administrátor DuklaLabs. Zároveň jsme požádali "
+        "tvého třídního učitele a koordinátora o souhlas s uvolňováním z výuky – "
+        "než ho oba dají, budeš se moct zapisovat jen na hodiny, kdy nemáš výuku.</p>"
     )
 
 

@@ -33,6 +33,7 @@ Přepnutí backendu = změna jediné proměnné `MAIL_BACKEND` v `Messenger/.env
 | `SMTP_FROM`/`SMTP_FROM_NAME` | Nepovinné; `SMTP_FROM` default = `SMTP_USER`       |
 | `MAIL_ENABLED`     | `false` → `/send` vrací `{"status":"DISABLED"}`              |
 | `MAIL_DRY_RUN`     | `true` → neodesílá, vrací sestavený payload                 |
+| `MAIL_REDIRECT_TO` | Když vyplněno, **veškerá** pošta jde jen sem (bezpečnostní brzda pro testování); původní příjemci se propíšou do předmětu a těla, odpověď má `redirected_from` |
 | `AGENT_PORT`       | Port služby (default `8005`)                                 |
 
 Zkopíruj `.env.example` do `.env` a doplň hodnoty. `.env` je v `.gitignore`.

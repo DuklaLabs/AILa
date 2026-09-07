@@ -22,6 +22,8 @@ SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME")
 # ==== Provozní přepínače ====
 MAIL_ENABLED = os.getenv("MAIL_ENABLED", "true")
 MAIL_DRY_RUN = os.getenv("MAIL_DRY_RUN", "false")
+# Bezpečnostní brzda: když je vyplněno, veškerá pošta jde jen na tuto adresu.
+MAIL_REDIRECT_TO = os.getenv("MAIL_REDIRECT_TO", "")
 
 # ==== GENERAL ====
 AGENT_PORT = int(os.getenv("AGENT_PORT", 8005))

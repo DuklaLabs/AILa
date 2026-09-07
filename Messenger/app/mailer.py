@@ -66,11 +66,15 @@ class MailerConfig:
     # -- společné --
     enabled: bool = True
     dry_run: bool = False
+    # Bezpečnostní brzda pro testování: když je vyplněno, VŠECHNA pošta jde jen
+    # na tuto adresu (původní příjemci se propíšou do předmětu a těla).
+    redirect_to: str = ""
 
     @classmethod
     def from_env(cls) -> "MailerConfig":
         return cls(
             backend=os.getenv("MAIL_BACKEND", "graph").strip().lower(),
+            redirect_to=os.getenv("MAIL_REDIRECT_TO", "").strip(),
             tenant_id=os.getenv("MS_TENANT_ID", ""),
             client_id=os.getenv("MS_CLIENT_ID", ""),
             client_secret=os.getenv("MS_CLIENT_SECRET", ""),
@@ -207,12 +211,26 @@ class Mailer:
     ) -> dict:
         to_l, cc_l, bcc_l = _as_list(to), _as_list(cc), _as_list(bcc)
 
+        redirected_from = None
+        if self.config.redirect_to:
+            orig = ", ".join([*to_l, *cc_l, *bcc_l]) or "(nikdo)"
+            redirected_from = orig
+            note = f"[Původně určeno: {orig}]"
+            body = (
+                f"<p style=\"color:#b42318;font-weight:600;\">{note}</p>{body}"
+                if html
+                else f"{note}\n\n{body}"
+            )
+            subject = f"{subject}  » pův. {orig}"
+            to_l, cc_l, bcc_l = [self.config.redirect_to], [], []
+
         if not self.config.enabled:
             return {"status": "DISABLED"}
         if self.config.dry_run:
             return {
                 "status": "DRY_RUN",
                 "backend": self.config.backend,
+                "redirected_from": redirected_from,
                 "payload": self.build_payload(
                     to_l, subject, body, html=html, cc=cc_l, bcc=bcc_l
                 ),
@@ -220,10 +238,14 @@ class Mailer:
 
         try:
             if self.config.backend == "smtp":
-                return self._send_smtp(to_l, subject, body, html, cc_l, bcc_l)
-            return self._send_graph(to_l, subject, body, html, cc_l, bcc_l)
+                result = self._send_smtp(to_l, subject, body, html, cc_l, bcc_l)
+            else:
+                result = self._send_graph(to_l, subject, body, html, cc_l, bcc_l)
         except MailerError as exc:
-            return {"status": "ERROR", "message": str(exc)}
+            result = {"status": "ERROR", "message": str(exc)}
+        if redirected_from is not None:
+            result["redirected_from"] = redirected_from
+        return result
 
     def _send_graph(self, to, subject, body, html, cc, bcc) -> dict:
         payload = self.build_payload(

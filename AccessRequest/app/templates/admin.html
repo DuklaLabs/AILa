@@ -26,6 +26,30 @@
         <div id="pendingList">Načítám...</div>
     </section>
 
+    <!-- ČEKAJÍCÍ NA SCHVÁLENÍ UVOLŇOVÁNÍ -->
+    <section class="card" id="releaseCard" style="display:none;">
+        <h2>🎓 Souhlas s uvolňováním z výuky (<span id="releaseCount">0</span>)</h2>
+        <p class="hint">
+            Dokud nedá souhlas třídní učitel i koordinátor, student se nemůže
+            zapsat na hodinu, kdy má podle rozvrhu vlastní výuku.
+        </p>
+        <div id="releaseList">Načítám…</div>
+    </section>
+
+    <!-- ROZESLÁNÍ E-MAILŮ K UVOLNĚNÍ -->
+    <section class="card" id="digestCard">
+        <h2>✉️ Žádosti o uvolnění z výuky</h2>
+        <p class="hint">
+            <strong>Učitelům</strong> rozešle rozhodovací e-mail se studenty, které
+            podle rozvrhu učí v době jejich zápisu na DuklaLabs (když se učitel
+            nenajde, spadne to na dozora).
+            <strong>Dozorům</strong> rozešle denní přehled docházky.
+        </p>
+        <button type="button" class="btn-primary" id="sendDigestBtn">Rozeslat učitelům (žádosti)</button>
+        <button type="button" class="btn-primary" id="sendRosterBtn">Rozeslat dozorům (docházka)</button>
+        <span id="digestResult" class="hint"></span>
+    </section>
+
     <!-- TÝDENNÍ MŘÍŽKA -->
     <section class="card">
         <div class="card-head">
@@ -63,6 +87,8 @@
 
 <script src="/static/js/timetable.js?v=14"></script>
 <script src="/static/js/pending_students.js"></script>
+<script src="/static/js/pending_release.js"></script>
+<script src="/static/js/decisions_admin.js"></script>
 <script src="/static/js/open_hours.js?v=14"></script>
 </body>
 </html>

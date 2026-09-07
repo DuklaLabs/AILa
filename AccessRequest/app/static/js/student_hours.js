@@ -3,8 +3,10 @@
 // student už přihlášený (lze se z nich i odhlásit).
 
 const state = { weekOffset: 0 };
-let slotMap = {};      // slotMap[date][hour] = slot
-let mine = new Set();  // open_hour_id, kam je student přihlášený
+let slotMap = {};        // slotMap[date][hour] = slot
+let mine = new Set();    // open_hour_id, kam je student přihlášený
+let myLessons = new Set(); // "date|hour", kdy má student vlastní výuku
+let releaseApproved = false;
 
 function esc(s) {
     return String(s ?? "").replace(/[&<>"']/g, c => (
@@ -21,13 +23,18 @@ async function renderGrid() {
         b.classList.toggle("active", Number(b.dataset.week) === state.weekOffset);
     });
 
-    const [slots, periods, myIds] = await Promise.all([
+    const [slots, periods, myIds, lessons] = await Promise.all([
         fetch(`/api/open-hours/list?from=${from}&to=${to}`).then(r => r.json()).catch(() => []),
         fetchPeriods(),
         fetch("/api/my-bookings").then(r => (r.ok ? r.json() : [])).catch(() => []),
+        fetch(`/api/my-lessons?from=${from}&to=${to}`).then(r => (r.ok ? r.json() : {})).catch(() => ({})),
     ]);
 
     mine = new Set(Array.isArray(myIds) ? myIds : []);
+    releaseApproved = !!(lessons && lessons.release_approved);
+    myLessons = new Set(
+        ((lessons && lessons.lessons) || []).map(l => `${l.date}|${l.hour_number}`)
+    );
 
     slotMap = {};
     (Array.isArray(slots) ? slots : []).forEach(s => {
@@ -49,6 +56,17 @@ function cellHtml(date, hour) {
                 <div class="tt-spots">✓ Přihlášen/a</div>
                 ${slot.note ? `<div class="tt-note">${esc(slot.note)}</div>` : ""}
                 <button class="tt-book tt-cancel-book" onclick="cancelHour(${slot.id})">Odhlásit</button>
+            </div>
+        `;
+    }
+
+    // Má student v tuto dobu vlastní výuku a nemá schválené uvolňování?
+    if (!releaseApproved && myLessons.has(`${date}|${hour}`)) {
+        return `
+            <div class="tt-slot tt-full" title="Podle rozvrhu tu máš výuku. Zápis bude možný až po schválení uvolňování z výuky (třídní učitel + koordinátor).">
+                <div class="tt-spots">Máš výuku</div>
+                ${slot.note ? `<div class="tt-note">${esc(slot.note)}</div>` : ""}
+                <button class="btn-primary tt-book" disabled>Zamčeno</button>
             </div>
         `;
     }
