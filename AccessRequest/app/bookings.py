@@ -8,6 +8,8 @@ Booking now requires login: the student is identified from their session
 (ailacore.auth), not from a freely-typed email — the old flow let anyone
 book on behalf of any registered email with zero proof of identity.
 """
+import secrets
+
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -15,6 +17,8 @@ from pydantic import BaseModel
 from ailacore.auth import get_current_user
 from ailacore.db import get_pool
 from ailacore.models import User
+
+from app.notify import notify_booking
 
 router = APIRouter(prefix="/api", tags=["Bookings"])
 
@@ -55,14 +59,17 @@ async def book_hour(payload: BookHourRequest, user: User = Depends(get_current_u
             if booked_count >= slot["capacity"]:
                 raise HTTPException(status_code=409, detail="Termín je plně obsazený.")
 
+            decision_token = secrets.token_urlsafe(24)
             try:
                 await conn.execute(
                     """
-                    INSERT INTO internal.bookings (student_id, open_hour_id)
-                    VALUES ($1, $2)
+                    INSERT INTO internal.bookings
+                        (student_id, open_hour_id, decision_token)
+                    VALUES ($1, $2, $3)
                     """,
                     student["student_id"],
                     payload.hour_id,
+                    decision_token,
                 )
             except asyncpg.UniqueViolationError:
                 raise HTTPException(
@@ -70,7 +77,47 @@ async def book_hour(payload: BookHourRequest, user: User = Depends(get_current_u
                     detail="Tento termín už máš zarezervovaný.",
                 )
 
-    return {"detail": "Rezervace proběhla úspěšně."}
+    # Rezervace je uložená. Teď (best-effort, mimo transakci) informujeme
+    # dozora dané otevřené hodiny e-mailem. Selhání mailu nesmí shodit zápis.
+    notify = {"error": "nespuštěno"}
+    try:
+        async with pool.acquire() as conn:
+            info = await conn.fetchrow(
+                """
+                SELECT oh.date, oh.hour_number, oh.start_time, oh.end_time,
+                       oh.note, oh.supervisor, oh.capacity,
+                       (SELECT COUNT(*) FROM internal.bookings
+                        WHERE open_hour_id = oh.id) AS booked_count,
+                       s.first_name, s.last_name, s.class_group
+                FROM internal.open_hours oh
+                CROSS JOIN internal.students s
+                WHERE oh.id = $1 AND s.student_id = $2
+                """,
+                payload.hour_id,
+                student["student_id"],
+            )
+        if info is not None:
+            notify = await notify_booking(
+                supervisor_csv=info["supervisor"],
+                student_name=f"{info['first_name']} {info['last_name']}",
+                class_group=info["class_group"],
+                day=info["date"],
+                hour_number=info["hour_number"],
+                start_time=info["start_time"],
+                end_time=info["end_time"],
+                note=info["note"],
+                booked_count=info["booked_count"],
+                capacity=info["capacity"],
+                decision_token=decision_token,
+            )
+    except Exception as exc:  # noqa: BLE001 - notifikace je best-effort
+        notify = {"error": f"{type(exc).__name__}: {exc}"}
+
+    return {
+        "detail": "Rezervace proběhla úspěšně.",
+        "teacher_notified": bool(notify.get("notified")),
+        "notify": notify,
+    }
 
 
 @router.get("/my-bookings")

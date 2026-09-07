@@ -1,9 +1,7 @@
 import psycopg2
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import re
-from config import DB_CONFIG, SMTP_EMAIL, SMTP_PASSWORD, SMTP_HOST, SMTP_PORT
+import requests
+from config import DB_CONFIG, MESSENGER_URL
 
 
 # ==================================================
@@ -30,22 +28,24 @@ def db_query(query: str) -> dict:
 
 
 # ==================================================
-# TOOL: Odesílání e-mailu
+# TOOL: Odesílání e-mailu (přes službu Messenger / Microsoft Graph)
 # ==================================================
 def send_email(to: str, subject: str, body: str) -> dict:
-    msg = MIMEMultipart()
-    msg["From"] = SMTP_EMAIL
-    msg["To"] = to
-    msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain", "utf-8"))
-
     try:
-        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
-            server.login(SMTP_EMAIL, SMTP_PASSWORD)
-            server.sendmail(SMTP_EMAIL, to, msg.as_string())
-        return {"status": "OK"}
-    except Exception as e:
-        return {"status": "ERROR", "message": str(e)}
+        resp = requests.post(
+            f"{MESSENGER_URL}/send",
+            json={"to": to, "subject": subject, "body": body},
+            timeout=20,
+        )
+    except requests.RequestException as e:
+        return {"status": "ERROR", "message": f"Messenger nedostupný: {e}"}
+
+    if resp.status_code != 200:
+        return {
+            "status": "ERROR",
+            "message": f"Messenger vrátil {resp.status_code}: {resp.text}",
+        }
+    return resp.json()
 
 
 # ==================================================

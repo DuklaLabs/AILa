@@ -76,6 +76,8 @@ services:
     depends_on:
       db-migrate:
         condition: service_completed_successfully
+      messenger:
+        condition: service_started
     # lets DUKLA_PG_HOST=host.docker.internal reach a DB on the Docker host
     # (works out of the box on Docker Desktop; this line is for Linux).
     extra_hosts:
@@ -85,6 +87,16 @@ services:
       POSTGRES_USER: agent
       POSTGRES_PASSWORD: agentpass
       POSTGRES_HOST: postgres
+      # Informování dozora e-mailem při zápisu studenta na otevřenou hodinu.
+      # Odesílá přes službu Messenger; SUPERVISOR_EMAILS mapuje jména z
+      # DUKLA_SUPERVISORS na adresy (oddělovač ";", volitelně víc řádků).
+      MESSENGER_URL: http://messenger:8005
+      SUPERVISOR_EMAILS: "Bc. Jan Petrášek=petrasek@spssecb.cz"
+      # Veřejná URL serveru — odkazy s tlačítky Povolit/Zamítnout v e-mailu
+      # z ní vycházejí. V produkci nastavit na skutečnou (https) adresu.
+      PUBLIC_BASE_URL: "http://localhost:8003"
+      # BOOKING_NOTIFY_CC: "koordinator@spssecb.cz"   # nepovinná kopie
+      # NOTIFY_ENABLED: "false"                        # vypnout notifikace
       # Separate read-only "duklamaps" timetable DB used by the admin
       # open-hours grid to show supervising teachers' lessons. Leave
       # DUKLA_PG_HOST empty to disable (grid still works without it).
@@ -105,8 +117,20 @@ services:
       # jen pokud chceš v takovém případě spadnout na stálý rozvrh.
       DUKLA_PERMANENT_FALLBACK: "0"
 
+  messenger:
+    build:
+      context: ./Messenger
+      dockerfile: Dockerfile
+    container_name: messenger
+    ports:
+      - "8005:8005"
+    networks:
+      - agentnet
+    env_file:
+      - ./Messenger/.env
+
   security-agent:
-    build:  
+    build:
       context: ./Security_agent
       dockerfile: Dockerfile
     container_name: security-agent
@@ -119,12 +143,15 @@ services:
         condition: service_completed_successfully
       ollama:
         condition: service_started
+      messenger:
+        condition: service_started
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_USER: agent
       POSTGRES_PASSWORD: agentpass
       POSTGRES_DB: agentdb
       OLLAMA_HOST: http://lmstudio:1234
+      MESSENGER_URL: http://messenger:8005
     env_file:
       - ./Security_agent/.env
 

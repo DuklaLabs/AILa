@@ -5,7 +5,12 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 import asyncpg
 
-from ailacore.auth import hash_password, require_role
+from ailacore.auth import (
+    SESSION_COOKIE,
+    get_user_from_token,
+    hash_password,
+    require_role,
+)
 from ailacore.db import get_pool
 
 router_students = APIRouter()
@@ -53,6 +58,21 @@ async def load_students():
             d["bookings"] = json.loads(d["bookings"])
         out.append(d)
     return out
+
+
+async def current_student_id(request: Request):
+    """student_id of the logged-in student (or None for anonymous / staff
+    visitors). Lets the dashboard show an "unregister" control only on the
+    viewer's own bookings — the DELETE endpoint is session-scoped anyway,
+    but there's no point offering a button that can only fail on other rows."""
+    user = await get_user_from_token(request.cookies.get(SESSION_COOKIE))
+    if user is None:
+        return None
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        return await conn.fetchval(
+            "SELECT student_id FROM internal.students WHERE user_id = $1", user.id
+        )
 
 
 async def load_pending_students():
@@ -121,7 +141,7 @@ async def student_dashboard(request: Request):
     return templates.TemplateResponse(
         request,
         "student_dashboard.html",
-        {"students": students},
+        {"students": students, "my_student_id": await current_student_id(request)},
     )
 
 

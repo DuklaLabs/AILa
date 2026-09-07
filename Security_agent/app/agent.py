@@ -35,7 +35,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "send_email",
-            "description": "Odešli e-mail pomocí SMTP serveru.",
+            "description": "Odešli e-mail přes službu Messenger (Microsoft Graph).",
             "parameters": {
                 "type": "object",
                 "properties": {
