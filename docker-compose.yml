@@ -102,10 +102,10 @@ services:
       # jinak odvození příjmení@TEACHER_EMAIL_DOMAIN. Výjimky:
       # TEACHER_EMAIL_OVERRIDES="Příjmení Jméno=mail; ..."
       TEACHER_EMAIL_DOMAIN: "spssecb.cz"
-      # Třídní učitel: nejdřív tato mapa, pak sloupec třídnictví v
-      # public.teachers (jméno sloupce TEACHER_HOMEROOM_COLUMN, přidá se do
-      # duklamaps). Bez třídního zůstává uvolňování blokované.
-      CLASS_TEACHERS: "4.ER=Hána Jiří; 2.EM=Fedorová Alena; 1.ER=Petrásek Jan"
+      # Třídní učitel se řídí výhradně sloupcem třídnictví v public.teachers
+      # (jméno sloupce TEACHER_HOMEROOM_COLUMN). CLASS_TEACHERS je prázdné =
+      # žádná ruční přepisová mapa. Bez třídního zůstává uvolňování blokované.
+      CLASS_TEACHERS: ""
       TEACHER_HOMEROOM_COLUMN: "homeroom_class"
       # Koordinátor uvolňování; prázdné = adresy z SUPERVISOR_EMAILS.
       RELEASE_COORDINATOR_EMAILS: ""
