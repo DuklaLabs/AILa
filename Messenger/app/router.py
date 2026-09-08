@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from app.mailer import get_mailer
+from app.maillog import log_send
 from app.models import SendRequest
 
 router = APIRouter()
@@ -12,8 +13,8 @@ def health():
 
 
 @router.post("/send")
-def send(req: SendRequest):
-    return get_mailer().send(
+def send(req: SendRequest, request: Request):
+    result = get_mailer().send(
         req.to,
         req.subject,
         req.body,
@@ -24,12 +25,15 @@ def send(req: SendRequest):
         ics_name=req.ics_name,
         ics_method=req.ics_method,
     )
+    log_send(req=req, result=result,
+             source=request.headers.get("x-mail-source"))
+    return result
 
 
 # Zpětná kompatibilita se šablonovým rozhraním /task.
 @router.post("/task")
 def handle_task(data: dict):
-    return get_mailer().send(
+    result = get_mailer().send(
         data.get("to"),
         data.get("subject", ""),
         data.get("body", ""),
@@ -37,3 +41,5 @@ def handle_task(data: dict):
         cc=data.get("cc"),
         bcc=data.get("bcc"),
     )
+    log_send(req=data, result=result, source=data.get("source") or "task")
+    return result

@@ -230,9 +230,11 @@ class Mailer:
         att = dict(ics=ics, ics_name=ics_name, ics_method=ics_method)
 
         redirected_from = None
+        redirected_to = None
         if self.config.redirect_to:
             orig = ", ".join([*to_l, *cc_l, *bcc_l]) or "(nikdo)"
             redirected_from = orig
+            redirected_to = self.config.redirect_to
             note = f"[Původně určeno: {orig}]"
             body = (
                 f"<p style=\"color:#b42318;font-weight:600;\">{note}</p>{body}"
@@ -249,6 +251,7 @@ class Mailer:
                 "status": "DRY_RUN",
                 "backend": self.config.backend,
                 "redirected_from": redirected_from,
+                "redirected_to": redirected_to,
                 "payload": self.build_payload(
                     to_l, subject, body, html=html, cc=cc_l, bcc=bcc_l, **att
                 ),
@@ -263,6 +266,7 @@ class Mailer:
             result = {"status": "ERROR", "message": str(exc)}
         if redirected_from is not None:
             result["redirected_from"] = redirected_from
+            result["redirected_to"] = redirected_to
         return result
 
     def _send_graph(self, to, subject, body, html, cc, bcc,

@@ -50,6 +50,19 @@
         <span id="digestResult" class="hint"></span>
     </section>
 
+    <!-- LOG ODESLANÝCH E-MAILŮ -->
+    <section class="card" id="mailLogCard">
+        <div class="card-head">
+            <h2>📮 Log odeslaných e-mailů</h2>
+            <div class="week-toggle">
+                <button type="button" data-flt="" class="active">Vše</button>
+                <button type="button" data-flt="ERROR">Jen chyby</button>
+            </div>
+        </div>
+        <p class="hint" id="mailLogCounts"></p>
+        <div id="mailLogList">Načítám…</div>
+    </section>
+
     <!-- TÝDENNÍ MŘÍŽKA -->
     <section class="card">
         <div class="card-head">
@@ -89,6 +102,7 @@
 <script src="/static/js/pending_students.js"></script>
 <script src="/static/js/pending_release.js"></script>
 <script src="/static/js/decisions_admin.js"></script>
+<script src="/static/js/mail_log.js"></script>
 <script src="/static/js/open_hours.js?v=14"></script>
 </body>
 </html>

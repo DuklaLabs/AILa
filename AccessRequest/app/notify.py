@@ -328,7 +328,7 @@ async def notify_booking(
     if BOOKING_NOTIFY_CC:
         payload["cc"] = BOOKING_NOTIFY_CC
 
-    err = await _send_via_messenger(payload)
+    err = await _send_via_messenger(payload, source="booking-instant")
     if err:
         result["error"] = err
     else:
@@ -336,11 +336,15 @@ async def notify_booking(
     return result
 
 
-async def _send_via_messenger(payload: dict) -> str | None:
-    """Pošle payload službě Messenger. Vrací None při úspěchu, jinak text chyby."""
+async def _send_via_messenger(payload: dict, source: str | None = None) -> str | None:
+    """Pošle payload službě Messenger. `source` se propíše do logu odeslané pošty.
+    Vrací None při úspěchu, jinak text chyby."""
+    headers = {"X-Mail-Source": source} if source else None
     try:
         async with httpx.AsyncClient(timeout=20) as client:
-            resp = await client.post(f"{MESSENGER_URL}/send", json=payload)
+            resp = await client.post(
+                f"{MESSENGER_URL}/send", json=payload, headers=headers
+            )
     except httpx.HTTPError as exc:
         return f"Messenger nedostupný: {exc}"
     if resp.status_code != 200:
@@ -477,7 +481,7 @@ async def send_decision_digest(
     if BOOKING_NOTIFY_CC:
         payload["cc"] = BOOKING_NOTIFY_CC
 
-    err = await _send_via_messenger(payload)
+    err = await _send_via_messenger(payload, source="decision-digest")
     if err:
         result["error"] = err
     else:
@@ -584,7 +588,7 @@ async def send_supervisor_roster(
     payload = {"to": [email], "subject": subject, "body": body, "html": True}
     if BOOKING_NOTIFY_CC:
         payload["cc"] = BOOKING_NOTIFY_CC
-    err = await _send_via_messenger(payload)
+    err = await _send_via_messenger(payload, source="supervisor-roster")
     if err:
         result["error"] = err
     else:
@@ -676,7 +680,7 @@ async def send_release_requests(
             class_teacher_name=(class_teacher or {}).get("name"),
         )
         payload = {"to": [email], "subject": subj, "body": body, "html": True}
-        err = await _send_via_messenger(payload)
+        err = await _send_via_messenger(payload, source="release-request")
         (result["errors"] if err else result["sent"]).append(
             {"role": role, "email": email, "error": err} if err
             else {"role": role, "email": email}
@@ -846,7 +850,7 @@ async def notify_student_decision(
             ics_name="duklalabs-uvolneni.ics",
             ics_method="CANCEL" if not approved else "PUBLISH",
         )
-    err = await _send_via_messenger(payload)
+    err = await _send_via_messenger(payload, source="student-decision")
     if err:
         result["error"] = err
     else:

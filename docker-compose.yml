@@ -148,6 +148,15 @@ services:
       - "8005:8005"
     networks:
       - agentnet
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      # Log odeslané pošty do messaging.mail_log v agentdb.
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: agentdb
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
     env_file:
       - ./Messenger/.env
 

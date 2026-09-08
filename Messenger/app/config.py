@@ -25,5 +25,14 @@ MAIL_DRY_RUN = os.getenv("MAIL_DRY_RUN", "false")
 # Bezpečnostní brzda: když je vyplněno, veškerá pošta jde jen na tuto adresu.
 MAIL_REDIRECT_TO = os.getenv("MAIL_REDIRECT_TO", "")
 
+# ==== LOG ODESLANÝCH E-MAILŮ (messaging.mail_log v agentdb) ====
+MAIL_LOG_ENABLED = os.getenv("MAIL_LOG_ENABLED", "true")
+MAIL_LOG_BODY = os.getenv("MAIL_LOG_BODY", "false")  # ukládat i tělo e-mailu
+PG_HOST = os.getenv("POSTGRES_HOST", "postgres")
+PG_PORT = int(os.getenv("POSTGRES_PORT", 5432))
+PG_DB = os.getenv("POSTGRES_DB", "agentdb")
+PG_USER = os.getenv("POSTGRES_USER", "agent")
+PG_PASSWORD = os.getenv("POSTGRES_PASSWORD", "")
+
 # ==== GENERAL ====
 AGENT_PORT = int(os.getenv("AGENT_PORT", 8005))
