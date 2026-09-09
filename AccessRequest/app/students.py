@@ -10,8 +10,8 @@ from ailacore.auth import (
     SESSION_COOKIE,
     get_user_from_token,
     hash_password,
-    require_role,
 )
+from ailacore.rbac import require_permission
 from ailacore.db import get_pool
 
 from app.dukla_db import class_teacher
@@ -20,7 +20,8 @@ from app.notify import send_release_requests
 router_students = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
-_STAFF_ONLY = [Depends(require_role("admin", "staff"))]
+_STUDENT_READ = [Depends(require_permission("internal.student:read"))]
+_STUDENT_WRITE = [Depends(require_permission("internal.student:write"))]
 
 # Per-student list of the open hours they're booked into, so the dashboard
 # can show *where* each student is already registered. Each entry has a
@@ -223,13 +224,13 @@ async def api_get_students():
 # SCHVALOVÁNÍ REGISTRACÍ (staff/admin only)
 # ----------------------------------------------------------------------
 
-@router_students.get("/api/students/pending", dependencies=_STAFF_ONLY)
+@router_students.get("/api/students/pending", dependencies=_STUDENT_READ)
 async def api_get_pending_students():
     students = await load_pending_students()
     return [dict(s) for s in students]
 
 
-@router_students.post("/api/students/{user_id}/approve", dependencies=_STAFF_ONLY)
+@router_students.post("/api/students/{user_id}/approve", dependencies=_STUDENT_WRITE)
 async def approve_student(user_id: int):
     pool = await get_pool()
     async with pool.acquire() as conn:
@@ -242,7 +243,7 @@ async def approve_student(user_id: int):
     return {"status": "ok", "msg": "Účet schválen."}
 
 
-@router_students.post("/api/students/{user_id}/reject", dependencies=_STAFF_ONLY)
+@router_students.post("/api/students/{user_id}/reject", dependencies=_STUDENT_WRITE)
 async def reject_student(user_id: int):
     pool = await get_pool()
     async with pool.acquire() as conn:

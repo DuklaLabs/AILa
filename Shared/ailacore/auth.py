@@ -13,6 +13,10 @@ which is simpler to reason about for a small closed-network deployment
 than distributing/rotating a JWT signing key across every service).
 `get_current_user` is the FastAPI dependency every protected route in
 every service should use instead of rolling its own cookie check.
+
+`require_role` here is a coarse check against the single `auth.users.role`
+string. For per-capability checks (`schema.resource:action`) use
+`require_permission` / `user_has_permission` from `ailacore.rbac`.
 """
 import os
 import secrets

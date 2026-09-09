@@ -186,6 +186,32 @@ services:
     env_file:
       - ./Security_agent/.env
 
+  projects-server:
+    build:
+      context: .
+      dockerfile: Projects/Dockerfile
+    container_name: projects-server
+    ports:
+      - "8006:8006"
+    networks:
+      - agentnet
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_DB: agentdb
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
+      POSTGRES_HOST: postgres
+      # Veřejná URL serveru (odkazy v UI/e-mailech). V produkci https adresa.
+      PUBLIC_BASE_URL: "http://localhost:8006"
+      # Interní hodinová sazba a týdenní kapacita člověka pro finanční/kapacitní
+      # výpočty. Přednost má řádek v projects.settings, pak tyhle env, pak default.
+      PROJECTS_HOURLY_RATE_CZK: "500"
+      PROJECTS_WEEKLY_CAPACITY_HOURS: "40"
+      # MCP server (napojení AI) na /mcp téhož portu 8006. "false" ho vypne.
+      MCP_ENABLED: "true"
+
 
 
 networks:

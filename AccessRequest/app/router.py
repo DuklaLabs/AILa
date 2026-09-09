@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from ailacore.auth import SESSION_COOKIE, get_user_from_token
+from ailacore.rbac import user_has_permission
 
 from app.bookings import router as bookings_router
 
@@ -12,9 +13,13 @@ templates = Jinja2Templates(directory="app/templates")
 
 async def _require_staff(request: Request):
     """Page-level guard for HTML routes: redirect to /login instead of a
-    raw 401, since these render templates rather than return JSON."""
+    raw 401, since these render templates rather than return JSON.
+
+    Gated on the `internal.open_hours:read` permission (the /admin page's
+    primary content), not on a role name — same RBAC as the JSON routes.
+    """
     user = await get_user_from_token(request.cookies.get(SESSION_COOKIE))
-    if user is None or user.role not in ("admin", "staff"):
+    if user is None or not await user_has_permission(user, "internal.open_hours:read"):
         return None
     return user
 

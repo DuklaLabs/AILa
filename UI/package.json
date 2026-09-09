@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:projects": "vite --config vite.projects.config.js",
     "build": "vite build",
+    "build:projects": "vite build --config vite.projects.config.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

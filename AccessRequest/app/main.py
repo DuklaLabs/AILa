@@ -1,9 +1,12 @@
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from ailacore.db import close_pool
+from ailacore.admin import rbac_api_router, mount_admin_ui
 
 from app.router import router as admin_router
 from app.auth import router_auth
@@ -54,3 +57,7 @@ app.include_router(open_hours_router)
 app.include_router(router_decisions)
 app.include_router(router_release)
 app.include_router(router_mail_log)
+
+# Sdílená RBAC administrace z ailacore (API + React konzole na /admin/rbac/).
+app.include_router(rbac_api_router)
+mount_admin_ui(app, os.getenv("RBAC_UI_DIST", "rbac-ui-dist"))

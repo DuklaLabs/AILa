@@ -19,7 +19,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
-from ailacore.auth import require_role
+from ailacore.rbac import require_permission
 from ailacore.db import get_pool
 
 router_release = APIRouter(tags=["Release"])
@@ -149,7 +149,7 @@ async def release_submit(token: str, request: Request):
 
 @router_release.get(
     "/api/students/release-pending",
-    dependencies=[Depends(require_role("admin", "staff"))],
+    dependencies=[Depends(require_permission("internal.release:manage"))],
 )
 async def release_pending():
     pool = await get_pool()
@@ -171,7 +171,7 @@ async def release_pending():
 
 @router_release.post(
     "/api/students/{student_id}/release-coord",
-    dependencies=[Depends(require_role("admin", "staff"))],
+    dependencies=[Depends(require_permission("internal.release:manage"))],
 )
 async def release_coord(student_id: int, request: Request):
     body = {}

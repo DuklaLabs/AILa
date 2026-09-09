@@ -3,7 +3,7 @@ import datetime
 import asyncpg
 from fastapi import APIRouter, Depends, Form, HTTPException, Query
 
-from ailacore.auth import require_role
+from ailacore.rbac import require_permission
 from ailacore.db import get_pool
 
 from app.dukla_db import (
@@ -15,7 +15,9 @@ from app.dukla_db import (
 
 router = APIRouter(prefix="/api/open-hours", tags=["Open Hours"])
 
-_STAFF_ONLY = [Depends(require_role("admin", "staff"))]
+_OH_READ = [Depends(require_permission("internal.open_hours:read"))]
+_OH_WRITE = [Depends(require_permission("internal.open_hours:write"))]
+_BOOKING_READ = [Depends(require_permission("internal.booking:read"))]
 
 # Fixed bell schedule (period number -> start/end time) so every open hour
 # lines up with a real school period and can be rendered as a timetable
@@ -82,7 +84,7 @@ async def list_periods():
 # CREATE / ADD OPEN HOURS (staff/admin only)
 # ----------------------------------------------------------------------
 
-@router.post("/add", dependencies=_STAFF_ONLY)
+@router.post("/add", dependencies=_OH_WRITE)
 async def add_open_hours(
     date: str = Form(...),
     hour_number: int = Form(...),
@@ -131,7 +133,7 @@ async def add_open_hours(
 # UPDATE OPEN HOUR (staff/admin only) — capacity / note
 # ----------------------------------------------------------------------
 
-@router.patch("/{id}", dependencies=_STAFF_ONLY)
+@router.patch("/{id}", dependencies=_OH_WRITE)
 async def update_open_hours(
     id: int,
     capacity: int = Form(None),
@@ -196,7 +198,7 @@ async def update_open_hours(
 # overview: click a slot to see who is coming and from which class.
 # ----------------------------------------------------------------------
 
-@router.get("/{id}/bookings", dependencies=_STAFF_ONLY)
+@router.get("/{id}/bookings", dependencies=_BOOKING_READ)
 async def open_hour_bookings(id: int):
     pool = await get_pool()
     async with pool.acquire() as conn:
@@ -257,14 +259,14 @@ async def list_open_hours(
 # or unreachable.
 # ----------------------------------------------------------------------
 
-@router.get("/supervisors", dependencies=_STAFF_ONLY)
+@router.get("/supervisors", dependencies=_OH_READ)
 async def list_supervisor_names():
     """Configured supervisor display names — the grid uses this to build
     the per-supervisor filter toggle."""
     return supervisor_names()
 
 
-@router.get("/supervisions", dependencies=_STAFF_ONLY)
+@router.get("/supervisions", dependencies=_OH_READ)
 async def list_supervisions(
     from_: str = Query(..., alias="from"),
     to: str = Query(...),
@@ -275,7 +277,7 @@ async def list_supervisions(
     return await fetch_supervisions(date_from, date_to, week)
 
 
-@router.get("/supervisions/debug", dependencies=_STAFF_ONLY)
+@router.get("/supervisions/debug", dependencies=_OH_READ)
 async def debug_supervisions():
     """Why is the duklamaps overlay empty? Shows the connection config,
     whether we can reach that DB, the resolved date column, and a sample
@@ -288,7 +290,7 @@ async def debug_supervisions():
 # DELETE OPEN HOURS (staff/admin only)
 # ----------------------------------------------------------------------
 
-@router.delete("/delete/{id}", dependencies=_STAFF_ONLY)
+@router.delete("/delete/{id}", dependencies=_OH_WRITE)
 async def delete_open_hours(id: int):
     pool = await get_pool()
     async with pool.acquire() as conn:

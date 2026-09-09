@@ -27,7 +27,7 @@ from datetime import date, time
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from ailacore.auth import require_role
+from ailacore.rbac import require_permission
 from ailacore.db import get_pool
 
 from app.dukla_db import class_lookup_debug, class_teachers
@@ -583,7 +583,7 @@ async def run_supervisor_roster(
 
 @router_decisions.post(
     "/api/decisions/send-digest",
-    dependencies=[Depends(require_role("admin", "staff"))],
+    dependencies=[Depends(require_permission("internal.release:manage"))],
 )
 async def send_digests(request: Request):
     """Rozhodovací digest učitelům. `?all=1` i těm, co mají jen rozhodnuté."""
@@ -593,7 +593,7 @@ async def send_digests(request: Request):
 
 @router_decisions.post(
     "/api/decisions/send-supervisor-roster",
-    dependencies=[Depends(require_role("admin", "staff"))],
+    dependencies=[Depends(require_permission("internal.release:manage"))],
 )
 async def send_supervisor_rosters(request: Request):
     """Přehled docházky dozorům. `?day=YYYY-MM-DD` omezí na den,
@@ -611,7 +611,7 @@ async def send_supervisor_rosters(request: Request):
 
 @router_decisions.get(
     "/api/decisions/scheduler",
-    dependencies=[Depends(require_role("admin", "staff"))],
+    dependencies=[Depends(require_permission("internal.release:manage"))],
 )
 async def scheduler_status():
     """Naplánované úlohy + čas příštího spuštění."""
@@ -621,7 +621,7 @@ async def scheduler_status():
 
 @router_decisions.post(
     "/api/decisions/run-teacher-digest",
-    dependencies=[Depends(require_role("admin", "staff"))],
+    dependencies=[Depends(require_permission("internal.release:manage"))],
 )
 async def run_teacher_digest_now():
     """Ruční spuštění naplánované úlohy (test)."""
@@ -630,7 +630,7 @@ async def run_teacher_digest_now():
 
 @router_decisions.post(
     "/api/decisions/run-supervisor-roster",
-    dependencies=[Depends(require_role("admin", "staff"))],
+    dependencies=[Depends(require_permission("internal.release:manage"))],
 )
 async def run_supervisor_roster_now(request: Request):
     only_day = datetime.date.today()
@@ -641,7 +641,7 @@ async def run_supervisor_roster_now(request: Request):
 
 @router_decisions.get(
     "/api/decisions/timetable-debug",
-    dependencies=[Depends(require_role("admin", "staff"))],
+    dependencies=[Depends(require_permission("internal.release:manage"))],
 )
 async def timetable_debug(request: Request):
     """?class=4.ER&date=2026-09-14&hour=2 → co rozvrh vrátí pro daný zápis."""

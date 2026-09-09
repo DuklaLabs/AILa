@@ -21,3 +21,10 @@ alembic revision -m "popis změny"
 ```
 
 Migrace jsou psané jako čisté SQL přes `op.execute(...)` (žádné ORM modely), viz `migrations/versions/0001_baseline.py` pro vzor.
+
+## RBAC katalog
+
+Granulární oprávnění žijí v `auth.roles` / `auth.permissions` / `auth.role_permissions`
+(+ `auth.user_roles`, `auth.user_permissions`). Katalog i mapování systémových rolí
+seeduje migrace `0014_rbac`; nové oprávnění se přidává vlastní migrací (insert do
+`auth.permissions` a `auth.role_permissions`). Runtime kontrola je `ailacore.rbac`.

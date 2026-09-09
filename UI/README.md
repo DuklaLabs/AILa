@@ -1,16 +1,30 @@
-# React + Vite
+# UI — RBAC admin konzole
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React SPA pro správu RBAC jádra (`ailacore`): katalog oprávnění, mapování
+role → oprávnění, přiřazení rolí a přímých grantů uživatelům, audit změn.
 
-Currently, two official plugins are available:
+Servíruje ji `ailacore.admin.mount_admin_ui` pod `/admin/rbac/` na stejném originu
+jako API (kvůli cookie session `dl_session`) — ne vlastní kontejner. Vstupní bod je
+`src/rbac/RbacConsole.jsx`; orchestrátorský dashboard (`src/LabOrchestratorDashboard.jsx`)
+zůstává v repu, ale tenhle build ho nemountuje.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Vývoj
 
-## React Compiler
+```
+npm install
+npm run dev        # http://localhost:5173/admin/rbac/
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+`npm run dev` proxuje `/api/*` na `http://localhost:8003` (běžící `access-request-server`).
+Jiný cíl: `VITE_API_TARGET=http://... npm run dev`. Přihlas se ve druhém tabu na
+`http://localhost:8003/login` jako admin (`Database/seed_admin.py`) — session cookie
+platí i pro dev server přes proxy.
 
-## Expanding the ESLint configuration
+## Build
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```
+npm run build      # -> dist/  (Vite base = /admin/rbac/)
+```
+
+`dist/` se v Dockeru služby nakopíruje tam, kam ukazuje `RBAC_UI_DIST`
+(viz stage `rbac-ui` v `AccessRequest/Dockerfile`).

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
 
-from ailacore.auth import require_role
+from ailacore.rbac import require_permission
 from ailacore.db import get_pool
 
 router_mail_log = APIRouter(tags=["MailLog"])
@@ -16,7 +16,7 @@ router_mail_log = APIRouter(tags=["MailLog"])
 
 @router_mail_log.get(
     "/api/mail-log",
-    dependencies=[Depends(require_role("admin", "staff"))],
+    dependencies=[Depends(require_permission("messaging.mail_log:read"))],
 )
 async def mail_log(
     limit: int = Query(100, ge=1, le=1000),

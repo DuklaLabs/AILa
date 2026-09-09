@@ -1,3 +1,13 @@
+# ---------- RBAC admin UI (React konzole z UI/, servíruje ji ailacore.admin) ----------
+FROM node:20 AS rbac-ui
+WORKDIR /ui
+COPY UI/package*.json ./
+RUN npm ci
+COPY UI/ ./
+RUN npm run build      # -> /ui/dist (Vite base=/admin/rbac/)
+
+
+# ---------- aplikace ----------
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -19,6 +29,9 @@ COPY AccessRequest/requirements.txt .
 RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 COPY AccessRequest/ .
+
+# buildnutá RBAC konzole – ailacore.admin.mount_admin_ui ji hledá v RBAC_UI_DIST
+COPY --from=rbac-ui /ui/dist /app/rbac-ui-dist
 
 EXPOSE 8003
 
