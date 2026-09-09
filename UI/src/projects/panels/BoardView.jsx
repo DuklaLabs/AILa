@@ -117,15 +117,15 @@ export default function BoardView({ project, perms, users, reloadKey, onOpenTask
                  if (id) move(id, s)
                }}>
             <div className="pj-col-head">
-              <span className="pj-dot" style={{ background: `var(--st-${s})` }} />
+              <span className="pj-dot" style={{ background: `var(--st-${s})`, '--sd': `var(--st-${s})` }} />
               {label}
               <span className="n">{byStatus[s]?.length || 0}</span>
             </div>
             <div className="pj-col-scroll">
-              {(byStatus[s] || []).map((t) => (
+              {(byStatus[s] || []).map((t, i) => (
                 <div key={t.id}
                      className={'pj-card' + (draggingId === t.id ? ' dragging' : '')}
-                     style={{ '--st': `var(--st-${t.status})` }}
+                     style={{ '--st': `var(--st-${t.status})`, '--i': i }}
                      draggable={canWrite}
                      onDragStart={(e) => {
                        e.dataTransfer.effectAllowed = 'move'

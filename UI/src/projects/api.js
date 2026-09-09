@@ -96,12 +96,22 @@ export function can(perms, needed) {
 }
 
 export const STATUSES = [
-  ['backlog', 'K řešení', '#9aa0a6'],
-  ['in_progress', 'V řešení', '#1a73e8'],
-  ['design_review', 'Interní revize', '#e8a01a'],
-  ['blocked', 'Blokováno', '#d93025'],
-  ['done', 'Hotovo', '#1e8e3e'],
+  ['backlog', 'K řešení'],
+  ['in_progress', 'V řešení'],
+  ['design_review', 'Interní revize'],
+  ['blocked', 'Blokováno'],
+  ['done', 'Hotovo'],
 ]
+
+// barva podle kategorie (složky) projektu – hodnota je CSS custom property
+export const FOLDER_LABELS = {
+  commercial: 'Komerční prototypy',
+  internal_rnd: 'Interní R&D',
+  overview: 'Globální přehledy',
+}
+export function folderColor(kind) {
+  return kind && FOLDER_LABELS[kind] ? `var(--cat-${kind})` : 'var(--pj-accent)'
+}
 export const COST_TYPES = [
   ['components', 'Součástky'],
   ['pcb', 'Výroba desek (PCB)'],

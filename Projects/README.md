@@ -20,6 +20,10 @@ Port **8006**. Schéma `projects` (migrace `Database/migrations/versions/0016_pr
   sklápí a stav úkolu jde měnit i výběrem na kartě. Výběr řešitele /
   spolupracovníků / závislostí je přes rozbalovací seznamy se jmény (endpoint
   `GET /api/users`), ne přes ID.
+- **Vzhled:** „glass" karty s rozostřeným pozadím; karty úkolů přebírají barvu
+  podle sloupce-stavu, chrome (panel, hlavička, záložky fází) přebírá barvu podle
+  kategorie projektu (složky – `folder_kind` z API: Komerční prototypy / Interní
+  R&D / Globální přehledy). Animace respektují `prefers-reduced-motion`.
 - **Time tracking:** nativní stopky Start/Stop (max jedny běžící na uživatele) +
   ruční zápis minut.
 - **Finanční součet projektu:** `Σ skutečných cen + odpracované hodiny × interní

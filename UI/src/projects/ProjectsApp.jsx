@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { api, can } from './api'
+import { api, can, folderColor } from './api'
 import ProjectTree from './panels/ProjectTree'
 import BoardView from './panels/BoardView'
 import TaskDrawer from './panels/TaskDrawer'
@@ -45,8 +45,10 @@ export default function ProjectsApp() {
     setSideOpen(false)
   }
 
+  const fc = folderColor(project?.folder_kind)
+
   return (
-    <div className="pj">
+    <div className="pj" style={{ '--fc': fc }}>
       <div className="pj-top">
         <button
           className="pj-hamburger ghost"

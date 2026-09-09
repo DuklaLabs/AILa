@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, can } from '../api'
+import { api, can, folderColor } from '../api'
 
 export default function ProjectTree({ perms, activeId, onSelect, reloadKey, onCreated, onError }) {
   const [folders, setFolders] = useState([])
@@ -68,7 +68,7 @@ export default function ProjectTree({ perms, activeId, onSelect, reloadKey, onCr
       {folders.map((f) => {
         const inFolder = projects.filter((p) => p.folder_id === f.id)
         return (
-          <div key={f.id} className="pj-folder">
+          <div key={f.id} className="pj-folder" style={{ '--fc': folderColor(f.kind) }}>
             <div className="f-name">{f.name}</div>
             {inFolder.length === 0 && <div className="muted" style={{ fontSize: '0.8rem', padding: '0.1rem 0.5rem' }}>žádné projekty</div>}
             {inFolder.map((p) => (

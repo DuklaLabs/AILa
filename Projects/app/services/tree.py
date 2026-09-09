@@ -61,7 +61,7 @@ async def list_projects(
         rows = await conn.fetch(
             f"""
             SELECT {_PROJECT_COLS_P},
-                   f.name AS folder_name,
+                   f.name AS folder_name, f.kind AS folder_kind,
                    (SELECT count(*) FROM projects.tasks t WHERE t.project_id = p.id) AS task_count
             FROM projects.projects p
             JOIN projects.folders f ON f.id = p.folder_id
@@ -80,7 +80,13 @@ async def get_project(user: User, project_id: int) -> dict:
     pool = await get_pool()
     async with pool.acquire() as conn:
         proj = await conn.fetchrow(
-            f"SELECT {_PROJECT_COLS} FROM projects.projects WHERE id = $1", project_id
+            f"""
+            SELECT {_PROJECT_COLS_P}, f.name AS folder_name, f.kind AS folder_kind
+            FROM projects.projects p
+            JOIN projects.folders f ON f.id = p.folder_id
+            WHERE p.id = $1
+            """,
+            project_id,
         )
         if proj is None:
             raise HTTPException(404, "Projekt neexistuje.")
