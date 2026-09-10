@@ -62,7 +62,15 @@ services:
     networks:
       - agentnet
 
-
+  ollama-pull-models:
+    image: ollama/ollama:latest
+    container_name: ollama_pull_models
+    volumes:
+      - ollama_data:/root/.ollama
+    # Zde definujete, které modely se mají stáhnout (oddělené mezerou)
+    entrypoint: /bin/sh -c "ollama serve & sleep 5 && ollama pull qwen2.5"
+    depends_on:
+      - ollama
 
   access-request-server:
     build:

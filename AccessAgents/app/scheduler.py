@@ -75,6 +75,26 @@ def start_scheduler() -> None:
         id="monthly_lab_report", replace_existing=True, misfire_grace_time=3600,
     )
 
+    # #2 hlídač uvolněných hodin podle předmětu – denně večer
+    _scheduler.add_job(
+        lambda: _run_agent("subject_release_watch"),
+        CronTrigger(
+            hour=int(os.getenv("SUBJECT_WATCH_HOUR", "18")),
+            minute=0, timezone=_tz(),
+        ),
+        id="subject_release_watch", replace_existing=True, misfire_grace_time=3600,
+    )
+
+    # #4 triage registrací – pravidelný poll
+    _scheduler.add_job(
+        lambda: _run_agent("registration_triage"),
+        CronTrigger(
+            minute=f"*/{int(os.getenv('REG_TRIAGE_EVERY_MIN', '15'))}",
+            timezone=_tz(),
+        ),
+        id="registration_triage", replace_existing=True, misfire_grace_time=600,
+    )
+
     _scheduler.start()
     _log("plánovač běží:", ", ".join(j["id"] for j in get_jobs()))
 
