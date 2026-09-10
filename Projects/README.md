@@ -20,10 +20,17 @@ Port **8006**. Schéma `projects` (migrace `Database/migrations/versions/0016_pr
   sklápí a stav úkolu jde měnit i výběrem na kartě. Výběr řešitele /
   spolupracovníků / závislostí je přes rozbalovací seznamy se jmény (endpoint
   `GET /api/users`), ne přes ID.
-- **Vzhled:** „glass" karty s rozostřeným pozadím; karty úkolů přebírají barvu
-  podle sloupce-stavu, chrome (panel, hlavička, záložky fází) přebírá barvu podle
-  kategorie projektu (složky – `folder_kind` z API: Komerční prototypy / Interní
-  R&D / Globální přehledy). Animace respektují `prefers-reduced-motion`.
+- **Timeline (Gantt):** přepínač Nástěnka / Timeline. Bez vybraného projektu =
+  přehled všech projektů na časové ose (seskupené podle složky, klik = otevřít).
+  S projektem = úkoly na ose seskupené podle fáze, čárkované šipky = závislosti,
+  značka ▶ = úkol „lze spustit" (všechny závislosti hotové a termín startu
+  dozrál). `GET /api/tasks` proto vrací i `depends_on_task_ids`.
+- **Vzhled:** sjednocený brand s AccessRequest – tmavé téma, krvavě červený akcent
+  (`AccessRequest/app/static/css/base.css`; login/rozcestník používá přímo ty samé
+  CSS soubory, nakopírované do `Projects/app/static/css/`). Funkční barvy navíc:
+  karty úkolů a pruhy v Ganttu podle stavu-semaforu, sekundární akcent (panel,
+  hlavička, záložky fází) podle kategorie projektu (`folder_kind`). Animace
+  respektují `prefers-reduced-motion`.
 - **Time tracking:** nativní stopky Start/Stop (max jedny běžící na uživatele) +
   ruční zápis minut.
 - **Finanční součet projektu:** `Σ skutečných cen + odpracované hodiny × interní

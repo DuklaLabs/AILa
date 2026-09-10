@@ -70,10 +70,14 @@ async def list_tasks(
     async with pool.acquire() as conn:
         rows = await conn.fetch(
             f"""
-            SELECT {_TASK_COLS} FROM projects.tasks
-            WHERE ($1::int IS NULL OR phase_id = $1)
-              AND ($2::int IS NULL OR project_id = $2)
-            ORDER BY position, id
+            SELECT {', '.join('t.' + f for f in _TASK_FIELDS)},
+                   COALESCE((SELECT array_agg(d.depends_on_task_id)
+                             FROM projects.task_dependencies d WHERE d.task_id = t.id),
+                            '{{}}') AS depends_on_task_ids
+            FROM projects.tasks t
+            WHERE ($1::int IS NULL OR t.phase_id = $1)
+              AND ($2::int IS NULL OR t.project_id = $2)
+            ORDER BY t.position, t.id
             """,
             phase_id,
             project_id,

@@ -87,6 +87,24 @@ export function isOverdue(due, status) {
   return new Date(due) < new Date(new Date().toDateString())
 }
 
+// ---- datové pomůcky pro Gantt ----
+export const DAY_MS = 86400000
+export const today0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }
+export const parseDate = (s) => (s ? new Date(s + 'T00:00:00') : null)
+export const addDays = (d, n) => new Date(d.getTime() + n * DAY_MS)
+export const daysBetween = (a, b) => Math.round((b - a) / DAY_MS)
+export const fmtDay = (d) =>
+  d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' })
+
+// úkol lze spustit = je „K řešení", všechny závislosti jsou hotové a termín startu dozrál
+export function readyToStart(task, byId) {
+  if (task.status !== 'backlog') return false
+  const deps = task.depends_on_task_ids || []
+  if (!deps.every((id) => byId.get(id)?.status === 'done')) return false
+  if (task.start_on && parseDate(task.start_on) > addDays(today0(), 7)) return false
+  return true
+}
+
 // mirror ailacore.rbac.permission_matches
 export function can(perms, needed) {
   if (!perms) return false

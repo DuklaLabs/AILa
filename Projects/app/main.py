@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from ailacore.admin import mount_spa
@@ -36,6 +37,9 @@ app.include_router(api_router)
 
 if _mcp_app is not None:
     app.mount("/mcp", _mcp_app)
+
+# sdílený brand look (převzato z AccessRequest/app/static/css)
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # React SPA (druhý build v UI/, Vite base=/app/projects/, vstup index.projects.html)
 mount_spa(

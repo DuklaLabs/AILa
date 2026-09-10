@@ -6,6 +6,7 @@ import TaskDrawer from './panels/TaskDrawer'
 import CostSummary from './panels/CostSummary'
 import ProposalsPanel from './panels/ProposalsPanel'
 import RunningTimer from './panels/TimerPanel'
+import GanttView from './panels/GanttView'
 
 export default function ProjectsApp() {
   const [me, setMe] = useState(null)
@@ -15,6 +16,7 @@ export default function ProjectsApp() {
   const [projectId, setProjectId] = useState(null)
   const [project, setProject] = useState(null)
   const [taskId, setTaskId] = useState(null)
+  const [view, setView] = useState('board')
   const [showProposals, setShowProposals] = useState(false)
   const [sideOpen, setSideOpen] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
@@ -86,21 +88,32 @@ export default function ProjectsApp() {
         </div>
 
         <div className="pj-main">
-          {!project && (
-            <div className="empty">
-              {projectId ? 'Načítám projekt…' : 'Vyber projekt v postranním panelu, nebo založ nový.'}
+          <div className="pj-viewbar">
+            <div className="pj-seg">
+              <button className={view === 'board' ? 'on' : ''} onClick={() => setView('board')}>Nástěnka</button>
+              <button className={view === 'timeline' ? 'on' : ''} onClick={() => setView('timeline')}>Timeline</button>
+            </div>
+            {project && <span className="pj-status-pill">{project.name}</span>}
+          </div>
+
+          {project && (
+            <div className="pj-proj-head" style={{ marginBottom: '0.2rem' }}>
+              <h1>{project.name}</h1>
+              <span className="pj-status-pill">{project.status}</span>
+              {project.due_on && <span className="pj-status-pill">termín {project.due_on}</span>}
             </div>
           )}
-          {project && (
+          {project?.description && view === 'board' && (
+            <p className="muted" style={{ margin: '0.3rem 0 0' }}>{project.description}</p>
+          )}
+
+          {view === 'board' && !project && (
+            <div className="empty">
+              {projectId ? 'Načítám projekt…' : 'Vyber projekt v postranním panelu, nebo přepni na Timeline pro přehled všech projektů.'}
+            </div>
+          )}
+          {view === 'board' && project && (
             <>
-              <div className="pj-proj-head">
-                <h1>{project.name}</h1>
-                <span className="pj-status-pill">{project.status}</span>
-                {project.due_on && <span className="pj-status-pill">termín {project.due_on}</span>}
-              </div>
-              {project.description && (
-                <p className="muted" style={{ margin: '0.3rem 0 0' }}>{project.description}</p>
-              )}
               {canFinance && (
                 <CostSummary projectId={project.id} reloadKey={reloadKey} onError={setError} />
               )}
@@ -115,6 +128,15 @@ export default function ProjectsApp() {
                 onError={setError}
               />
             </>
+          )}
+          {view === 'timeline' && (
+            <GanttView
+              key={(project?.id || 'all') + ':' + reloadKey}
+              project={project}
+              onOpenTask={setTaskId}
+              onSelectProject={pickProject}
+              onError={setError}
+            />
           )}
         </div>
       </div>
