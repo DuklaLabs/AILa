@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+jinja2
+asyncpg
+python-multipart
+pydantic
+httpx
+mcp

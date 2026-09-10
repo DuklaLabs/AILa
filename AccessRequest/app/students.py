@@ -1,17 +1,27 @@
 import json
+import secrets
 
 from fastapi import APIRouter, Request, Form, HTTPException, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 import asyncpg
 
-from ailacore.auth import hash_password, require_role
+from ailacore.auth import (
+    SESSION_COOKIE,
+    get_user_from_token,
+    hash_password,
+)
+from ailacore.rbac import require_permission
 from ailacore.db import get_pool
+
+from app.dukla_db import class_teacher
+from app.notify import send_release_requests
 
 router_students = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
-_STAFF_ONLY = [Depends(require_role("admin", "staff"))]
+_STUDENT_READ = [Depends(require_permission("internal.student:read"))]
+_STUDENT_WRITE = [Depends(require_permission("internal.student:write"))]
 
 # Per-student list of the open hours they're booked into, so the dashboard
 # can show *where* each student is already registered. Each entry has a
@@ -55,6 +65,21 @@ async def load_students():
     return out
 
 
+async def current_student_id(request: Request):
+    """student_id of the logged-in student (or None for anonymous / staff
+    visitors). Lets the dashboard show an "unregister" control only on the
+    viewer's own bookings — the DELETE endpoint is session-scoped anyway,
+    but there's no point offering a button that can only fail on other rows."""
+    user = await get_user_from_token(request.cookies.get(SESSION_COOKIE))
+    if user is None:
+        return None
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        return await conn.fetchval(
+            "SELECT student_id FROM internal.students WHERE user_id = $1", user.id
+        )
+
+
 async def load_pending_students():
     pool = await get_pool()
     async with pool.acquire() as conn:
@@ -74,7 +99,7 @@ async def load_pending_students():
 
 async def register_student(
     first_name: str, last_name: str, email: str, class_group: str, password: str
-) -> int:
+) -> dict:
     """Creates both the login account (auth.users, role='student') and the
     roster row (internal.students, used by bookings/excused/reports),
     linked via internal.students.user_id — one identity, not two.
@@ -99,20 +124,51 @@ async def register_student(
                     email,
                     password_hash,
                 )
-                await conn.execute(
+                student_id = await conn.fetchval(
                     """
-                    INSERT INTO internal.students (first_name, last_name, email, class_group, user_id)
-                    VALUES ($1, $2, $3, $4, $5)
+                    INSERT INTO internal.students
+                        (first_name, last_name, email, class_group, user_id, release_token)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    RETURNING student_id
                     """,
                     first_name,
                     last_name,
                     email,
                     class_group,
                     user_id,
+                    secrets.token_urlsafe(24),
                 )
             except asyncpg.UniqueViolationError:
                 raise HTTPException(status_code=400, detail="E-mail již existuje.")
-    return user_id
+    return {"user_id": user_id, "student_id": student_id}
+
+
+async def request_release_consent(student_id: int, class_group: str) -> dict:
+    """Po registraci: dohledá třídního učitele, uloží snapshot a rozešle
+    žádost o souhlas (třídní + koordinátor). Best-effort."""
+    try:
+        ct = await class_teacher(class_group)
+    except Exception:  # noqa: BLE001
+        ct = None
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "UPDATE internal.students SET release_class_teacher = $1 "
+            "WHERE student_id = $2 "
+            "RETURNING first_name, last_name, release_token",
+            (ct or {}).get("name"), student_id,
+        )
+    if row is None:
+        return {"error": "student nenalezen"}
+    try:
+        return await send_release_requests(
+            student_name=f"{row['first_name']} {row['last_name']}",
+            class_group=class_group,
+            release_token=row["release_token"],
+            class_teacher=ct,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"{type(exc).__name__}: {exc}"}
 
 
 @router_students.get("/student-dashboard")
@@ -121,7 +177,7 @@ async def student_dashboard(request: Request):
     return templates.TemplateResponse(
         request,
         "student_dashboard.html",
-        {"students": students},
+        {"students": students, "my_student_id": await current_student_id(request)},
     )
 
 
@@ -147,12 +203,14 @@ async def register_submit(
             status_code=400,
         )
 
-    await register_student(first_name, last_name, email, class_group, password)
+    reg = await register_student(first_name, last_name, email, class_group, password)
+    await request_release_consent(reg["student_id"], class_group)
 
     return HTMLResponse(
         "<h1>Registrace přijata</h1>"
-        "<p>Účet teď musí schválit administrátor DuklaLabs. "
-        "Až se to stane, budeš se moct přihlásit a zapsat na volné hodiny.</p>"
+        "<p>Účet teď musí schválit administrátor DuklaLabs. Zároveň jsme požádali "
+        "tvého třídního učitele a koordinátora o souhlas s uvolňováním z výuky – "
+        "než ho oba dají, budeš se moct zapisovat jen na hodiny, kdy nemáš výuku.</p>"
     )
 
 
@@ -166,13 +224,13 @@ async def api_get_students():
 # SCHVALOVÁNÍ REGISTRACÍ (staff/admin only)
 # ----------------------------------------------------------------------
 
-@router_students.get("/api/students/pending", dependencies=_STAFF_ONLY)
+@router_students.get("/api/students/pending", dependencies=_STUDENT_READ)
 async def api_get_pending_students():
     students = await load_pending_students()
     return [dict(s) for s in students]
 
 
-@router_students.post("/api/students/{user_id}/approve", dependencies=_STAFF_ONLY)
+@router_students.post("/api/students/{user_id}/approve", dependencies=_STUDENT_WRITE)
 async def approve_student(user_id: int):
     pool = await get_pool()
     async with pool.acquire() as conn:
@@ -185,7 +243,7 @@ async def approve_student(user_id: int):
     return {"status": "ok", "msg": "Účet schválen."}
 
 
-@router_students.post("/api/students/{user_id}/reject", dependencies=_STAFF_ONLY)
+@router_students.post("/api/students/{user_id}/reject", dependencies=_STUDENT_WRITE)
 async def reject_student(user_id: int):
     pool = await get_pool()
     async with pool.acquire() as conn:

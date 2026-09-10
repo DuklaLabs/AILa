@@ -1,9 +1,7 @@
 import os
 
-SMTP_EMAIL = os.getenv("SMTP_EMAIL")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+# E-maily se odesílají přes službu Messenger (Microsoft Graph), ne přímo SMTP.
+MESSENGER_URL = os.getenv("MESSENGER_URL", "http://messenger:8005")
 
 DB_CONFIG = {
     "host": os.getenv("DB_HOST", "postgres"),
@@ -12,10 +10,6 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD", ""),
     "port": int(os.getenv("DB_PORT", 5432))
 }
-
-TENANT_ID = os.getenv("TENANT_ID")
-CLIENT_ID = os.getenv("CLIENT_ID")
-CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
 AGENT_PORT = int(os.getenv("AGENT_PORT", 8004))
 

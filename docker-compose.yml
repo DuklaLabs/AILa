@@ -76,6 +76,8 @@ services:
     depends_on:
       db-migrate:
         condition: service_completed_successfully
+      messenger:
+        condition: service_started
     # lets DUKLA_PG_HOST=host.docker.internal reach a DB on the Docker host
     # (works out of the box on Docker Desktop; this line is for Linux).
     extra_hosts:
@@ -85,6 +87,38 @@ services:
       POSTGRES_USER: agent
       POSTGRES_PASSWORD: agentpass
       POSTGRES_HOST: postgres
+      # Informování dozora e-mailem při zápisu studenta na otevřenou hodinu.
+      # Odesílá přes službu Messenger; SUPERVISOR_EMAILS mapuje jména z
+      # DUKLA_SUPERVISORS na adresy (oddělovač ";", volitelně víc řádků).
+      MESSENGER_URL: http://messenger:8005
+      SUPERVISOR_EMAILS: "Bc. Jan Petrášek=petrasek@spssecb.cz"
+      # Veřejná URL serveru — odkazy v e-mailu (rozhodovací stránka) z ní
+      # vycházejí. V produkci nastavit na skutečnou (https) adresu.
+      PUBLIC_BASE_URL: "http://localhost:8003"
+      # Podpis rozhodovacích odkazů. V produkci nastavit na náhodnou hodnotu;
+      # její změna zneplatní všechny dříve rozeslané odkazy.
+      DECISION_SECRET: "dev-decision-secret-zmen-v-produkci"
+      # E-mail běžného učitele: primárně z public.teachers.email v duklamaps,
+      # jinak odvození příjmení@TEACHER_EMAIL_DOMAIN. Výjimky:
+      # TEACHER_EMAIL_OVERRIDES="Příjmení Jméno=mail; ..."
+      TEACHER_EMAIL_DOMAIN: "spssecb.cz"
+      # Třídní učitel se řídí výhradně sloupcem třídnictví v public.teachers
+      # (jméno sloupce TEACHER_HOMEROOM_COLUMN). CLASS_TEACHERS je prázdné =
+      # žádná ruční přepisová mapa. Bez třídního zůstává uvolňování blokované.
+      CLASS_TEACHERS: ""
+      TEACHER_HOMEROOM_COLUMN: "homeroom_class"
+      # Koordinátor uvolňování; prázdné = adresy z SUPERVISOR_EMAILS.
+      RELEASE_COORDINATOR_EMAILS: ""
+      # Plánované rozesílání (APScheduler, in-process).
+      SCHEDULER_ENABLED: "true"
+      SCHEDULER_TZ: "Europe/Prague"
+      TEACHER_DIGEST_DOW: "thu"        # rozhodovací digest učitelům
+      TEACHER_DIGEST_HOUR: "13"
+      SUPERVISOR_ROSTER_HOUR: "7"      # denní seznam uvolněných dozorům
+      SUPERVISOR_ROSTER_MINUTE: "0"
+      # BOOKING_NOTIFY_CC: "koordinator@spssecb.cz"   # nepovinná kopie
+      # NOTIFY_ON_BOOKING: "true"    # i okamžitý e-mail při každém zápisu
+      # NOTIFY_ENABLED: "false"      # úplně vypnout odchozí e-maily
       # Separate read-only "duklamaps" timetable DB used by the admin
       # open-hours grid to show supervising teachers' lessons. Leave
       # DUKLA_PG_HOST empty to disable (grid still works without it).
@@ -105,8 +139,29 @@ services:
       # jen pokud chceš v takovém případě spadnout na stálý rozvrh.
       DUKLA_PERMANENT_FALLBACK: "0"
 
+  messenger:
+    build:
+      context: ./Messenger
+      dockerfile: Dockerfile
+    container_name: messenger
+    ports:
+      - "8005:8005"
+    networks:
+      - agentnet
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      # Log odeslané pošty do messaging.mail_log v agentdb.
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: agentdb
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
+    env_file:
+      - ./Messenger/.env
+
   security-agent:
-    build:  
+    build:
       context: ./Security_agent
       dockerfile: Dockerfile
     container_name: security-agent
@@ -119,14 +174,43 @@ services:
         condition: service_completed_successfully
       ollama:
         condition: service_started
+      messenger:
+        condition: service_started
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_USER: agent
       POSTGRES_PASSWORD: agentpass
       POSTGRES_DB: agentdb
       OLLAMA_HOST: http://lmstudio:1234
+      MESSENGER_URL: http://messenger:8005
     env_file:
       - ./Security_agent/.env
+
+  projects-server:
+    build:
+      context: .
+      dockerfile: Projects/Dockerfile
+    container_name: projects-server
+    ports:
+      - "8006:8006"
+    networks:
+      - agentnet
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_DB: agentdb
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
+      POSTGRES_HOST: postgres
+      # Veřejná URL serveru (odkazy v UI/e-mailech). V produkci https adresa.
+      PUBLIC_BASE_URL: "http://localhost:8006"
+      # Interní hodinová sazba a týdenní kapacita člověka pro finanční/kapacitní
+      # výpočty. Přednost má řádek v projects.settings, pak tyhle env, pak default.
+      PROJECTS_HOURLY_RATE_CZK: "500"
+      PROJECTS_WEEKLY_CAPACITY_HOURS: "40"
+      # MCP server (napojení AI) na /mcp téhož portu 8006. "false" ho vypne.
+      MCP_ENABLED: "true"
 
 
 

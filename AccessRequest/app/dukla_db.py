@@ -23,10 +23,14 @@ empty and to look up the exact `teacher_name` spelling.
 """
 import os
 import time
+import unicodedata
 from datetime import date, timedelta
 from typing import Optional
 
 import asyncpg
+
+# Doména pro odvození e-mailu učitele, když ho nemá vyplněný v public.teachers.
+_TEACHER_EMAIL_DOMAIN = os.getenv("TEACHER_EMAIL_DOMAIN", "spssecb.cz").strip()
 
 _pool: Optional[asyncpg.Pool] = None
 _last_error: Optional[str] = None
@@ -325,3 +329,287 @@ async def diagnose() -> dict:
     finally:
         await pool.close()
     return info
+
+
+# ======================================================================
+# TŘÍDA + DATUM + HODINA  ->  UČITELÉ (kdo studenta v tu dobu učí)
+# ======================================================================
+
+def _strip_diacritics(s: str) -> str:
+    return unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode()
+
+
+def _derive_teacher_email(teacher_name: str) -> str:
+    """Z "Příjmení Jméno" -> prijmeni@<doména>. Fallback, když učitel nemá
+    e-mail v public.teachers (~pola jich ho nemá)."""
+    parts = (teacher_name or "").split()
+    if not parts:
+        return ""
+    slug = "".join(ch for ch in _strip_diacritics(parts[0]) if ch.isalnum()).lower()
+    return f"{slug}@{_TEACHER_EMAIL_DOMAIN}" if slug else ""
+
+
+def _load_teacher_overrides() -> dict:
+    """TEACHER_EMAIL_OVERRIDES="Příjmení Jméno=mail; ..." -> {tokenset_key: email}."""
+    raw = os.getenv("TEACHER_EMAIL_OVERRIDES", "")
+    out: dict[str, str] = {}
+    for chunk in raw.replace("\n", ";").split(";"):
+        if "=" not in chunk:
+            continue
+        name, email = chunk.split("=", 1)
+        name, email = name.strip(), email.strip()
+        if name and email:
+            out[" ".join(sorted(_name_tokens(name)))] = email
+    return out
+
+
+def _teacher_email(teacher_name: str, db_email: Optional[str], overrides: dict) -> str:
+    key = " ".join(sorted(_name_tokens(teacher_name)))
+    if key in overrides:
+        return overrides[key]
+    if db_email and db_email.strip():
+        return db_email.strip()
+    return _derive_teacher_email(teacher_name)
+
+
+async def _pick_timetable(conn, monday: date) -> tuple[Optional[str], bool]:
+    """(název tabulky, má_week_date) pro daný týden. None když nic."""
+    for table in ("public.timetable_actual", "public.timetable_next"):
+        if await conn.fetchval(f"SELECT 1 FROM {table} WHERE week_date = $1 LIMIT 1", monday):
+            return table, True
+    if os.getenv("DUKLA_PERMANENT_FALLBACK", "").strip().lower() in ("1", "true", "yes"):
+        return "public.timetable_permanent", False
+    return None, False
+
+
+async def class_teachers(
+    class_abbrev: str, day: date, hour_number: int
+) -> list[dict]:
+    """Učitelé, kteří danou třídu učí v daný den + hodinu (dle rozvrhu).
+    -> [{teacher_id, teacher_name, teacher_email, subject, group_abbrev}]
+    Best-effort: DB nedostupná / nic nenalezeno -> []."""
+    global _last_error
+    if not class_abbrev:
+        return []
+    pool = await get_dukla_pool()
+    if pool is None:
+        return []
+
+    monday = day - timedelta(days=day.weekday())
+    day_index = day.weekday() + _DAY_BASE
+    norm_class = class_abbrev.strip().upper()
+    overrides = _load_teacher_overrides()
+
+    try:
+        async with pool.acquire() as conn:
+            table, has_week = await _pick_timetable(conn, monday)
+            if table is None:
+                return []
+            q = (
+                "SELECT DISTINCT tt.teacher_id, tt.teacher_name, tt.group_abbrev, "
+                "  COALESCE(NULLIF(tt.subject_name,''), tt.subject_abbrev) AS subject, "
+                "  tt.change_type, t.email AS db_email "
+                f"FROM {table} tt "
+                "LEFT JOIN public.teachers t ON t.id = tt.teacher_id "
+                "WHERE tt.entity_type = 'classes' "
+                "  AND tt.day_index = $1 AND tt.hour_index = $2 "
+                "  AND upper(btrim(tt.class_abbrev)) = $3"
+            )
+            args = [day_index, hour_number, norm_class]
+            if has_week:
+                q += " AND tt.week_date = $4"
+                args.append(monday)
+            rows = await conn.fetch(q, *args)
+        _last_error = None
+    except Exception as e:  # noqa: BLE001 - best effort
+        _last_error = f"class_teachers: {type(e).__name__}: {e}"
+        print("[dukla]", _last_error)
+        return []
+
+    out: dict[str, dict] = {}
+    for r in rows:
+        if str(r["change_type"] or "").strip().lower() in _REMOVED_CHANGE_TYPES:
+            continue
+        name = (r["teacher_name"] or "").strip()
+        if not name:
+            continue
+        tid = r["teacher_id"] or name
+        if tid in out:
+            continue
+        out[tid] = {
+            "teacher_id": r["teacher_id"],
+            "teacher_name": name,
+            "teacher_email": _teacher_email(name, r["db_email"], overrides),
+            "subject": r["subject"] or "",
+            "group_abbrev": r["group_abbrev"] or "",
+        }
+    return list(out.values())
+
+
+async def class_lookup_debug(
+    class_abbrev: str, day: date, hour_number: int
+) -> dict:
+    """Diagnostika pro GET /api/decisions/timetable-debug."""
+    info: dict = {
+        "enabled": _enabled(),
+        "input": {
+            "class_abbrev": class_abbrev,
+            "date": day.isoformat(),
+            "weekday": day.weekday(),
+            "monday": (day - timedelta(days=day.weekday())).isoformat(),
+            "day_index": day.weekday() + _DAY_BASE,
+            "hour_number": hour_number,
+        },
+        "table_used": None,
+        "entity_types": [],
+        "class_abbrev_samples": [],
+        "teachers": [],
+        "last_error": _last_error,
+    }
+    pool = await get_dukla_pool()
+    if pool is None:
+        info["error"] = _last_error or "duklamaps nedostupné"
+        return info
+    monday = day - timedelta(days=day.weekday())
+    try:
+        async with pool.acquire() as conn:
+            table, _ = await _pick_timetable(conn, monday)
+            info["table_used"] = table
+            for t in ("public.timetable_actual", "public.timetable_next"):
+                info["entity_types"] += [
+                    f"{t}:{r['entity_type']}"
+                    for r in await conn.fetch(
+                        f"SELECT DISTINCT entity_type FROM {t}"
+                    )
+                ]
+            src = table or "public.timetable_actual"
+            info["class_abbrev_samples"] = [
+                r["class_abbrev"]
+                for r in await conn.fetch(
+                    f"SELECT DISTINCT class_abbrev FROM {src} "
+                    "WHERE entity_type='classes' AND class_abbrev <> '' "
+                    "ORDER BY 1 LIMIT 60"
+                )
+            ]
+    except Exception as e:  # noqa: BLE001
+        info["error"] = f"{type(e).__name__}: {e}"
+    info["teachers"] = await class_teachers(class_abbrev, day, hour_number)
+    info["class_teacher"] = await class_teacher(class_abbrev)
+    return info
+
+
+# ======================================================================
+# TŘÍDNÍ UČITEL + CELÝ TÝDENNÍ ROZVRH TŘÍDY
+# ======================================================================
+
+# Sloupec v public.teachers, kterým se značí třídnictví (přidá se do duklamaps).
+_HOMEROOM_COL = os.getenv("TEACHER_HOMEROOM_COLUMN", "homeroom_class").strip()
+
+
+def _load_class_teacher_map() -> dict:
+    """CLASS_TEACHERS="4.ER=Hána Jiří; 1.ER=Petrásek Jan; ..." -> {TRIDA_UPPER: jméno}."""
+    raw = os.getenv("CLASS_TEACHERS", "")
+    out: dict[str, str] = {}
+    for chunk in raw.replace("\n", ";").split(";"):
+        if "=" not in chunk:
+            continue
+        cls, name = chunk.split("=", 1)
+        cls, name = cls.strip().upper(), name.strip()
+        if cls and name:
+            out[cls] = name
+    return out
+
+
+async def _email_for_name(conn, name: str, overrides: dict) -> str:
+    """Dohledá e-mail učitele podle jména v public.teachers (dle tokenů),
+    jinak odvodí."""
+    key = " ".join(sorted(_name_tokens(name)))
+    if key in overrides:
+        return overrides[key]
+    try:
+        rows = await conn.fetch(
+            "SELECT first_name, last_name, email FROM public.teachers "
+            "WHERE COALESCE(deleted, FALSE) = FALSE"
+        )
+        for r in rows:
+            full = f"{r['last_name'] or ''} {r['first_name'] or ''}"
+            if set(_name_tokens(full)) == set(_name_tokens(name)) and (r["email"] or "").strip():
+                return r["email"].strip()
+    except Exception:  # noqa: BLE001
+        pass
+    return _derive_teacher_email(name)
+
+
+async def class_teacher(class_abbrev: str) -> Optional[dict]:
+    """Třídní učitel dané třídy -> {name, email} nebo None.
+    Priorita: env CLASS_TEACHERS -> sloupec třídnictví v public.teachers."""
+    if not class_abbrev:
+        return None
+    norm = class_abbrev.strip().upper()
+    overrides = _load_teacher_overrides()
+
+    mapped = _load_class_teacher_map().get(norm)
+    pool = await get_dukla_pool()
+
+    if mapped:
+        email = ""
+        if pool is not None:
+            async with pool.acquire() as conn:
+                email = await _email_for_name(conn, mapped, overrides)
+        else:
+            email = _derive_teacher_email(mapped)
+        return {"name": mapped, "email": email, "source": "config"}
+
+    if pool is None:
+        return None
+    try:
+        async with pool.acquire() as conn:
+            r = await conn.fetchrow(
+                f"SELECT first_name, last_name, email FROM public.teachers "
+                f"WHERE upper(btrim({_HOMEROOM_COL})) = $1 "
+                f"  AND COALESCE(deleted, FALSE) = FALSE LIMIT 1",
+                norm,
+            )
+    except Exception as e:  # noqa: BLE001 - sloupec zatím nemusí existovat
+        print(f"[dukla] class_teacher: {type(e).__name__}: {e}")
+        return None
+    if r is None:
+        return None
+    name = f"{(r['last_name'] or '').strip()} {(r['first_name'] or '').strip()}".strip()
+    email = (r["email"] or "").strip() or _derive_teacher_email(name)
+    return {"name": name, "email": email, "source": _HOMEROOM_COL}
+
+
+async def class_week(class_abbrev: str, monday: date) -> list[dict]:
+    """Všechny (day_index, hour_index) sloty, kdy má třída podle rozvrhu výuku
+    v daném týdnu. Best-effort -> []."""
+    if not class_abbrev:
+        return []
+    pool = await get_dukla_pool()
+    if pool is None:
+        return []
+    norm = class_abbrev.strip().upper()
+    try:
+        async with pool.acquire() as conn:
+            table, has_week = await _pick_timetable(conn, monday)
+            if table is None:
+                return []
+            q = (
+                "SELECT DISTINCT day_index, hour_index, change_type "
+                f"FROM {table} WHERE entity_type='classes' "
+                "AND upper(btrim(class_abbrev)) = $1"
+            )
+            args = [norm]
+            if has_week:
+                q += " AND week_date = $2"
+                args.append(monday)
+            rows = await conn.fetch(q, *args)
+    except Exception as e:  # noqa: BLE001
+        print(f"[dukla] class_week: {type(e).__name__}: {e}")
+        return []
+    out = []
+    for r in rows:
+        if str(r["change_type"] or "").strip().lower() in _REMOVED_CHANGE_TYPES:
+            continue
+        out.append({"day_index": r["day_index"], "hour_index": r["hour_index"]})
+    return out
