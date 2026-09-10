@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+apscheduler
+ollama>=0.3
+httpx
+tzdata

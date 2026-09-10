@@ -14,6 +14,7 @@ from app.students import router_students
 from app.decisions import router_decisions
 from app.release import router_release
 from app.mail_log import router_mail_log
+from app.agent_review import router_agent_review
 
 from app.open_hours import router as open_hours_router
 from app.dukla_db import close_dukla_pool
@@ -57,6 +58,7 @@ app.include_router(open_hours_router)
 app.include_router(router_decisions)
 app.include_router(router_release)
 app.include_router(router_mail_log)
+app.include_router(router_agent_review)
 
 # Sdílená RBAC administrace z ailacore (API + React konzole na /admin/rbac/).
 app.include_router(rbac_api_router)

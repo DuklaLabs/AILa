@@ -70,6 +70,23 @@
         <div id="mailLogList">Načítám…</div>
     </section>
 
+    <!-- NÁVRHY AGENTŮ -->
+    <section class="card" id="agentProposalsCard" style="display:none;">
+        <h2>🤖 Návrhy agentů (<span id="agentProposalsCount">0</span>)</h2>
+        <p class="hint">
+            Návrhy a upozornění od agentní vrstvy. „Info“ jsou jen na vědomí,
+            „pending“ čekají na tvé rozhodnutí.
+        </p>
+        <div id="agentProposalsList">Načítám…</div>
+    </section>
+
+    <!-- MĚSÍČNÍ REPORTY -->
+    <section class="card" id="agentReportsCard" style="display:none;">
+        <h2>📈 Měsíční reporty o využívání laborky</h2>
+        <div id="agentReportsList">Načítám…</div>
+        <div id="agentReportDetail"></div>
+    </section>
+
     <!-- TÝDENNÍ MŘÍŽKA -->
     <section class="card">
         <div class="card-head">
@@ -110,6 +127,8 @@
 <script src="/static/js/pending_release.js"></script>
 <script src="/static/js/decisions_admin.js"></script>
 <script src="/static/js/mail_log.js"></script>
+<script src="/static/js/agent_proposals.js"></script>
+<script src="/static/js/agent_reports.js"></script>
 <script src="/static/js/open_hours.js?v=14"></script>
 </body>
 </html>
