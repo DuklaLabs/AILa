@@ -85,6 +85,18 @@ def start_scheduler() -> None:
         id="subject_release_watch", replace_existing=True, misfire_grace_time=3600,
     )
 
+    # #3 asistent rozhodování – před čtvrtečním digestem učitelům (13:00)
+    _scheduler.add_job(
+        lambda: _run_agent("release_advisor"),
+        CronTrigger(
+            day_of_week=os.getenv("RELEASE_ADVISOR_DOW", "thu"),
+            hour=int(os.getenv("RELEASE_ADVISOR_HOUR", "12")),
+            minute=int(os.getenv("RELEASE_ADVISOR_MINUTE", "45")),
+            timezone=_tz(),
+        ),
+        id="release_advisor", replace_existing=True, misfire_grace_time=1800,
+    )
+
     # #4 triage registrací – pravidelný poll
     _scheduler.add_job(
         lambda: _run_agent("registration_triage"),

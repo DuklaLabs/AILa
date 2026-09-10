@@ -9,12 +9,14 @@ from app.agents import (
     monthly_lab_report,
     openhours_planner,
     registration_triage,
+    release_advisor,
     subject_release_watch,
 )
 
 AGENTS = {
     monthly_lab_report.NAME: monthly_lab_report.run,
     subject_release_watch.NAME: subject_release_watch.run,
+    release_advisor.NAME: release_advisor.run,
     registration_triage.NAME: registration_triage.run,
     openhours_planner.NAME: openhours_planner.run,
 }

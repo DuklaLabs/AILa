@@ -121,8 +121,11 @@ async def upcoming_bookings(today: Optional[date] = None) -> list[dict]:
         """
         SELECT b.id, b.approved, b.attended,
                s.student_id, s.first_name, s.last_name, s.class_group, s.email,
+               s.release_teacher_ok, s.release_coord_ok,
                o.id AS open_hour_id, o.date, o.hour_number, o.start_time,
-               o.end_time, o.note, o.supervisor, o.capacity
+               o.end_time, o.note, o.supervisor, o.capacity,
+               (SELECT COUNT(*) FROM internal.bookings bb
+                 WHERE bb.open_hour_id = o.id) AS booked_count
         FROM internal.bookings b
         JOIN internal.students s ON s.student_id = b.student_id
         JOIN internal.open_hours o ON o.id = b.open_hour_id
@@ -132,6 +135,27 @@ async def upcoming_bookings(today: Optional[date] = None) -> list[dict]:
         today,
     )
     return [dict(r) for r in rows]
+
+
+async def student_release_history(student_ids: list[int]) -> dict[int, dict]:
+    """Pro dané studenty souhrn dosavadních uvolnění: kolikrát povoleno /
+    zamítnuto a jaká byla docházka (přišel / nepřišel)."""
+    if not student_ids:
+        return {}
+    rows = await _fetch(
+        """
+        SELECT b.student_id,
+               COUNT(*) FILTER (WHERE b.approved IS TRUE)  AS approved,
+               COUNT(*) FILTER (WHERE b.approved IS FALSE) AS denied,
+               COUNT(*) FILTER (WHERE b.approved IS TRUE AND b.attended IS TRUE)  AS came,
+               COUNT(*) FILTER (WHERE b.approved IS TRUE AND b.attended IS FALSE) AS no_show
+        FROM internal.bookings b
+        WHERE b.student_id = ANY($1::int[])
+        GROUP BY b.student_id
+        """,
+        student_ids,
+    )
+    return {r["student_id"]: dict(r) for r in rows}
 
 
 async def new_registrations(start: date, end: date) -> int:

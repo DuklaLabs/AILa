@@ -120,12 +120,13 @@ async def emit_flag(
     target_id=None,
     payload: Optional[dict] = None,
     summary: Optional[str] = None,
+    confidence: Optional[float] = None,
 ) -> dict:
     """Upozornění na vědomí – `status='info'`, neschvaluje se, jen se zobrazí."""
     return await _insert_proposal(
         conn, module=module, agent=agent, kind=kind, status="info",
         target_type=target_type, target_id=target_id, payload=payload,
-        summary=summary, confidence=None,
+        summary=summary, confidence=confidence,
     )
 
 
