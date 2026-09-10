@@ -188,6 +188,51 @@ async def failed_mails(start: date, end: date, limit: int = 20) -> dict:
             "samples": [dict(r) for r in samples]}
 
 
+async def open_slots_between(start: date, end: date) -> list[dict]:
+    """Otevřené hodiny s datem v `[start, end)` – aby plánovač nenavrhoval
+    duplicity (UNIQUE (date, hour_number))."""
+    rows = await _fetch(
+        """
+        SELECT id, date, hour_number, capacity, supervisor, note
+        FROM internal.open_hours
+        WHERE date >= $1 AND date < $2
+        ORDER BY date, hour_number
+        """,
+        start, end,
+    )
+    return [dict(r) for r in rows]
+
+
+async def demand_by_slot(since_days: int = 90) -> list[dict]:
+    """Historická poptávka podle (den v týdnu, vyučovací hodina). `weekday`
+    je 0=pondělí … 6=neděle. Pořadí od nejvytíženějších."""
+    rows = await _fetch(
+        """
+        WITH oh AS (
+            SELECT o.id, o.hour_number,
+                   ((EXTRACT(DOW FROM o.date)::int + 6) % 7) AS weekday,
+                   o.capacity,
+                   (SELECT COUNT(*) FROM internal.bookings b
+                     WHERE b.open_hour_id = o.id) AS booked
+            FROM internal.open_hours o
+            WHERE o.date >= CURRENT_DATE - ($1::int) AND o.hour_number IS NOT NULL
+        )
+        SELECT weekday, hour_number,
+               COUNT(*)                               AS slots_opened,
+               ROUND(AVG(booked), 2)                  AS avg_booked,
+               COALESCE(MAX(booked), 0)               AS max_booked,
+               CASE WHEN SUM(capacity) > 0
+                    THEN ROUND(SUM(booked)::numeric / SUM(capacity), 3)
+                    ELSE 0 END                        AS fill_ratio
+        FROM oh
+        GROUP BY weekday, hour_number
+        ORDER BY avg_booked DESC, fill_ratio DESC
+        """,
+        since_days,
+    )
+    return [dict(r) for r in rows]
+
+
 async def agent_flag_counts(start: date, end: date) -> list[dict]:
     """Kolik vlajek/návrhů agenti vytvořili v `[start, end)`, podle druhu."""
     rows = await _fetch(

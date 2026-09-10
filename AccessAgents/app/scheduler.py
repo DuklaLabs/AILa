@@ -95,6 +95,17 @@ def start_scheduler() -> None:
         id="registration_triage", replace_existing=True, misfire_grace_time=600,
     )
 
+    # #5 plánovač otevřených hodin – týdně (dopoledne, před plánováním týdne)
+    _scheduler.add_job(
+        lambda: _run_agent("openhours_planner"),
+        CronTrigger(
+            day_of_week=os.getenv("OPENHOURS_PLANNER_DOW", "thu"),
+            hour=int(os.getenv("OPENHOURS_PLANNER_HOUR", "9")),
+            minute=0, timezone=_tz(),
+        ),
+        id="openhours_planner", replace_existing=True, misfire_grace_time=3600,
+    )
+
     _scheduler.start()
     _log("plánovač běží:", ", ".join(j["id"] for j in get_jobs()))
 

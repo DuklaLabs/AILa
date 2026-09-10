@@ -14,9 +14,11 @@ pak se návrh označí jako approved (vše v jedné transakci + audit).
 """
 from __future__ import annotations
 
+import datetime
 import json
 from typing import Optional
 
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
@@ -65,9 +67,66 @@ async def _apply(conn, prop: dict) -> dict:
             raise HTTPException(404, "Studentský účet nenalezen.")
         return {"approved_student_user_id": int(tid)}
 
+    if kind == "open_hours.week_plan":
+        return await _apply_week_plan(conn, prop["payload"] or {})
+
     raise HTTPException(
         422, f"Schválení návrhu typu {kind!r} zatím není podporováno."
     )
+
+
+async def _apply_week_plan(conn, payload: dict) -> dict:
+    """Založí navržené otevřené hodiny stávající logikou z app.open_hours.
+    Slot, který nejde založit (duplicita, dozor učí, neplatná hodina),
+    se přeskočí – ostatní se založí."""
+    from app.open_hours import (
+        _PERIODS_BY_NUMBER, _clean_supervisor, _reject_if_supervisor_teaching,
+        _require_supervisor,
+    )
+
+    created: list[dict] = []
+    skipped: list[dict] = []
+    for s in payload.get("slots") or []:
+        try:
+            hn = int(s["hour_number"])
+            d = datetime.date.fromisoformat(str(s["date"]))
+        except (KeyError, ValueError, TypeError):
+            skipped.append({"slot": s, "why": "neplatné datum/hodina"})
+            continue
+        if hn not in _PERIODS_BY_NUMBER:
+            skipped.append({"slot": s, "why": "neplatná vyučovací hodina"})
+            continue
+        sup = _clean_supervisor(s.get("supervisor"))
+        try:
+            _require_supervisor(sup)
+            await _reject_if_supervisor_teaching(sup, d, hn)
+        except HTTPException as e:
+            skipped.append({"slot": s, "why": e.detail})
+            continue
+        if await conn.fetchval(
+            "SELECT 1 FROM internal.open_hours WHERE date = $1 AND hour_number = $2",
+            d, hn,
+        ):
+            skipped.append({"slot": s, "why": "termín už existuje"})
+            continue
+        start_t, end_t = _PERIODS_BY_NUMBER[hn]
+        cap = max(1, int(s.get("capacity") or 4))
+        try:
+            async with conn.transaction():  # savepoint – chyba nezruší celý review
+                await conn.execute(
+                    """
+                    INSERT INTO internal.open_hours
+                        (weekday, date, hour_number, start_time, end_time,
+                         capacity, note, supervisor)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    """,
+                    d.strftime("%A"), d, hn, start_t, end_t, cap,
+                    s.get("reason") or "Návrh plánovače hodin", sup,
+                )
+            created.append({"date": s["date"], "hour_number": hn, "supervisor": sup})
+        except asyncpg.UniqueViolationError:
+            skipped.append({"slot": s, "why": "duplicita"})
+    return {"created": created, "skipped": skipped}
 
 
 async def _review(proposal_id: int, *, approve: bool, note: Optional[str], user: User):
