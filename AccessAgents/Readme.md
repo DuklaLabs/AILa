@@ -24,10 +24,11 @@ migrace `0017_agent_layer`.
 
 | name | trigger | úroveň | výstup |
 |---|---|---|---|
-| `monthly_lab_report` | 1. den v měsíci | pouze informuje + uloží | `agent.reports` + e-mail koordinátorům |
-
-_(další – `subject_release_watch`, `release_advisor`, `registration_triage`,
-`openhours_planner` – dle plánu.)_
+| `monthly_lab_report` | 1. den v měsíci | informuje + uloží | `agent.reports` + e-mail koordinátorům |
+| `subject_release_watch` | denně večer | informuje + označí | `agent.proposals` `status='info'` + e-mail |
+| `release_advisor` | čt 12:45 (před digestem) | navrhuje (jen text) | `agent.proposals` `kind='release.advice'` → blok v digestu |
+| `registration_triage` | poll á 15 min | navrhuje | `agent.proposals` `kind='registration.approve'` → schválí admin |
+| `openhours_planner` | týdně (čt 9:00) | navrhuje | `agent.proposals` `kind='open_hours.week_plan'` → potvrdí koordinátor |
 
 ## Endpointy
 
