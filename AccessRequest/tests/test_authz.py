@@ -34,9 +34,12 @@ CASES = [
     ("GET", "/api/agents/proposals", "agent.proposal:review"),
     ("POST", "/api/agents/proposals/1/approve", "agent.proposal:review"),
     ("POST", "/api/agents/proposals/1/reject", "agent.proposal:review"),
+    ("POST", "/api/agents/proposals/1/ack", "agent.proposal:review"),
     ("GET", "/api/agents/reports", "agent.report:read"),
     ("GET", "/api/agents/reports/1", "agent.report:read"),
     ("GET", "/api/agents/runs", "agent.proposal:review"),
+    ("GET", "/api/agents/registry", "agent.proposal:review"),
+    ("POST", "/api/agents/run/monthly_lab_report", "agent.run:trigger"),
 ]
 
 

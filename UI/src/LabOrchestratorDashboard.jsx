@@ -10,13 +10,40 @@ import "./LabOrchestratorDashboard.css";
  * - pravý panel: detail vybraného agenta (např. stroje)
  */
 
+// Položky se `href` navigují na reálnou (cross-origin) subdoménu dané služby –
+// SSO cookie (SESSION_COOKIE_DOMAIN=".aila.localhost") zajišťuje, že tam
+// uživatel není znovu vyzván k přihlášení. Položky s `comingSoon` zatím nemají
+// žádný backend/UI a zůstávají jen mock náhledem v pravém panelu.
 const AGENTS = [
   { id: "orchestrator", name: "AILa", description: "Hlavní agent, který rozděluje práci." },
-  { id: "access", name: "Vrátný", description: "Řeší přístupy, RFID, sessions." },
-  { id: "machines", name: "Strojník", description: "Správa strojů a jejich stavů." },
-  { id: "inventory", name: "Skladník", description: "Materiál, sklady, zásoby." },
-  { id: "orders", name: "Nákupčík", description: "Objednávky materiálu." },
-  { id: "analytics", name: "Analytik", description: "Přehledy, statistiky, reporty." },
+  {
+    id: "assistant",
+    name: "Generál",
+    description: "Chat s asistentem – zatím ukázkový, čeká na napojení na backend (General).",
+    comingSoon: true,
+  },
+  {
+    id: "access",
+    name: "Vrátný",
+    description: "Přístupy, RFID, registrace a otevřené hodiny.",
+    href: "http://access.aila.localhost/admin",
+  },
+  {
+    id: "rbac",
+    name: "Oprávnění",
+    description: "Správa rolí a oprávnění napříč systémem (RBAC konzole).",
+    href: "http://access.aila.localhost/admin/rbac/",
+  },
+  {
+    id: "projects",
+    name: "Projekty",
+    description: "Kanban, Gantt a sledování času na projektech.",
+    href: "http://projects.aila.localhost/app/projects/",
+  },
+  { id: "machines", name: "Strojník", description: "Správa strojů a jejich stavů.", comingSoon: true },
+  { id: "inventory", name: "Skladník", description: "Materiál, sklady, zásoby.", comingSoon: true },
+  { id: "orders", name: "Nákupčík", description: "Objednávky materiálu.", comingSoon: true },
+  { id: "analytics", name: "Analytik", description: "Přehledy, statistiky, reporty.", comingSoon: true },
 ];
 
 const MOCK_MACHINES = [
@@ -24,12 +51,6 @@ const MOCK_MACHINES = [
   { id: 2, name: "FDM tiskárna 2", type: "FDM", status: "idle", currentUser: null },
   { id: 3, name: "Laser 1", type: "Laser", status: "error", currentUser: "Petr Svoboda" },
   { id: 4, name: "SLA tiskárna 1", type: "SLA", status: "running", currentUser: "Eva Dvořáková" },
-];
-
-const MOCK_USERS_IN_LAB = [
-  { id: 1, name: "Jan Novák", since: "10:12" },
-  { id: 2, name: "Eva Dvořáková", since: "10:45" },
-  { id: 3, name: "Petr Svoboda", since: "11:05" },
 ];
 
 const statusColor = (status) => {
@@ -52,40 +73,20 @@ export default function LabOrchestratorDashboard() {
     { from: "agent", text: "Zdravím, jsem Generál. Jak ti dnes můžu pomoct v laboratoři?" },
   ]);
   const [input, setInput] = useState("");
-  const [isSending, setIsSending] = useState(false);
 
-  const handleSend = async () => {
+  // Chat zatím nemá skutečný backend (General je jen nenasazený prototyp bez
+  // /api/chat) – místo síťového volání jen zobrazíme, že asistent zatím čeká
+  // na napojení. Až bude General rozšířený o tool-calling, přijde sem znovu
+  // fetch na `assistant.aila.localhost`.
+  const handleSend = () => {
     if (!input.trim()) return;
     const userMessage = { from: "user", text: input.trim() };
-    setMessages((prev) => [...prev, userMessage]);
+    const agentMessage = {
+      from: "agent",
+      text: "Asistent zatím není napojen na backend – bude dostupný v příští fázi.",
+    };
+    setMessages((prev) => [...prev, userMessage, agentMessage]);
     setInput("");
-    setIsSending(true);
-
-    try {
-      // Volání backendu – přizpůsob si URL podle toho, kde poběží agent
-      const resp = await fetch("http://localhost:8000/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage.text }),
-      });
-
-      let replyText = "Něco se pokazilo na straně generála.";
-      if (resp.ok) {
-        const data = await resp.json();
-        replyText = data.reply || replyText;
-      }
-
-      const agentMessage = { from: "agent", text: replyText };
-      setMessages((prev) => [...prev, agentMessage]);
-    } catch (err) {
-      const agentMessage = {
-        from: "agent",
-        text: "Nepodařilo se kontaktovat backend agenta. Zkontroluj server.",
-      };
-      setMessages((prev) => [...prev, agentMessage]);
-    } finally {
-      setIsSending(false);
-    }
   };
 
   const handleKeyDown = (e) => {
@@ -128,9 +129,16 @@ export default function LabOrchestratorDashboard() {
                       "lab-agent-item" +
                       (selectedAgent.id === agent.id ? " lab-agent-item-active" : "")
                     }
-                    onClick={() => setSelectedAgent(agent)}
+                    onClick={() =>
+                      agent.href ? (window.location.href = agent.href) : setSelectedAgent(agent)
+                    }
                   >
-                    <div className="lab-agent-name">{agent.name}</div>
+                    <div className="lab-agent-name">
+                      {agent.name}
+                      {agent.comingSoon && (
+                        <span className="lab-agent-badge">Připravujeme</span>
+                      )}
+                    </div>
                     <div className="lab-agent-desc">{agent.description}</div>
                   </button>
                 ))}
@@ -182,9 +190,9 @@ export default function LabOrchestratorDashboard() {
               <button
                 className="lab-chat-send-btn"
                 onClick={handleSend}
-                disabled={isSending || !input.trim()}
+                disabled={!input.trim()}
               >
-                {isSending ? "Odesílám..." : "Odeslat"}
+                Odeslat
               </button>
             </div>
           </div>
@@ -200,11 +208,10 @@ export default function LabOrchestratorDashboard() {
               </div>
             </div>
 
-            {/* Obsah podle typu agenta */}
+            {/* Obsah podle typu agenta. `access`/`rbac`/`projects` sem nikdy
+                nedorazí – jejich kliknutí naviguje pryč (mají `href`). */}
             {selectedAgent.id === "machines" ? (
               <MachinesOverview />
-            ) : selectedAgent.id === "access" ? (
-              <AccessOverview />
             ) : selectedAgent.id === "inventory" ? (
               <InventoryOverview />
             ) : (
@@ -253,26 +260,6 @@ function MachinesOverview() {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-/** Přehled lidí v laboratoři pro Access Agenta */
-function AccessOverview() {
-  return (
-    <div className="lab-detail-content">
-      <h3 className="lab-section-title">Aktuálně v laboratoři</h3>
-      <ul className="lab-list">
-        {MOCK_USERS_IN_LAB.map((u) => (
-          <li key={u.id} className="lab-list-item">
-            <div>
-              <div className="lab-list-title">{u.name}</div>
-              <div className="lab-list-subtitle">Od {u.since}</div>
-            </div>
-            <button className="lab-list-btn">Detail uživatele</button>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

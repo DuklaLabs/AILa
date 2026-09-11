@@ -151,6 +151,20 @@
   color: #aaa;
 }
 
+.lab-agent-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: #f5f5f5;
+  background: #444;
+  border-radius: 999px;
+  padding: 2px 6px;
+  vertical-align: middle;
+}
+
 /* Center */
 
 .lab-center {

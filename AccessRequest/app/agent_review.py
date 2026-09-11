@@ -16,13 +16,16 @@ from __future__ import annotations
 
 import datetime
 import json
+import os
 from typing import Optional
 
 import asyncpg
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from ailacore.agents import get_proposal_for_update, list_proposals, mark_reviewed
+from ailacore.audit import record_audit
 from ailacore.db import get_pool
 from ailacore.models import User
 from ailacore.rbac import require_permission
@@ -33,6 +36,14 @@ _REVIEW = [Depends(require_permission("agent.proposal:review"))]
 _REPORT = [Depends(require_permission("agent.report:read"))]
 
 MODULE = "access"
+
+
+def _agents_base_url() -> str:
+    return os.getenv("ACCESS_AGENTS_URL", "http://access-agents:8007").rstrip("/")
+
+
+def _agents_run_token() -> str:
+    return os.getenv("ACCESS_AGENT_RUN_TOKEN", "").strip()
 
 
 class ReviewIn(BaseModel):
@@ -58,14 +69,15 @@ async def _apply(conn, prop: dict) -> dict:
     tid = prop["target_id"]
 
     if kind == "registration.approve":
-        res = await conn.execute(
+        row = await conn.fetchrow(
             "UPDATE auth.users SET is_active = TRUE "
-            "WHERE id = $1 AND role = 'student'",
+            "WHERE id = $1 AND role = 'student' "
+            "RETURNING COALESCE(full_name, username) AS name",
             int(tid),
         )
-        if res == "UPDATE 0":
+        if row is None:
             raise HTTPException(404, "Studentský účet nenalezen.")
-        return {"approved_student_user_id": int(tid)}
+        return {"approved_student_user_id": int(tid), "student_name": row["name"]}
 
     if kind == "open_hours.week_plan":
         return await _apply_week_plan(conn, prop["payload"] or {})
@@ -165,6 +177,48 @@ async def reject_proposal(
     return await _review(proposal_id, approve=False, note=body.note, user=user)
 
 
+@router_agent_review.post("/proposals/{proposal_id}/ack")
+async def acknowledge_proposal(
+    proposal_id: int,
+    body: ReviewIn = ReviewIn(),
+    user: User = Depends(require_permission("agent.proposal:review")),
+):
+    """Odbaví `info` vlajku (upozornění na vědomí) – `status='acknowledged'`.
+    Na rozdíl od approve/reject nemá žádnou „apply" akci."""
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            prop = await get_proposal_for_update(conn, proposal_id)
+            if prop is None or prop["module"] != MODULE:
+                raise HTTPException(404, "Návrh neexistuje.")
+            if prop["status"] != "info":
+                raise HTTPException(
+                    409,
+                    f"Vzít na vědomí jde jen upozornění (info), tohle je "
+                    f"{prop['status']}.",
+                )
+            await conn.execute(
+                """
+                UPDATE agent.proposals
+                   SET status = 'acknowledged',
+                       reviewed_by_user_id = $2,
+                       reviewed_at = now(),
+                       review_note = $3
+                 WHERE id = $1
+                """,
+                proposal_id, user.id, body.note,
+            )
+            await record_audit(
+                conn,
+                actor=user,
+                action="access.agent.proposal.ack",
+                target_type="agent_proposal",
+                target_id=str(proposal_id),
+                detail={"kind": prop["kind"], "agent": prop["agent"]},
+            )
+    return {"id": proposal_id, "status": "acknowledged"}
+
+
 @router_agent_review.get("/reports", dependencies=_REPORT)
 async def get_reports(limit: int = Query(24, ge=1, le=200)):
     pool = await get_pool()
@@ -225,3 +279,53 @@ async def get_runs(limit: int = Query(50, ge=1, le=500)):
             d["detail"] = json.loads(d["detail"])
         out.append(d)
     return out
+
+
+# --- ovládání služby access-agents (proxy) --------------------------------
+# access-agents běží samostatně na portu 8007. Admin panel (tady) k němu mluví
+# přes tenký proxy, ať uživatel spouští agenty z jedné obrazovky a nemusí na
+# druhou službu ani znát sdílený token.
+
+
+@router_agent_review.get("/registry", dependencies=_REVIEW)
+async def agents_registry():
+    """Seznam agentů ze služby access-agents. Když je nedostupná, vrátí prázdno
+    (UI pak spouštěcí panel schová)."""
+    try:
+        async with httpx.AsyncClient(timeout=5) as c:
+            r = await c.get(f"{_agents_base_url()}/agents")
+        r.raise_for_status()
+        return r.json()
+    except (httpx.HTTPError, ValueError):
+        return {"agents": []}
+
+
+@router_agent_review.post("/run/{agent}", dependencies=[
+    Depends(require_permission("agent.run:trigger"))
+])
+async def run_agent_now(agent: str):
+    """Ručně spustí agenta ve službě access-agents (mimo plánovač).
+    Běh je synchronní a přes LLM může trvat desítky sekund."""
+    token = _agents_run_token()
+    if not token:
+        raise HTTPException(
+            503,
+            "Spouštění agentů z panelu není nakonfigurované "
+            "(chybí ACCESS_AGENT_RUN_TOKEN).",
+        )
+    try:
+        async with httpx.AsyncClient(timeout=180) as c:
+            resp = await c.post(
+                f"{_agents_base_url()}/run/{agent}",
+                headers={"X-Agent-Token": token},
+            )
+    except httpx.HTTPError as e:
+        raise HTTPException(502, f"Služba access-agents neodpověděla: {e}")
+    if resp.status_code != 200:
+        detail = resp.text
+        try:
+            detail = resp.json().get("detail", detail)
+        except ValueError:
+            pass
+        raise HTTPException(resp.status_code, detail)
+    return resp.json()

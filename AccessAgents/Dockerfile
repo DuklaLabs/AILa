@@ -17,4 +17,4 @@ COPY AccessAgents/ .
 
 EXPOSE 8007
 
-CMD ["python", "app/run.py"]
+CMD ["python", "-m", "app.run"]

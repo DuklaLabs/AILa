@@ -38,13 +38,18 @@ migrace `0017_agent_layer`.
   s `agent.run:trigger` (cookie/bearer), nebo `X-Agent-Token` shodný s
   `ACCESS_AGENT_RUN_TOKEN`.
 
+Admin panel `access-request-server` má nad těmito endpointy proxy
+(`/api/agents/run/{agent}`, `/api/agents/registry`) – karta „Běhy a spouštění
+agentů“ spouští agenty přes `ACCESS_AGENTS_URL` + `ACCESS_AGENT_RUN_TOKEN`
+(obě proměnné musí mít obě služby stejné).
+
 ## Konfigurace (env)
 
 | Proměnná | Význam | Default |
 |---|---|---|
 | `ACCESS_AGENT_ENABLED` | **bezpečná brzda** – `false` = plánovač nezaregistruje joby | `false` |
 | `OLLAMA_HOST` | Ollama server | `http://ollama:11434` |
-| `AILA_AGENT_MODEL` | model | `llama3.2:8b-instruct` |
+| `AILA_AGENT_MODEL` | model (compose jede `qwen2.5:latest`) | `llama3.2:8b-instruct` |
 | `MESSENGER_URL` | služba pro odchozí e-maily | `http://messenger:8005` |
 | `SCHEDULER_TZ` | pásmo plánovače | `Europe/Prague` |
 | `MONTHLY_REPORT_DAY` / `MONTHLY_REPORT_HOUR` | čas #1 | `1` / `6` |

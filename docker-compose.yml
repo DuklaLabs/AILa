@@ -100,9 +100,18 @@ services:
       # DUKLA_SUPERVISORS na adresy (oddělovač ";", volitelně víc řádků).
       MESSENGER_URL: http://messenger:8005
       SUPERVISOR_EMAILS: "Bc. Jan Petrášek=petrasek@spssecb.cz"
+      # Ovládání agentní vrstvy z admin panelu (karta „Běhy a spouštění agentů“).
+      # ACCESS_AGENT_RUN_TOKEN musí být STEJNÝ jako u služby access-agents.
+      # V produkci silná náhodná hodnota z prostředí, necommitovat.
+      ACCESS_AGENTS_URL: http://access-agents:8007
+      ACCESS_AGENT_RUN_TOKEN: "dev-run-token"
       # Veřejná URL serveru — odkazy v e-mailu (rozhodovací stránka) z ní
       # vycházejí. V produkci nastavit na skutečnou (https) adresu.
-      PUBLIC_BASE_URL: "http://localhost:8003"
+      PUBLIC_BASE_URL: "http://access.aila.localhost"
+      # Sdílená doména session cookie (dl_session) napříč službami za gateway
+      # (viz Gateway/). Prázdné/nenastavené = cookie platí jen pro přesný host,
+      # co ji vydal (dnešní chování, žádné SSO). V produkci ".labs.<doména>".
+      SESSION_COOKIE_DOMAIN: ".aila.localhost"
       # Podpis rozhodovacích odkazů. V produkci nastavit na náhodnou hodnotu;
       # její změna zneplatní všechny dříve rozeslané odkazy.
       DECISION_SECRET: "dev-decision-secret-zmen-v-produkci"
@@ -212,7 +221,11 @@ services:
       POSTGRES_PASSWORD: agentpass
       POSTGRES_HOST: postgres
       # Veřejná URL serveru (odkazy v UI/e-mailech). V produkci https adresa.
-      PUBLIC_BASE_URL: "http://localhost:8006"
+      PUBLIC_BASE_URL: "http://projects.aila.localhost"
+      # Sdílená doména session cookie (dl_session) napříč službami za gateway
+      # (viz Gateway/). Prázdné/nenastavené = cookie platí jen pro přesný host,
+      # co ji vydal (dnešní chování, žádné SSO). V produkci ".labs.<doména>".
+      SESSION_COOKIE_DOMAIN: ".aila.localhost"
       # Interní hodinová sazba a týdenní kapacita člověka pro finanční/kapacitní
       # výpočty. Přednost má řádek v projects.settings, pak tyhle env, pak default.
       PROJECTS_HOURLY_RATE_CZK: "500"
@@ -250,9 +263,9 @@ services:
       POSTGRES_PASSWORD: agentpass
       POSTGRES_HOST: postgres
       MESSENGER_URL: http://messenger:8005
-      PUBLIC_BASE_URL: "http://localhost:8003"
+      PUBLIC_BASE_URL: "http://access.aila.localhost"
       OLLAMA_HOST: http://ollama:11434
-      AILA_AGENT_MODEL: "llama3.2:8b-instruct"
+      AILA_AGENT_MODEL: "qwen2.5:latest"
       # BEZPEČNÁ BRZDA: "false" = plánovač nezaregistruje žádný job.
       # Agenti jdou pořád spustit ručně přes POST /run/{agent}. Zapínat
       # postupně, agent po agentovi.
@@ -263,8 +276,9 @@ services:
       MONTHLY_REPORT_HOUR: "6"
       # #2 hlídač uvolněných hodin podle předmětu (práh streaku)
       SUBJECT_RELEASE_STREAK: "3"
-      # sdílený tajný token pro POST /run/{agent} bez session (skripty/testy)
-      ACCESS_AGENT_RUN_TOKEN: ""
+      # sdílený tajný token pro POST /run/{agent} bez session (skripty/testy
+      # i proxy z admin panelu). STEJNÁ hodnota jako u access-request-server.
+      ACCESS_AGENT_RUN_TOKEN: "dev-run-token"
       # adresář koordinátorů (jinak hodnoty ze SUPERVISOR_EMAILS)
       RELEASE_COORDINATOR_EMAILS: ""
       SUPERVISOR_EMAILS: "Bc. Jan Petrášek=petrasek@spssecb.cz"
@@ -278,7 +292,27 @@ services:
       DUKLA_DAY_BASE: "0"
       DUKLA_PERMANENT_FALLBACK: "0"
 
-
+  # Reverse proxy (Caddy) sjednocující přístup pod jednu doménu: portálový
+  # shell na aila.localhost, jednotlivé služby na svých subdoménách
+  # (access.aila.localhost, projects.aila.localhost, ...). Viz Gateway/Caddyfile.
+  # Díky SESSION_COOKIE_DOMAIN výše se tu přihlášení sdílí napříč službami (SSO).
+  gateway:
+    build:
+      context: .
+      dockerfile: Gateway/Dockerfile
+    container_name: aila-gateway
+    ports:
+      - "80:80"
+    networks:
+      - agentnet
+    depends_on:
+      access-request-server:
+        condition: service_started
+      projects-server:
+        condition: service_started
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
 
 networks:
   agentnet:
@@ -286,3 +320,5 @@ networks:
 volumes:
   postgres_data:
   ollama-data:
+  caddy_data:
+  caddy_config:
