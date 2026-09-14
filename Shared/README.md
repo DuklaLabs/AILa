@@ -6,6 +6,7 @@ Sdílený balíček pro všechny AILa služby. Cíl: nová služba si nikdy sama
 - `ailacore.auth` — RFID + heslové SSO nad `auth.users`/`auth.rfid_cards`/`auth.web_sessions`. `get_current_user` je FastAPI dependency pro chráněné routy, `require_role("admin", "staff")` pro routy omezené na roli (hrubá kontrola jedné role).
 - `ailacore.rbac` — granulární RBAC: kontrola na úrovni jednotlivých oprávnění (`require_permission(...)`, `user_has_permission(...)`). Viz níže.
 - `ailacore.models` — sdílené Pydantic modely (`User`, `RFIDCard`, `Role`, `Permission`).
+- `ailacore.pocket` — klient na [Pocket API](https://docs.heypocketai.com/docs/api) (nahrávky/přepisy/AI shrnutí schůzek). Kterýkoli agent tak může tahat přepisy schůzek — jako podklad pro odpověď, nebo jako instrukční materiál pro jiného agenta — bez vlastní httpx logiky. Viz níže.
 
 ## Použití v nové službě
 
@@ -41,6 +42,23 @@ async def delete_something(id: int):
 ```
 
 Žádná služba by neměla mít vlastní `DB_CONFIG` dict ani vlastní `require_login`/cookie kontrolu — obojí nahrazuje tento balíček.
+
+## Pocket (`ailacore.pocket`)
+
+Klient nad veřejným Pocket API (nahrávky schůzek, přepisy, AI shrnutí).
+Vyžaduje v env proměnnou `POCKET_API_KEY` (org API klíč `pk_xxx` z nastavení
+Pocket organizace); `POCKET_BASE_URL` má rozumný default a měnit se nemusí.
+
+```python
+from ailacore.pocket import list_recordings, get_recording, search_recordings
+
+recordings = await list_recordings(limit=10)
+detail = await get_recording(recordings["data"][0]["id"])  # včetně transcript + summary
+hits = await search_recordings("rozpočet na příští čtvrtletí")
+```
+
+Bez nastaveného `POCKET_API_KEY` každé volání skončí `RuntimeError` hned na
+začátku, ne až chybou 401 z Pocket.
 
 ## RBAC (granular)
 
