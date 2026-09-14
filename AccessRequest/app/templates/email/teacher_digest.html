@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+</head>
+<body style="margin:0; padding:0; background:#f3f4f6; font-family:Arial, Helvetica, sans-serif; color:#111827;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6; padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:8px; padding:24px;">
+          <tr>
+            <td>
+              <h2 style="margin:0 0 8px;">Žádosti o uvolnění z výuky</h2>
+              <p style="margin:0 0 16px; color:#4b5563; font-size:14px;">
+                Následující studenti si rezervovali hodinu v DuklaLabs, která koliduje s tvojí výukou.
+                U každého řádku můžeš rozhodnout jednotlivě, nebo použij hromadné tlačítko dole.
+              </p>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; font-size:14px; margin-bottom:16px;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:2px solid #e5e7eb;">
+                    <th style="padding:8px 4px;">Student</th>
+                    <th style="padding:8px 4px;">Třída</th>
+                    <th style="padding:8px 4px;">Datum / hodina</th>
+                    <th style="padding:8px 4px;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in items %}
+                  <tr style="border-bottom:1px solid #e5e7eb;">
+                    <td style="padding:8px 4px;">{{ item.first_name }} {{ item.last_name }}</td>
+                    <td style="padding:8px 4px;">{{ item.class_group }}</td>
+                    <td style="padding:8px 4px;">{{ item.date }}, {{ item.subject_name }} ({{ item.hour_number }}.)</td>
+                    <td style="padding:8px 4px; white-space:nowrap;">
+                      <a href="{{ public_base_url }}/excuse-requests/{{ item.token }}"
+                         style="display:inline-block; padding:6px 10px; background:#2563eb; color:#ffffff; text-decoration:none; border-radius:4px; font-size:13px;">Uvolnit / Zamítnout</a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+
+              <p style="margin:0 0 8px; font-size:14px; color:#4b5563;">Nebo vyřiď všechny žádosti z tohoto e-mailu najednou:</p>
+              <a href="{{ public_base_url }}/excuse-requests/batch/{{ batch_token }}?action=approve"
+                 style="display:inline-block; padding:10px 16px; margin-right:8px; background:#16a34a; color:#ffffff; text-decoration:none; border-radius:4px; font-size:14px;">Uvolnit všechny</a>
+              <a href="{{ public_base_url }}/excuse-requests/batch/{{ batch_token }}?action=deny"
+                 style="display:inline-block; padding:10px 16px; background:#dc2626; color:#ffffff; text-decoration:none; border-radius:4px; font-size:14px;">Zamítnout všechny</a>
+
+              <p style="margin:24px 0 0; font-size:12px; color:#9ca3af;">DuklaLabs — automatický týdenní souhrn žádostí o uvolnění.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

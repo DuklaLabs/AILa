@@ -7,8 +7,13 @@ here talks to an LLM; it's a plain transactional insert.
 Booking now requires login: the student is identified from their session
 (ailacore.auth), not from a freely-typed email — the old flow let anyone
 book on behalf of any registered email with zero proof of identity.
+
+If the booked slot overlaps a regular lesson (per DuklaMaps), this used to
+auto-write internal.excused — now it queues a pending internal.excuse_requests
+row instead; the teacher decides via the weekly digest (excuse_digest.py).
 """
 import datetime
+import logging
 import secrets
 
 import asyncpg
@@ -22,8 +27,100 @@ from ailacore.models import User
 from app import dukla_db
 from app.dukla_db import class_teachers, class_week
 from app.notify import notify_booking
+from app.missing_teacher_tickets import record_missing_teacher
+from app.timetable_client import find_class_lesson, find_teacher_email
 
 router = APIRouter(prefix="/api", tags=["Bookings"])
+log = logging.getLogger(__name__)
+
+
+async def _precheck_lesson_conflict(student, slot) -> dict | None:
+    """Checks DuklaMaps for a lesson conflict BEFORE the booking transaction
+    opens — this is a cross-process network call, so it must not run under
+    the open_hours row lock (FOR UPDATE), and a rejection here (missing
+    teacher email) must not touch internal.bookings at all, so there's
+    nothing to roll back.
+
+    Returns None if there's no conflict, or DuklaMaps couldn't be reached
+    (fail-open — a flaky DuklaMaps must never block booking, same principle
+    as before). Returns a dict with the lesson + teacher_email if there IS
+    a conflict and the teacher has a usable email on file. Raises
+    HTTPException(422) directly — after recording a missing-teacher ticket —
+    if there's a conflict but the teacher has no usable email (fail-closed:
+    the booking is rejected outright, per product decision)."""
+    class_group = student["class_group"]
+    hour_number = slot["hour_number"]
+    if hour_number is None or not class_group:
+        return None
+
+    try:
+        lesson = await find_class_lesson(class_group, slot["date"], hour_number)
+    except (OSError, asyncpg.PostgresError) as exc:
+        log.warning("DuklaMaps timetable lookup failed (fail-open, booking proceeds): %s", exc)
+        return None
+    if lesson is None:
+        return None
+
+    teacher_id = lesson["teacher_id"]
+    if not teacher_id:
+        # Synced row with no teacher identity at all (older data / unassigned
+        # substitution) — nothing to dedupe a ticket on, nothing to email.
+        # Fail-open: proceed without the excuse workflow for this booking.
+        log.warning("Lesson found but no teacher_id on file, skipping excuse workflow: %s", lesson)
+        return None
+
+    try:
+        teacher_email = await find_teacher_email(teacher_id)
+    except (OSError, asyncpg.PostgresError) as exc:
+        level = log.error if isinstance(exc, asyncpg.InsufficientPrivilegeError) else log.warning
+        level("DuklaMaps teacher-email lookup failed (fail-open, booking proceeds): %s", exc)
+        return None
+
+    if not teacher_email:
+        await record_missing_teacher(teacher_id, lesson["teacher_name"])
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Tuto hodinu nelze zapsat: vyučující {lesson['teacher_name']} nemá v systému e-mail. "
+                "Byl vytvořen tiket pro administrátora, zkus to prosím později."
+            ),
+        )
+
+    lesson["teacher_email"] = teacher_email
+    return lesson
+
+
+async def _create_pending_excuse_request(conn, student_id: int, booking_id: int, lesson: dict, lesson_date) -> None:
+    lesson_id = await conn.fetchval(
+        """
+        INSERT INTO internal.lesson_hours (weekday, date, class_name, subject_name, teacher_name, hour_number)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (date, class_name, hour_number) DO UPDATE SET
+            subject_name = EXCLUDED.subject_name,
+            teacher_name = EXCLUDED.teacher_name
+        RETURNING lesson_id
+        """,
+        lesson["weekday"],
+        lesson_date,
+        lesson["class_name"],
+        lesson["subject_name"],
+        lesson["teacher_name"],
+        lesson["hour_number"],
+    )
+    await conn.execute(
+        """
+        INSERT INTO internal.excuse_requests
+            (student_id, booking_id, lesson_id, teacher_id, teacher_email, token)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (student_id, lesson_id) WHERE status = 'pending' DO NOTHING
+        """,
+        student_id,
+        booking_id,
+        lesson_id,
+        lesson["teacher_id"],
+        lesson["teacher_email"],
+        secrets.token_urlsafe(32),
+    )
 
 
 class BookHourRequest(BaseModel):
@@ -33,6 +130,30 @@ class BookHourRequest(BaseModel):
 @router.post("/book-hour")
 async def book_hour(payload: BookHourRequest, user: User = Depends(get_current_user)):
     pool = await get_pool()
+
+    # Step 1 — cheap, lock-free reads to get what the precheck needs.
+    async with pool.acquire() as conn:
+        student = await conn.fetchrow(
+            "SELECT student_id, class_group FROM internal.students WHERE user_id = $1",
+            user.id,
+        )
+        if student is None:
+            raise HTTPException(
+                status_code=404,
+                detail="K tomuto účtu není přiřazený studentský profil.",
+            )
+        slot = await conn.fetchrow(
+            "SELECT id, capacity, date, hour_number FROM internal.open_hours WHERE id = $1",
+            payload.hour_id,
+        )
+        if slot is None:
+            raise HTTPException(status_code=404, detail="Termín neexistuje.")
+
+    # Step 2 — DuklaMaps precheck, outside any agentdb transaction/lock.
+    conflict = await _precheck_lesson_conflict(student, slot)
+
+    # Step 3 — the real transaction: lock, capacity check, insert booking,
+    # and (if there's a conflict) queue a pending excuse request.
     async with pool.acquire() as conn:
         async with conn.transaction():
             student = await conn.fetchrow(
@@ -49,12 +170,12 @@ async def book_hour(payload: BookHourRequest, user: User = Depends(get_current_u
             # FOR UPDATE locks the slot row for the rest of this transaction,
             # so two concurrent bookings into the same slot can't both pass
             # the capacity check below before either commits.
-            slot = await conn.fetchrow(
+            locked_slot = await conn.fetchrow(
                 "SELECT id, capacity, date, hour_number "
                 "FROM internal.open_hours WHERE id = $1 FOR UPDATE",
                 payload.hour_id,
             )
-            if slot is None:
+            if locked_slot is None:
                 raise HTTPException(status_code=404, detail="Termín neexistuje.")
 
             # Uvolňování z výuky: dokud nemá souhlas třídního učitele I
@@ -64,10 +185,10 @@ async def book_hour(payload: BookHourRequest, user: User = Depends(get_current_u
                 student["release_teacher_ok"] is True
                 and student["release_coord_ok"] is True
             )
-            if not release_ok and slot["hour_number"] is not None:
+            if not release_ok and locked_slot["hour_number"] is not None:
                 try:
                     clash = await class_teachers(
-                        student["class_group"] or "", slot["date"], slot["hour_number"]
+                        student["class_group"] or "", locked_slot["date"], locked_slot["hour_number"]
                     )
                 except Exception:  # noqa: BLE001 - rozvrh nedostupný → neblokovat
                     clash = []
@@ -83,19 +204,20 @@ async def book_hour(payload: BookHourRequest, user: User = Depends(get_current_u
                     )
 
             booked_count = await conn.fetchval(
-                "SELECT COUNT(*) FROM internal.bookings WHERE open_hour_id = $1",
+                "SELECT COUNT(*) FROM internal.bookings WHERE open_hour_id = $1 AND cancelled_at IS NULL",
                 payload.hour_id,
             )
-            if booked_count >= slot["capacity"]:
+            if booked_count >= locked_slot["capacity"]:
                 raise HTTPException(status_code=409, detail="Termín je plně obsazený.")
 
             decision_token = secrets.token_urlsafe(24)
             try:
-                await conn.execute(
+                booking_id = await conn.fetchval(
                     """
                     INSERT INTO internal.bookings
                         (student_id, open_hour_id, decision_token)
                     VALUES ($1, $2, $3)
+                    RETURNING id
                     """,
                     student["student_id"],
                     payload.hour_id,
@@ -105,6 +227,11 @@ async def book_hour(payload: BookHourRequest, user: User = Depends(get_current_u
                 raise HTTPException(
                     status_code=409,
                     detail="Tento termín už máš zarezervovaný.",
+                )
+
+            if conflict is not None:
+                await _create_pending_excuse_request(
+                    conn, student["student_id"], booking_id, conflict, locked_slot["date"]
                 )
 
     # Rezervace je uložená. Teď (best-effort, mimo transakci) informujeme

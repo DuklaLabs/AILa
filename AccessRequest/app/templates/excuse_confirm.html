@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <title>Žádost o omluvenku – DuklaLabs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/forms.css">
+  <link rel="stylesheet" href="/static/css/buttons.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+</head>
+<body>
+
+  <div class="center-page">
+    <div class="card" style="max-width:440px; text-align:center;">
+      <div class="logo-pill">DL</div>
+      <h1>Žádost o omluvenku</h1>
+
+      {% if request_info.status != "pending" %}
+        <p class="subtitle">
+          Tahle žádost je už vyřízená
+          ({{ "schválena" if request_info.status == "approved" else "zamítnuta" }}),
+          není potřeba nic dělat.
+        </p>
+      {% else %}
+        <p class="subtitle">
+          {{ request_info.first_name }} {{ request_info.last_name }} ({{ request_info.class_group }})
+          žádá o uvolnění z hodiny {{ request_info.subject_name }}
+          dne {{ request_info.date }}, {{ request_info.hour_number }}. hodina.
+        </p>
+
+        <form method="POST" action="/excuse-requests/{{ token }}/approve" style="margin-top:16px;">
+          <button type="submit" class="btn btn-primary" style="width:100%;">Uvolnit</button>
+        </form>
+        <form method="POST" action="/excuse-requests/{{ token }}/deny" style="margin-top:8px;">
+          <button type="submit" class="btn" style="width:100%;">Zamítnout</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+</body>
+</html>

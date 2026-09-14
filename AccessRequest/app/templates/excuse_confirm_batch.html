@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hromadné vyřízení žádostí – DuklaLabs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/forms.css">
+  <link rel="stylesheet" href="/static/css/buttons.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+</head>
+<body>
+
+  <div class="center-page">
+    <div class="card" style="max-width:560px;">
+      <div class="logo-pill">DL</div>
+      <h1 style="text-align:center;">Hromadné vyřízení</h1>
+
+      {% if not items %}
+        <p class="subtitle" style="text-align:center;">
+          Všechny žádosti z tohoto e-mailu jsou už vyřízené, není potřeba nic dělat.
+        </p>
+      {% else %}
+        <p class="subtitle" style="text-align:center;">
+          Tlačítko níže {{ "uvolní" if action == "approve" else "zamítne" }} všechny nevyřízené žádosti z tohoto e-mailu:
+        </p>
+
+        <table style="width:100%; margin:16px 0; border-collapse:collapse; font-size:14px;">
+          <thead>
+            <tr style="text-align:left; border-bottom:1px solid #374151;">
+              <th style="padding:6px 4px;">Student</th>
+              <th style="padding:6px 4px;">Třída</th>
+              <th style="padding:6px 4px;">Datum</th>
+              <th style="padding:6px 4px;">Hodina</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr style="border-bottom:1px solid #1f2937;">
+              <td style="padding:6px 4px;">{{ item.first_name }} {{ item.last_name }}</td>
+              <td style="padding:6px 4px;">{{ item.class_group }}</td>
+              <td style="padding:6px 4px;">{{ item.date }}</td>
+              <td style="padding:6px 4px;">{{ item.subject_name }} ({{ item.hour_number }}.)</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <form method="POST" action="/excuse-requests/batch/{{ batch_token }}/{{ 'approve-all' if action == 'approve' else 'deny-all' }}">
+          <button type="submit" class="btn btn-primary" style="width:100%;">
+            {{ "Uvolnit všechny" if action == "approve" else "Zamítnout všechny" }}
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+</body>
+</html>

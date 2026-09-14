@@ -240,6 +240,7 @@ async def list_open_hours(
             LEFT JOIN (
                 SELECT open_hour_id, COUNT(*) AS booked_count
                 FROM internal.bookings
+                WHERE cancelled_at IS NULL
                 GROUP BY open_hour_id
             ) b ON b.open_hour_id = oh.id
             WHERE ($1::date IS NULL OR oh.date >= $1)
