@@ -15,10 +15,11 @@ from ailacore.audit import record_audit
 from ailacore.db import get_pool
 from ailacore.models import User
 
-from app.services.base import PROJECT_STATUSES, require, validate_enum
+from app.services.base import PROJECT_STATUSES, TASK_STATUSES, require, validate_enum
 
 # operace, které přes MCP jdou výhradně přes návrh ke schválení
 PROPOSAL_KINDS = {
+    "task.create",
     "task.delete",
     "project.update",
     "finance.update",
@@ -122,7 +123,7 @@ async def review_proposal(
 
             applied = None
             if approve:
-                applied = await _apply_proposal(conn, _row(prop))
+                applied = await _apply_proposal(conn, _row(prop), approved_by_user_id=user.id)
 
             row = await conn.fetchrow(
                 f"""
@@ -155,10 +156,53 @@ _PROJECT_UPDATE_FIELDS = {
 }
 
 
-async def _apply_proposal(conn, prop: dict) -> dict:
+async def _apply_proposal(conn, prop: dict, *, approved_by_user_id: int) -> dict:
     kind = prop["kind"]
     tid = prop["target_id"]
     payload = prop["payload"] or {}
+
+    if kind == "task.create":
+        phase_id = payload.get("phase_id")
+        title = (payload.get("title") or "").strip()
+        if not phase_id or not title:
+            raise HTTPException(422, "Návrh úkolu musí obsahovat phase_id a title.")
+        phase = await conn.fetchrow(
+            "SELECT project_id FROM projects.phases WHERE id = $1", phase_id
+        )
+        if phase is None:
+            raise HTTPException(404, "Cílová fáze už neexistuje.")
+        status = payload.get("status") or "backlog"
+        validate_enum(status, TASK_STATUSES, "status")
+        position = await conn.fetchval(
+            "SELECT COALESCE(MAX(position), -1) + 1 FROM projects.tasks WHERE phase_id = $1",
+            phase_id,
+        )
+        task_id = await conn.fetchval(
+            """
+            INSERT INTO projects.tasks
+                (phase_id, project_id, title, description, assignee_user_id,
+                 status, start_on, due_on, baseline_due_on, proto_version,
+                 estimated_hours, cost_type, order_status, position, created_by, done_at)
+            VALUES ($1, $2, $3, $4, $5, $6::text, $7, $8, $8, $9, $10, $11, $12, $13, $14,
+                    CASE WHEN $6::text = 'done' THEN NOW() END)
+            RETURNING id
+            """,
+            phase_id,
+            phase["project_id"],
+            title,
+            payload.get("description"),
+            payload.get("assignee_user_id"),
+            status,
+            payload.get("start_on"),
+            payload.get("due_on"),
+            payload.get("proto_version"),
+            payload.get("estimated_hours"),
+            payload.get("cost_type"),
+            payload.get("order_status"),
+            position,
+            approved_by_user_id,
+        )
+        return {"created_task": task_id}
 
     if kind == "task.delete":
         res = await conn.execute("DELETE FROM projects.tasks WHERE id = $1", tid)

@@ -286,7 +286,11 @@ def build_mcp():
         """Navrhne nevratnou / citlivou změnu ke schválení člověkem. Nic se
         neprovede hned – vznikne záznam v projects.proposals (pending).
 
-        kind ∈ {task.delete, project.update, finance.update, project.lifecycle}
+        kind ∈ {task.create, task.delete, project.update, finance.update, project.lifecycle}
+          * task.create       – target_type='phase',   target_id=phase_id,
+                                payload={title, description?, assignee_user_id?, status?,
+                                         start_on?, due_on?, proto_version?, estimated_hours?,
+                                         cost_type?, order_status?}
           * task.delete       – target_type='task',    payload={}
           * project.update    – target_type='project', payload={name?,description?,started_on?,due_on?,lead_user_id?}
           * finance.update    – target_type='project', payload={planned_budget_czk: N}

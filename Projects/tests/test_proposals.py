@@ -6,7 +6,7 @@ from app.services.proposals import classify_change
 
 @pytest.mark.parametrize(
     "kind",
-    ["task.delete", "project.update", "finance.update", "project.lifecycle"],
+    ["task.create", "task.delete", "project.update", "finance.update", "project.lifecycle"],
 )
 def test_risky_kinds_are_proposals(kind):
     assert classify_change(kind) == "proposal"
