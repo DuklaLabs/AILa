@@ -31,15 +31,19 @@ async def _request(method: str, path: str, **kwargs) -> Any:
 
 
 async def list_recordings(
+    page: int = 1,
     limit: int = 20,
-    cursor: Optional[str] = None,
-    folder_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    tag_ids: Optional[str] = None,
 ) -> Any:
-    params: dict = {"limit": limit}
-    if cursor:
-        params["cursor"] = cursor
-    if folder_id:
-        params["folder_id"] = folder_id
+    params: dict = {"page": page, "limit": limit}
+    if start_date:
+        params["start_date"] = start_date
+    if end_date:
+        params["end_date"] = end_date
+    if tag_ids:
+        params["tag_ids"] = tag_ids
     return await _request("GET", "/public/recordings", params=params)
 
 
@@ -47,18 +51,22 @@ async def get_recording(
     recording_id: str,
     include_transcript: bool = True,
     include_summarizations: bool = True,
+    summarization_id: Optional[str] = None,
 ) -> Any:
-    params = {
+    params: dict = {
         "include_transcript": include_transcript,
         "include_summarizations": include_summarizations,
     }
+    if summarization_id:
+        params["summarization_id"] = summarization_id
     return await _request("GET", f"/public/recordings/{recording_id}", params=params)
 
 
-async def search_recordings(query: str, limit: int = 20) -> Any:
-    return await _request(
-        "POST", "/public/recordings/search", json={"query": query, "limit": limit}
-    )
+async def search_recordings(query: str, limit: int = 8, filters: Optional[dict] = None) -> Any:
+    body: dict = {"query": query, "limit": limit}
+    if filters:
+        body["filters"] = filters
+    return await _request("POST", "/public/search", json=body)
 
 
 async def list_tags() -> Any:

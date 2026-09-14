@@ -32,13 +32,14 @@ def mock_pocket(monkeypatch):
 
 
 async def test_list_recordings_sends_bearer_token_and_params(mock_pocket):
-    await pocket.list_recordings(limit=5, cursor="abc", folder_id="f1")
+    await pocket.list_recordings(page=2, limit=5, start_date="2026-09-01", tag_ids="t1,t2")
     req = mock_pocket.requests[0]
     assert req.headers["authorization"] == "Bearer pk_test"
     assert req.url.path == "/api/v1/public/recordings"
+    assert req.url.params["page"] == "2"
     assert req.url.params["limit"] == "5"
-    assert req.url.params["cursor"] == "abc"
-    assert req.url.params["folder_id"] == "f1"
+    assert req.url.params["start_date"] == "2026-09-01"
+    assert req.url.params["tag_ids"] == "t1,t2"
 
 
 async def test_get_recording_path_and_params(mock_pocket):
@@ -53,8 +54,18 @@ async def test_search_recordings_posts_query_body(mock_pocket):
     await pocket.search_recordings("rozpočet", limit=3)
     req = mock_pocket.requests[0]
     assert req.method == "POST"
-    assert req.url.path == "/api/v1/public/recordings/search"
+    assert req.url.path == "/api/v1/public/search"
     assert json.loads(req.content) == {"query": "rozpočet", "limit": 3}
+
+
+async def test_search_recordings_includes_filters_when_given(mock_pocket):
+    await pocket.search_recordings("rozpočet", filters={"tag_ids": ["t1"]})
+    req = mock_pocket.requests[0]
+    assert json.loads(req.content) == {
+        "query": "rozpočet",
+        "limit": 8,
+        "filters": {"tag_ids": ["t1"]},
+    }
 
 
 async def test_list_tags_path(mock_pocket):
