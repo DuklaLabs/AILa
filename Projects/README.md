@@ -39,6 +39,12 @@ Port **8006**. Schéma `projects` (migrace `Database/migrations/versions/0016_pr
 - **Návrhy změn od AI:** nevratné / citlivé operace přes MCP nevytvoří přímou
   mutaci, ale `projects.proposals` (pending); člověk s `projects.proposal:review`
   je v SPA schválí/zamítne.
+- **Pocket panel:** nahrávání schůzky z mikrofonu prohlížeče → upload na
+  Pocket, přehled nahrávek/přepisů, extrakce kandidátních úkolů lokálním LLM
+  (Ollama), ruční doladění projektu/fáze/řešitele/termínu → každý potvrzený
+  úkol jde jako `task.create` `projects.proposals` návrh (stejná cesta jako
+  výše, žádný přímý zápis). Viz `app/services/pocket_bridge.py` a
+  `Shared/ailacore/pocket.py`.
 
 Milníky 2–4 (automatizace, manažerské dashboardy, GitHub) zatím nejsou.
 
@@ -49,7 +55,9 @@ Milníky 2–4 (automatizace, manažerské dashboardy, GitHub) zatím nejsou.
 - REST pod `/api`: `users`, `workspaces`, `folders`, `projects` (+`/phases`,
   `/costs`), `phases/{id}/tasks`, `tasks` (+`/status`, `/assignee`,
   `/collaborators`, `/dependencies`), `tasks/{id}/time` (+`/start`, `/manual`),
-  `time/stop`, `time/running`, `proposals` (+`/approve`, `/reject`).
+  `time/stop`, `time/running`, `proposals` (+`/approve`, `/reject`), `pocket`
+  (`/recordings`, `/recordings/{id}`, `/recordings/upload`,
+  `/recordings/{id}/extract-tasks`, `/recordings/{id}/propose-tasks`).
 - SPA na `/app/projects/` (za přihlášením).
 - MCP server na `/mcp` (viz níže).
 
@@ -82,15 +90,21 @@ přihlášení). Nástroj bez platného tokenu nebo bez `projects.ai:use` nic ne
 - **přímý zápis (pod RBAC uživatele):** `create_task`, `update_task_fields`,
   `set_task_status`, `set_task_assignee`, `add_time_entry`
 - **jen jako návrh ke schválení:** `propose_change(kind, target_type, target_id,
-  payload, summary)` pro `task.delete`, `project.update`, `finance.update`,
-  `project.lifecycle` – vznikne `projects.proposals` (pending), skutečná změna
-  proběhne až po schválení člověkem v SPA.
+  payload, summary)` pro `task.create`, `task.delete`, `project.update`,
+  `finance.update`, `project.lifecycle` – vznikne `projects.proposals`
+  (pending), skutečná změna proběhne až po schválení člověkem v SPA.
 
 Každý zápis přes MCP jde do `auth.audit_log` (`origin: "mcp"`).
 Vypnutí: `MCP_ENABLED=false`. Když není nainstalovaný balíček `mcp`, služba
 naběhne bez MCP (REST + SPA fungují dál).
 
 ## Vývoj
+
+Pocket panel navíc potřebuje v env: `POCKET_API_KEY` (čtení, org klíč),
+`POCKET_UPLOAD_API_KEY` (upload nahrávky — Pocket vyžaduje osobní klíč se
+scope `recordings:write`, org klíč na to nemá práva), `OLLAMA_URL` /
+`OLLAMA_MODEL` (extrakce úkolů, default `http://ollama:11434` /
+`qwen2.5:14b`). Bez nich panel v SPA běží dál, jen tyhle akce vrátí chybu.
 
 ```
 # DB (jednou)

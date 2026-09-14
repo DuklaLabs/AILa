@@ -57,6 +57,12 @@ detail = await get_recording(recordings["data"][0]["id"])  # včetně transcript
 hits = await search_recordings("rozpočet na příští čtvrtletí")
 ```
 
+Nahrání nové nahrávky (`create_upload_url` + `upload_audio`) potřebuje navíc
+`POCKET_UPLOAD_API_KEY` — Pocket na `/recordings/upload-url` vrací 403 pro
+org klíč ("insufficient scope"), vyžaduje osobní klíč se scope
+`recordings:write` (viz Pocket nastavení → API klíče). Bez toho `create_upload_url`
+padne s `RuntimeError` hned, ne až 403 z Pocket.
+
 Bez nastaveného `POCKET_API_KEY` každé volání skončí `RuntimeError` hned na
 začátku, ne až chybou 401 z Pocket.
 

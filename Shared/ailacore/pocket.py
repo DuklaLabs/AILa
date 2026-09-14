@@ -16,11 +16,25 @@ import httpx
 POCKET_BASE_URL = os.getenv("POCKET_BASE_URL", "https://public.heypocketai.com/api/v1")
 POCKET_API_KEY = os.getenv("POCKET_API_KEY", "")
 
+# Pocket rejects /recordings/upload-url for org-level keys ("insufficient
+# scope") — it wants a personal key with the recordings:write scope, minted
+# separately from the org key everything else here uses. Falls back to
+# POCKET_API_KEY so a misconfigured deployment fails with a clear 403 from
+# Pocket instead of a confusing "key not set" locally.
+POCKET_UPLOAD_API_KEY = os.getenv("POCKET_UPLOAD_API_KEY", "")
+
 
 def _headers() -> dict:
     if not POCKET_API_KEY:
         raise RuntimeError("POCKET_API_KEY is not set")
     return {"Authorization": f"Bearer {POCKET_API_KEY}"}
+
+
+def _upload_headers() -> dict:
+    key = POCKET_UPLOAD_API_KEY or POCKET_API_KEY
+    if not key:
+        raise RuntimeError("POCKET_UPLOAD_API_KEY (or POCKET_API_KEY) is not set")
+    return {"Authorization": f"Bearer {key}"}
 
 
 async def _request(method: str, path: str, **kwargs) -> Any:
@@ -71,3 +85,44 @@ async def search_recordings(query: str, limit: int = 8, filters: Optional[dict] 
 
 async def list_tags() -> Any:
     return await _request("GET", "/public/tags")
+
+
+async def create_upload_url(
+    title: Optional[str] = None,
+    content_type: Optional[str] = None,
+    file_name: Optional[str] = None,
+    duration: Optional[float] = None,
+    recording_at: Optional[str] = None,
+) -> Any:
+    """Ask Pocket for a pre-signed URL to PUT a new recording's audio to.
+    Requires POCKET_UPLOAD_API_KEY (see module docstring) — an org key gets
+    a 403 "insufficient scope" here even though it works for every read."""
+    body = {
+        k: v
+        for k, v in {
+            "title": title,
+            "content_type": content_type,
+            "file_name": file_name,
+            "duration": duration,
+            "recording_at": recording_at,
+        }.items()
+        if v is not None
+    }
+    async with httpx.AsyncClient(base_url=POCKET_BASE_URL, timeout=30) as client:
+        resp = await client.post(
+            "/public/recordings/upload-url", headers=_upload_headers(), json=body
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+
+async def upload_audio(upload_url: str, audio_bytes: bytes, content_type: str) -> None:
+    """PUT raw audio bytes to the pre-signed URL from create_upload_url().
+    This goes straight to Pocket's storage, not through POCKET_BASE_URL — no
+    auth header, the URL itself is the credential (same as any S3 presigned
+    PUT)."""
+    async with httpx.AsyncClient(timeout=120) as client:
+        resp = await client.put(
+            upload_url, content=audio_bytes, headers={"Content-Type": content_type}
+        )
+        resp.raise_for_status()

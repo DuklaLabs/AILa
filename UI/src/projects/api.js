@@ -67,6 +67,32 @@ export const api = {
   listProposals: (status = 'pending') => req('GET', `/proposals${q({ status })}`),
   approveProposal: (id, note) => req('POST', `/proposals/${id}/approve`, { note }),
   rejectProposal: (id, note) => req('POST', `/proposals/${id}/reject`, { note }),
+
+  listPocketRecordings: (page = 1, limit = 20) =>
+    req('GET', `/pocket/recordings${q({ page, limit })}`),
+  getPocketRecording: (id) => req('GET', `/pocket/recordings/${id}`),
+  extractPocketTasks: (id) => req('POST', `/pocket/recordings/${id}/extract-tasks`),
+  proposePocketTasks: (id, tasks) => req('POST', `/pocket/recordings/${id}/propose-tasks`, tasks),
+  uploadPocketRecording: async (blob, title) => {
+    const form = new FormData()
+    form.append('file', blob, 'recording.webm')
+    if (title) form.append('title', title)
+    const res = await fetch(`${BASE}/pocket/recordings/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      body: form,
+    })
+    if (res.status === 401) {
+      window.location.href = '/login'
+      throw new Error('Nepřihlášeno')
+    }
+    const text = await res.text()
+    const data = text ? JSON.parse(text) : null
+    if (!res.ok) {
+      throw new Error((data && (data.detail || data.message)) || `${res.status} ${res.statusText}`)
+    }
+    return data
+  },
 }
 
 export function userName(users, id) {

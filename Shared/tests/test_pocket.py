@@ -79,3 +79,46 @@ def test_missing_api_key_raises(monkeypatch):
     monkeypatch.setattr(pocket, "POCKET_API_KEY", "")
     with pytest.raises(RuntimeError):
         pocket._headers()
+
+
+async def test_create_upload_url_uses_upload_key_and_omits_unset_fields(mock_pocket, monkeypatch):
+    monkeypatch.setattr(pocket, "POCKET_UPLOAD_API_KEY", "pk_upload")
+    await pocket.create_upload_url(title="Schůzka")
+    req = mock_pocket.requests[0]
+    assert req.method == "POST"
+    assert req.url.path == "/api/v1/public/recordings/upload-url"
+    assert req.headers["authorization"] == "Bearer pk_upload"
+    assert json.loads(req.content) == {"title": "Schůzka"}
+
+
+async def test_create_upload_url_falls_back_to_main_key(mock_pocket, monkeypatch):
+    monkeypatch.setattr(pocket, "POCKET_UPLOAD_API_KEY", "")
+    await pocket.create_upload_url()
+    req = mock_pocket.requests[0]
+    assert req.headers["authorization"] == "Bearer pk_test"
+
+
+def test_missing_upload_key_raises(monkeypatch):
+    monkeypatch.setattr(pocket, "POCKET_UPLOAD_API_KEY", "")
+    monkeypatch.setattr(pocket, "POCKET_API_KEY", "")
+    with pytest.raises(RuntimeError):
+        pocket._upload_headers()
+
+
+async def test_upload_audio_puts_bytes_to_given_url(monkeypatch):
+    recorder = _Recorder()
+
+    class _MockAsyncClient(httpx.AsyncClient):
+        def __init__(self, *args, **kwargs):
+            kwargs["transport"] = httpx.MockTransport(recorder.handler)
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr(pocket.httpx, "AsyncClient", _MockAsyncClient)
+
+    await pocket.upload_audio("https://s3.example.com/presigned?sig=abc", b"raw-audio", "audio/webm")
+    req = recorder.requests[0]
+    assert req.method == "PUT"
+    assert str(req.url) == "https://s3.example.com/presigned?sig=abc"
+    assert req.headers["content-type"] == "audio/webm"
+    assert req.content == b"raw-audio"
+    assert "authorization" not in req.headers

@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, File, Form, UploadFile
 
 load_dotenv(Path(__file__).parent / ".env")
 
@@ -61,3 +61,18 @@ async def search(query: str, limit: int = 8):
 @app.get("/tags")
 async def tags():
     return await pocket.list_tags()
+
+
+@app.post("/recordings/upload")
+async def upload_recording(file: UploadFile = File(...), title: Optional[str] = Form(None)):
+    """Needs POCKET_UPLOAD_API_KEY, not POCKET_API_KEY — see .env.example."""
+    audio_bytes = await file.read()
+    created = await pocket.create_upload_url(
+        title=title, content_type=file.content_type, file_name=file.filename
+    )
+    data = created.get("data") or {}
+    upload_url = data.get("upload_url") or data.get("url")
+    if not upload_url:
+        return {"error": "Pocket nevrátil upload URL.", "raw": created}
+    await pocket.upload_audio(upload_url, audio_bytes, file.content_type or "audio/webm")
+    return {"uploaded": True, "raw": created}
