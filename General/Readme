@@ -1,3 +1,27 @@
-Spuštění:
+Rozbitý prototyp orchestrátoru ("Generál") – měl by přes lokální LLM (Ollama)
+překládat přirozený jazyk na volání mezi Skladník/Nakupcik. Není v
+docker-compose.yml, nepoužívá ailacore. Dává smysl opravit až budou aspoň dvě
+reálné (fungující) služby, mezi kterými má orchestrovat – dnes ani Skladník
+ani Nakupcik samy o sobě neběží (viz jejich README).
 
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+Momentálně rozbité:
+- main.py dělá `from app.orchestrator import run_general_command`, ale žádný
+  `app/` balíček v adresáři není – orchestrator.py, llm.py i agents/ jsou v
+  kořeni General/, ne pod app/. Import spadne hned při startu.
+- main.py používá `BaseModel` (třída `PromptIn`), ale nikde neimportuje
+  `pydantic` – i po opravě cesty na `app.` by spadlo na NameError.
+- orchestrator.py importuje `from app.agents.procurement import
+  create_order_from_low_stock` – soubor `agents/procurement.py` v repu
+  neexistuje (jen `agents/inventory.py` s `get_low_stock()`).
+
+Architektura (jak je zamýšlená, jednou opravená):
+- llm.py – `ask_model(prompt)` přes Ollama `/api/generate` (model `qwen2.5:14b`,
+  natvrdo; `OLLAMA_URL` z env, default `http://ollama:11434`).
+- orchestrator.py – systémový prompt "Generál" nechá LLM vybrat akci
+  (CHECK_STOCK / CREATE_ORDER / UNKNOWN), pak zavolá `agents.inventory` nebo
+  chybějící `agents.procurement`. `INVENTORY_URL = http://skladnik:8001`,
+  `PROCUREMENT_URL = http://nakupcik:8002` (natvrdo, ne z env).
+- main.py – FastAPI, `POST /general {"prompt": "..."}`.
+
+Spuštění (po opravě importů):
+    uvicorn main:app --reload --host 0.0.0.0 --port 8000

@@ -7,6 +7,7 @@ Sdílený balíček pro všechny AILa služby. Cíl: nová služba si nikdy sama
 - `ailacore.rbac` — granulární RBAC: kontrola na úrovni jednotlivých oprávnění (`require_permission(...)`, `user_has_permission(...)`). Viz níže.
 - `ailacore.models` — sdílené Pydantic modely (`User`, `RFIDCard`, `Role`, `Permission`).
 - `ailacore.pocket` — klient na [Pocket API](https://docs.heypocketai.com/docs/api) (nahrávky/přepisy/AI shrnutí schůzek). Kterýkoli agent tak může tahat přepisy schůzek — jako podklad pro odpověď, nebo jako instrukční materiál pro jiného agenta — bez vlastní httpx logiky. Viz níže.
+- `ailacore.obsidian` — klient na [Obsidian Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) plugin, pro dlouhodobou paměť agentů jako čitelné/editovatelné markdown poznámky ve vaultu. Viz níže.
 
 ## Použití v nové službě
 
@@ -65,6 +66,37 @@ padne s `RuntimeError` hned, ne až 403 z Pocket.
 
 Bez nastaveného `POCKET_API_KEY` každé volání skončí `RuntimeError` hned na
 začátku, ne až chybou 401 z Pocket.
+
+## Obsidian (`ailacore.obsidian`)
+
+Klient nad pluginem [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api)
+pro Obsidian. Slouží jako paměť pro agenty: cokoliv, co si agent potřebuje
+zapamatovat napříč běhy a co má být zároveň čitelné/editovatelné člověkem,
+jde sem místo do DB nebo do lokálního souboru — výsledkem je normální
+markdown poznámka ve vaultu, kterou kdokoliv otevře v Obsidianu.
+
+Vyžaduje běžící Obsidian s otevřeným vaultem a nainstalovaným pluginem
+Local REST API (nastavení pluginu → API key). Endpoint je jen loopback
+(`https://127.0.0.1:27124` ve výchozím stavu, self-signed cert — proto klient
+volá s `verify=False`), takže tohle funguje jen na stroji, kde Obsidian
+skutečně běží — ne jako sdílená služba pro víc strojů.
+
+```python
+from ailacore.obsidian import (
+    get_note, create_or_update_note, append_to_note,
+    patch_note, list_notes, search_notes, delete_note,
+)
+
+await create_or_update_note("Agents/Projekťák/2026-09-15.md", "# Shrnutí\n...")
+await append_to_note("Agents/Projekťák/log.md", "\n- nový poznatek")
+content = await get_note("Agents/Projekťák/2026-09-15.md")
+notes = await list_notes("Agents/Projekťák")
+hits = await search_notes("rozpočet")
+```
+
+Env proměnné: `OBSIDIAN_API_KEY` (povinné pro vše kromě `get_status()`),
+`OBSIDIAN_BASE_URL` (default `https://127.0.0.1:27124`, měnit jen když
+Obsidian běží jinde než na localhostu nebo na jiném portu).
 
 ## RBAC (granular)
 
