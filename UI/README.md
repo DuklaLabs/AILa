@@ -1,19 +1,21 @@
 # UI
 
-Jeden React (Vite) projekt, ze kterého se stavějí **dvě nezávislé SPA** —
+Jeden React (Vite) projekt, ze kterého se stavějí **tři nezávislé SPA** —
 sdílí `package.json`/závislosti, ale mají oddělený vstupní bod, Vite config
-i výstupní adresář a mountuje/servíruje je pokaždé jiná backend služba na
-jiné cestě (kvůli cookie session `dl_session` musí SPA i API sedět na
-stejném originu).
+i výstupní adresář a servíruje je pokaždé jiný backend na jiné cestě (kvůli
+cookie session `dl_session` musí RBAC/Projekty SPA i jejich API sedět na
+stejném originu; portál žádnou session nemá).
 
 | SPA | Vstupní bod | Vite config | `base` / cesta | Servíruje | Build příkaz |
 |---|---|---|---|---|---|
 | RBAC admin konzole | `src/main.jsx` → `src/App.jsx` → `src/rbac/RbacConsole.jsx` | `vite.config.js` | `/admin/rbac/` | `ailacore.admin.mount_admin_ui` (kterákoli služba, co si ji zamountuje — dnes `AccessRequest`) | `npm run build` → `dist/` |
 | Projekty | `src/projects/main.jsx` → `ProjectsApp.jsx` | `vite.projects.config.js` (`outDir: dist-projects`, `input: index.projects.html`) | `/app/projects/` | `Projects` server přes `ailacore.admin.mount_spa` | `npm run build:projects` → `dist-projects/` |
+| Portál (`LabOrchestratorDashboard`) | `src/main.portal.jsx` → `LabOrchestratorDashboard.jsx` | `vite.portal.config.js` (`outDir: dist-portal`, `input: index.portal.html`) | `/` | `Gateway` (Caddy, statické soubory) na `aila.localhost` | `npm run build:portal` → `dist-portal/` |
 
-`src/LabOrchestratorDashboard.jsx`(`.css`) zůstává v repu, ale nic ho
-neimportuje (`App.jsx` teď rovnou rendruje `RbacConsole`) — mrtvý kód,
-ne aktivní třetí SPA.
+Portál je agentní dashboard s postranním panelem agentů a chatem s
+"Generálem" — chat volá `POST /general` na `General` serveru přes jeho
+vlastní subdoménu (`assistant.aila.localhost`, viz `Gateway/Caddyfile`),
+ne přes stejný origin jako zbylé dvě SPA.
 
 ## RBAC admin konzole (`src/rbac/`)
 

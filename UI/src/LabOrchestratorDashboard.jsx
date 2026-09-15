@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./LabOrchestratorDashboard.css";
 
 
@@ -19,8 +19,7 @@ const AGENTS = [
   {
     id: "assistant",
     name: "Generál",
-    description: "Chat s asistentem – zatím ukázkový, čeká na napojení na backend (General).",
-    comingSoon: true,
+    description: "Chat s asistentem – napojený na General (assistant.aila.localhost).",
   },
   {
     id: "access",
@@ -66,27 +65,137 @@ const statusColor = (status) => {
   }
 };
 
+// General je za Gateway na vlastní subdoméně (viz Gateway/Caddyfile), ne na
+// stejném originu jako tenhle portál (aila.localhost) – proto plná URL a
+// CORS na straně General/app/main.py.
+const ASSISTANT_URL = "http://assistant.aila.localhost";
+
+// Odpověď z POST /general je {reply, data?} – "reply" je vždy volný text
+// (Generál umí i běžný pokec, ne jen CHECK_STOCK/CREATE_ORDER), "data" jsou
+// data vrácená skladníkem/nákupčím, když šlo o jednu z těch dvou akcí.
+// Backend by v "reply" měl vracet vždy čistý text, ale pro jistotu (např.
+// když model omylem zdvojí JSON obal) zkusíme "reply" ještě jednou
+// rozbalit, pokud sám vypadá jako {"reply": "..."} JSON objekt.
+function unwrapReplyText(reply) {
+  if (typeof reply !== "string") return reply;
+  const trimmed = reply.trim();
+  if (!trimmed.startsWith("{")) return reply;
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed && typeof parsed === "object" && typeof parsed.reply === "string") {
+      return unwrapReplyText(parsed.reply);
+    }
+  } catch {
+    // není to JSON, necháme text jak je
+  }
+  return reply;
+}
+
+function formatAssistantReply(data) {
+  if (!data || typeof data !== "object") return String(data);
+  const parts = [];
+  if (data.reply) parts.push(unwrapReplyText(data.reply));
+  // pending_email nese i plný seznam příjemců (general/app/orchestrator.py)
+  // – ten by tu jen zabral místo syrovým JSON dumpem, "reply" už obsahuje
+  // předmět/text/počet příjemců čitelně naformátované.
+  if (data.data !== undefined && !(data.data && data.data.pending_email)) {
+    parts.push(JSON.stringify(data.data, null, 2));
+  }
+  return parts.length ? parts.join("\n\n") : JSON.stringify(data, null, 2);
+}
+
+const WELCOME_MESSAGE = { from: "agent", text: "Zdravím, jsem Generál. Jak ti dnes můžu pomoct v laboratoři?" };
+const LOGIN_URL = "http://access.aila.localhost/login";
+const LOGOUT_URL = "http://access.aila.localhost/logout";
+
+function userInitials(user) {
+  const source = (user.full_name || user.username || "?").trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  const initials = parts.length >= 2 ? parts[0][0] + parts[1][0] : source.slice(0, 2);
+  return initials.toUpperCase();
+}
+
 export default function LabOrchestratorDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedAgent, setSelectedAgent] = useState(AGENTS[0]);
-  const [messages, setMessages] = useState([
-    { from: "agent", text: "Zdravím, jsem Generál. Jak ti dnes můžu pomoct v laboratoři?" },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authError, setAuthError] = useState(null);
+  const messagesEndRef = useRef(null);
 
-  // Chat zatím nemá skutečný backend (General je jen nenasazený prototyp bez
-  // /api/chat) – místo síťového volání jen zobrazíme, že asistent zatím čeká
-  // na napojení. Až bude General rozšířený o tool-calling, přijde sem znovu
-  // fetch na `assistant.aila.localhost`.
-  const handleSend = () => {
-    if (!input.trim()) return;
-    const userMessage = { from: "user", text: input.trim() };
-    const agentMessage = {
-      from: "agent",
-      text: "Asistent zatím není napojen na backend – bude dostupný v příští fázi.",
+  // Konverzace teď žije v general.chat_messages pod účtem (General/app/
+  // history.py), ne v localStorage prohlížeče – přežije reload i přihlášení
+  // z jiného zařízení. Bez platné dl_session cookie (sdílené SSO napříč
+  // *.aila.localhost) General vrátí 401 a pošleme uživatele na login s
+  // "next" zpátky sem.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const meResp = await fetch(`${ASSISTANT_URL}/general/me`, { credentials: "include" });
+        if (meResp.status === 401) {
+          window.location.href = `${LOGIN_URL}?next=${encodeURIComponent(window.location.href)}`;
+          return;
+        }
+        if (!meResp.ok) throw new Error(`me: HTTP ${meResp.status}`);
+        const meData = await meResp.json();
+
+        const historyResp = await fetch(`${ASSISTANT_URL}/general/history`, { credentials: "include" });
+        if (!historyResp.ok) throw new Error(`history: HTTP ${historyResp.status}`);
+        const historyData = await historyResp.json();
+
+        if (cancelled) return;
+        setUser(meData);
+        setMessages(historyData.length > 0 ? historyData : [WELCOME_MESSAGE]);
+      } catch {
+        if (!cancelled) setAuthError("Nepodařilo se spojit s Generálem (General/Gateway neběží?).");
+      }
+    })();
+    return () => {
+      cancelled = true;
     };
-    setMessages((prev) => [...prev, userMessage, agentMessage]);
+  }, []);
+
+  // Auto-scroll na poslední zprávu – ať uživatel nemusí ručně scrollovat
+  // dolů po každé nové odpovědi Generála.
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSend = async () => {
+    const prompt = input.trim();
+    if (!prompt || sending) return;
+    setMessages((prev) => [...prev, { from: "user", text: prompt }]);
     setInput("");
+    setSending(true);
+    try {
+      const resp = await fetch(`${ASSISTANT_URL}/general`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      if (resp.status === 401) {
+        window.location.href = `${LOGIN_URL}?next=${encodeURIComponent(window.location.href)}`;
+        return;
+      }
+      const data = await resp.json();
+      // Uloženo stejně jako to, co vrátí /general/history (text + volitelná
+      // data), ať se historická a čerstvá zpráva renderují identicky.
+      setMessages((prev) => [
+        ...prev,
+        { from: "agent", text: unwrapReplyText(data.reply) ?? String(data), data: data.data },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { from: "agent", text: "⚠️ Nepodařilo se spojit s Generálem (General/Gateway neběží?)." },
+      ]);
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -95,6 +204,16 @@ export default function LabOrchestratorDashboard() {
       handleSend();
     }
   };
+
+  // Dokud nevíme, jestli je uživatel přihlášený (nebo se to nepodařilo
+  // zjistit), nerenderujeme chat s prázdnou/neúplnou historií.
+  if (!user) {
+    return (
+      <div className="lab-shell">
+        <div className="lab-auth-gate">{authError || "Ověřuji přihlášení…"}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="lab-shell">
@@ -105,8 +224,11 @@ export default function LabOrchestratorDashboard() {
           <div className="lab-header-title">Agentní orchestrátor laboratoře</div>
         </div>
         <div className="lab-header-right">
-          <span className="lab-user-role">Admin</span>
-          <div className="lab-user-avatar">JD</div>
+          <span className="lab-user-role">{user.full_name || user.username}</span>
+          <div className="lab-user-avatar">{userInitials(user)}</div>
+          <a className="lab-logout-link" href={LOGOUT_URL}>
+            Odhlásit
+          </a>
         </div>
       </header>
 
@@ -173,10 +295,11 @@ export default function LabOrchestratorDashboard() {
                     <div className="lab-chat-label">
                       {m.from === "user" ? "Ty" : "Generál"}
                     </div>
-                    <div>{m.text}</div>
+                    <div>{m.from === "user" ? m.text : formatAssistantReply({ reply: m.text, data: m.data })}</div>
                   </div>
                 </div>
               ))}
+              <div ref={messagesEndRef} />
             </div>
 
             <div className="lab-chat-input-row">
@@ -184,15 +307,16 @@ export default function LabOrchestratorDashboard() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Zeptej se generála – např. „Kdo je aktuálně v laborce?“ nebo „Povol FDM tiskárnu 1 pro Jana Nováka“..."
+                placeholder="Zeptej se generála – např. „Zkontroluj sklad“ nebo „Objednej chybějící materiál“..."
                 className="lab-chat-textarea"
+                disabled={sending}
               />
               <button
                 className="lab-chat-send-btn"
                 onClick={handleSend}
-                disabled={!input.trim()}
+                disabled={!input.trim() || sending}
               >
-                Odeslat
+                {sending ? "Posílám…" : "Odeslat"}
               </button>
             </div>
           </div>

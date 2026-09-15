@@ -279,14 +279,18 @@ services:
       # stroji, ne v kontejneru, proto host.docker.internal místo 127.0.0.1.
       # OBSIDIAN_API_KEY viz Projects/.env.example.
       OBSIDIAN_BASE_URL: "https://host.docker.internal:27124"
-      # ailacore.llm (sensitive=False) — 9Router neběží jako služba v tomto
-      # compose souboru, ale jako samostatný kontejner (viz `docker ps`,
-      # image decolua/9router, port 20128 publikovaný na hosta) spravovaný
-      # mimo tento stack. Proto host.docker.internal místo service name
-      # "router". ROUTER_API_KEY/ROUTER_MODEL zatím nejsou nastavené (viz
-      # Shared/README.md) — doplnit v Projects/.env, jinak complete(...,
-      # sensitive=False) rovnou spadne s RuntimeError.
+      # ailacore.llm — 9Router neběží jako služba v tomto compose souboru,
+      # ale jako samostatný kontejner (viz `docker ps`, image
+      # decolua/9router, port 20128 publikovaný na hosta) spravovaný mimo
+      # tento stack. Proto host.docker.internal místo service name "router".
+      # ROUTER_API_KEY/ROUTER_MODEL jsou v Projects/.env (secrets, gitignored).
       ROUTER_URL: "http://host.docker.internal:20128/v1"
+      # Bez GPU na tomhle stroji nejede lokální Ollama — dokud nebude, i
+      # "citlivá" větev (Pocket extrakce z přepisů schůzek) jede přes
+      # 9Router místo lokálního modelu (viz Shared/ailacore/llm.py docstring
+      # k LLM_SENSITIVE_BACKEND). Vypnout zpět na "ollama" (nebo smazat), až
+      # bude lokální inference zase k dispozici.
+      LLM_SENSITIVE_BACKEND: "router"
     env_file:
       - ./Projects/.env
 
@@ -348,6 +352,50 @@ services:
       DUKLA_SUPERVISORS: "Bc. Jan Petrášek, Václav Hlaváč"
       DUKLA_DAY_BASE: "0"
       DUKLA_PERMANENT_FALLBACK: "0"
+      # ailacore.llm / decide() — stejný důvod a stejná výhrada jako u
+      # projects-server výše: bez GPU tu neběží lokální Ollama, takže i
+      # agentí rozhodování (release_advisor, registration_triage, ...),
+      # které pracuje s reálnými jmény studentů, dočasně jede přes 9Router
+      # místo lokálního modelu. ROUTER_API_KEY/ROUTER_MODEL viz AccessAgents/.env.
+      ROUTER_URL: "http://host.docker.internal:20128/v1"
+      LLM_SENSITIVE_BACKEND: "router"
+    env_file:
+      - ./AccessAgents/.env
+
+  # "Generál" – volná konverzace + akce: sklad/objednávky přes Skladník/
+  # Nakupcik (ani jedno zatím samo o sobě neběží, viz jejich README, ani
+  # není v tomto compose souboru – CHECK_STOCK/CREATE_ORDER dnes spadnou na
+  # chybu spojení) a e-mailová oznámení studentům přes Messenger (draft v
+  # chatu -> potvrzení -> POST messenger:8005/send). Generál samotný ale
+  # naběhne, jde promptovat a konverzace se ukládá pod účet
+  # (general.chat_messages, viz Database/migrations).
+  general:
+    build:
+      context: .
+      dockerfile: General/Dockerfile
+    container_name: general
+    ports:
+      - "8008:8008"
+    networks:
+      - agentnet
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+      messenger:
+        condition: service_started
+    # 9Router neběží jako služba v tomto compose souboru (viz projects-server
+    # výše), proto host.docker.internal místo service name "router".
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      POSTGRES_DB: agentdb
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
+      POSTGRES_HOST: postgres
+      ROUTER_URL: "http://host.docker.internal:20128/v1"
+      MESSENGER_URL: "http://messenger:8005"
+    env_file:
+      - ./General/.env
 
   # Reverse proxy (Caddy) sjednocující přístup pod jednu doménu: portálový
   # shell na aila.localhost, jednotlivé služby na svých subdoménách
@@ -366,6 +414,8 @@ services:
       access-request-server:
         condition: service_started
       projects-server:
+        condition: service_started
+      general:
         condition: service_started
     volumes:
       - caddy_data:/data

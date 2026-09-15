@@ -1,4 +1,6 @@
 import os
+from typing import Optional
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -37,9 +39,25 @@ async def _attach_session_cookie(response, user_id: int) -> None:
     )
 
 
+def _safe_next(url: Optional[str]) -> Optional[str]:
+    """Only allow bouncing back to something under *.aila.localhost (or the
+    bare domain) after login — anything else could be used as an open
+    redirect. `next` comes from other AILa services (e.g. the portal shell
+    at aila.localhost) that want the user back after SSO login here."""
+    if not url:
+        return None
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return None
+    host = parsed.hostname or ""
+    if host != "aila.localhost" and not host.endswith(".aila.localhost"):
+        return None
+    return url
+
+
 @router_auth.get("/login")
-async def login_page(request: Request):
-    return templates.TemplateResponse(request, "login.html")
+async def login_page(request: Request, next: Optional[str] = None):
+    return templates.TemplateResponse(request, "login.html", {"next": next})
 
 
 @router_auth.post("/login-check")
@@ -47,6 +65,7 @@ async def login_check(
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
+    next: Optional[str] = Form(default=None),
 ):
     user = await authenticate_password(username, password)
     if user is None:
@@ -55,17 +74,17 @@ async def login_check(
             return templates.TemplateResponse(
                 request,
                 "login.html",
-                {"error": "Účet zatím čeká na schválení administrátorem."},
+                {"error": "Účet zatím čeká na schválení administrátorem.", "next": next},
                 status_code=403,
             )
         return templates.TemplateResponse(
             request,
             "login.html",
-            {"error": "Nesprávné přihlašovací údaje."},
+            {"error": "Nesprávné přihlašovací údaje.", "next": next},
             status_code=401,
         )
 
-    target = "/admin" if user.role in ("admin", "staff") else "/student-hours"
+    target = _safe_next(next) or ("/admin" if user.role in ("admin", "staff") else "/student-hours")
     response = RedirectResponse(url=target, status_code=302)
     await _attach_session_cookie(response, user.id)
     return response

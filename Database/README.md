@@ -26,7 +26,21 @@ Migrace jsou psané jako čisté SQL přes `op.execute(...)` (žádné ORM model
 
 `0001_baseline` založí schémata `auth`, `inventory`, `lab`, `orders`, `events`,
 `internal`. `0013_mail_log` přidává `messaging`, `0016_projects` přidává
-`projects`.
+`projects`, `0017_agent_layer` přidává `agent`, `0019_general_chat` přidává
+`general` (konverzace s Generálem pod účtem, viz `General/Readme`).
+
+**`0018_merge_heads`** sjednocuje dvě větve, co obě navazovaly na
+`0016_projects` (`0009_excuse_workflow` a `0017_agent_layer` – vznikly
+nezávisle, žádná neexistovala, když druhá vznikala). Bez merge revize
+`alembic upgrade head` spadne na "Multiple head revisions". Objevilo se to,
+když `db-migrate` kontejner dlouho běžel proti staršímu image (bez
+`0017_agent_layer` v souborech), takže nikdy nehlásil chybu – teprve po
+přebuildu vyšlo najevo, že `alembic_version` v `agentdb` ukazoval na
+`0009_excuse_workflow`, ale schémata `messaging`/`projects`/RBAC katalog
+(`0013`–`0016`) na produkční DB reálně nikdy neběžela (historie migrací se
+mezitím přeuspořádala, aniž by se to nasadilo). Dohnáno ručně (viz git
+historie `0018`/`0019` pro detaily) – `alembic upgrade head` teď na čerstvé
+i na tehdy postižené DB funguje čistě.
 
 **Pozor na pořadí souborů vs. skutečný alembic řetězec.** Číselný prefix v
 názvu souboru je jen orientační (kdy migrace vznikla), skutečné pořadí

@@ -52,6 +52,43 @@ Průběžně rozšiřovaný přehled témat pro ročníkové a maturitní práce
 | Napojení e-mailu → automatické úkoly (AI) | SW | ✅ | ✅ | — | Sdílí extrakční logiku se zápisy ze schůzek. Mat.: víc schránek/uživatelů, feedback loop |
 | Wiki/knowledge base laborky | SW | ✅ | — | — | Návody, troubleshooting, verzování stránek |
 | Analytický dashboard napříč moduly | SW/HW | — | ✅ | Volitelně obrazovka/TV v laborce jako kiosk | Potřebuje data z ostatních modulů |
+| Samorostoucí nástrojový systém pro AI orchestrátora (Generál) | SW | — | ✅ | — | Generál zvládne nový typ úkolu poprvé ručně (např. sestavit a poslat e-mail), pak nabídne vytvoření trvalého nástroje pro příště. Zadání jde specializovanému "tool" agentovi (napíše kód + testy), aktivace až po lidském schválení – systém tak pomalu roste sám, vždy s člověkem na konci schvalovacího řetězce. |
+
+### Detailní rozpis: samorostoucí nástrojový systém pro Generála
+
+**Motivace:** Generál (`General/`) dnes reaguje na uživatelovy příkazy přes
+pevně zadrátovanou sadu akcí v systémovém promptu (CHECK_STOCK,
+CREATE_ORDER, DRAFT_EMAIL, ...) – nový typ úkolu (např. "napiš studentům, že
+je zavřeno") vyžaduje ruční zásah do kódu. Cíl: když Generál poprvé zvládne
+něco nového (i jen tím, že mu člověk krok za krokem poradí), umí nabídnout
+"chceš, ať z tohohle příště udělám nástroj?" a zadání předá specializovanému
+agentovi na tvorbu nástrojů.
+
+**Postup (návrh, k rozpracování):** Generál rozpozná/nabídne novou
+schopnost → zadání (popis úkolu + ukázka z reálné konverzace) jde tool-agentovi
+→ ten napíše kód nového nástroje (nová akce/modul) + testy → nástroj běží
+v sandboxu/testovacím prostředí, ne rovnou v produkci → člověk projde návrh
+(kód, testy, co nástroj smí) a schválí → teprve pak se nástroj stane trvale
+dostupnou akcí Generála.
+
+**Klíčová otevřená rozhodnutí:** co přesně je "nástroj" v týhle codebase –
+nový Python soubor v `General/app/agents/` vyžadující redeploy, nebo něco
+dynamičtějšího (registrovatelné za běhu, bez redeploy); kdo/co je
+"tool-agent" – samostatně spouštěná AI-coding agent instance nad tímhle
+repem, nebo šablonovaný generátor s omezenou sadou stavebních bloků; jak
+přesně vypadá schvalovací krok a kde se sleduje (podobně jako
+`agent.proposals`, ale to je dnes svázané s modulem `access`, viz
+`AccessRequest/app/agent_review.py`); jak se nový nástroj bezpečně otestuje,
+než dostane přístup k reálným datům/e-mailům/objednávkám.
+
+- Maturitní: návrh a implementace celého schvalovacího a nasazovacího
+  pipeline (bezpečné generování kódu, sandbox, testování, aktivace),
+  minimálně pro jeden typ nástroje (např. nová "akce" v Generálově
+  orchestrátoru).
+
+Závislost: staví na hotovém Generálovi (orchestrátor + akce, viz sekce 5
+výše a `General/Readme`) a na principu schvalování z §21 (`agent.proposals`)
+→ řadí se až po něm.
 
 ### Detailní rozpis: AI zpracování zápisů schůzek
 

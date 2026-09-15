@@ -1,27 +1,78 @@
-Rozbitý prototyp orchestrátoru ("Generál") – měl by přes lokální LLM (Ollama)
-překládat přirozený jazyk na volání mezi Skladník/Nakupcik. Není v
-docker-compose.yml, nepoužívá ailacore. Dává smysl opravit až budou aspoň dvě
-reálné (fungující) služby, mezi kterými má orchestrovat – dnes ani Skladník
-ani Nakupcik samy o sobě neběží (viz jejich README).
+Orchestrátor ("Generál") – přes LLM (ailacore.llm, sensitive=False -> 9Router)
+umožňuje volnou konverzaci a navíc umí spustit akce mezi Skladník/Nakupcik
+a Messenger, když o ně uživatel jasně požádá. Konverzace se ukládá pod účet
+(general.chat_messages) – vyžaduje přihlášení sdílené s celým AILa
+(dl_session cookie, ailacore.auth).
 
-Momentálně rozbité:
-- main.py dělá `from app.orchestrator import run_general_command`, ale žádný
-  `app/` balíček v adresáři není – orchestrator.py, llm.py i agents/ jsou v
-  kořeni General/, ne pod app/. Import spadne hned při startu.
-- main.py používá `BaseModel` (třída `PromptIn`), ale nikde neimportuje
-  `pydantic` – i po opravě cesty na `app.` by spadlo na NameError.
-- orchestrator.py importuje `from app.agents.procurement import
-  create_order_from_low_stock` – soubor `agents/procurement.py` v repu
-  neexistuje (jen `agents/inventory.py` s `get_low_stock()`).
+Stav: Generál sám o sobě naběhne, jde promptovat (POST /general) a je
+napojený na chat v portálovém UI (assistant.aila.localhost, viz
+Gateway/Caddyfile a UI/src/LabOrchestratorDashboard.jsx). Nepřihlášený
+požadavek dostane 401 – portál v tom případě přesměruje na
+access.aila.localhost/login?next=... a po přihlášení se vrátí zpátky.
+Skladník ani Nakupcik ale zatím samy o sobě neběží (viz jejich README) a
+nejsou v docker-compose.yml – CHECK_STOCK i CREATE_ORDER proto dnes vrátí
+odpověď s poznámkou, že se nepodařilo spojit se službou, místo reálného
+výsledku. Fixnout až budou aspoň dvě reálné (fungující) služby, mezi
+kterými má orchestrovat.
 
-Architektura (jak je zamýšlená, jednou opravená):
-- llm.py – `ask_model(prompt)` přes Ollama `/api/generate` (model `qwen2.5:14b`,
-  natvrdo; `OLLAMA_URL` z env, default `http://ollama:11434`).
-- orchestrator.py – systémový prompt "Generál" nechá LLM vybrat akci
-  (CHECK_STOCK / CREATE_ORDER / UNKNOWN), pak zavolá `agents.inventory` nebo
-  chybějící `agents.procurement`. `INVENTORY_URL = http://skladnik:8001`,
-  `PROCUREMENT_URL = http://nakupcik:8002` (natvrdo, ne z env).
-- main.py – FastAPI, `POST /general {"prompt": "..."}`.
+Architektura:
+- app/orchestrator.py – systémový prompt necha LLM (ailacore.llm.complete,
+  sensitive=False, json_mode=True – dotazy o skladu/objednávkách, e-mailová
+  oznámení ani běžný pokec nenesou osobní údaje) vrátit JSON {"action":
+  "CHECK_STOCK" | "CREATE_ORDER" | "DRAFT_EMAIL" | "CONFIRM_SEND" |
+  "CANCEL_DRAFT" | "CHAT", "reply": "...", "subject": "...", "body": "..."}.
+  Volná konverzace (CHAT) se vrátí rovnou jako reply; CHECK_STOCK/CREATE_ORDER
+  zavolají app.agents.inventory / app.agents.procurement a připojí výsledek
+  jako "data".
 
-Spuštění (po opravě importů):
-    uvicorn main:app --reload --host 0.0.0.0 --port 8000
+  DRAFT_EMAIL/CONFIRM_SEND/CANCEL_DRAFT: e-mailové oznámení STUDENTŮM
+  DuklaLabs (jiná cílovka zatím není podporovaná) jde přes draft ->
+  potvrzení -> odeslání, nikdy rovnou – shoduje se s principem "u agentních
+  akcí nikdy nevratná akce bez člověka" (§21 databanky, viz
+  Database/migrations/versions/0016_projects.py). DRAFT_EMAIL sestaví
+  subject/body, natáhne příjemce (app.agents.students.active_student_emails)
+  a uloží draft jako general.chat_messages.data = {"pending_email": {...}}
+  na Generálově zprávě, aniž by cokoli odeslal. Další tah v konverzaci:
+  pokud poslední Generálova zpráva nese "pending_email", LLM dostane tuhle
+  informaci v promptu a smí (podle uživatelovy odpovědi) vrátit
+  CONFIRM_SEND (zavolá app.agents.messenger.send_email) nebo CANCEL_DRAFT.
+  Jakmile Generál odpoví čímkoli jiným, draft "vyprchá" – žádný speciální
+  úklid.
+
+  Historie se načítá z DB (app/history.py), ne z toho, co pošle klient, a
+  skládá se do promptu jako transkript, ať Generál odpovídá s kontextem
+  (a vidí nevyřízený draft). Po odpovědi se do DB uloží jak uživatelův
+  vstup, tak Generálova odpověď.
+- app/history.py – general.chat_messages (schéma general, migrace
+  Database/migrations/versions/0019_general_chat.py): load_history(user_id),
+  save_message(user_id, role, text, data).
+- app/agents/inventory.py – GET {INVENTORY_URL}/materials/low
+  (INVENTORY_URL z env, default http://skladnik:8001).
+- app/agents/procurement.py – POST {PROCUREMENT_URL}/orders/from-low-stock
+  (PROCUREMENT_URL z env, default http://nakupcik:8002) – endpoint na
+  straně Nakupcika zatím neexistuje, viz jeho README.
+- app/agents/messenger.py – POST {MESSENGER_URL}/send (MESSENGER_URL z env,
+  default http://messenger:8005) – stejná služba, co používá AccessRequest/
+  AccessAgents, žádná auth navíc (interní síť).
+- app/agents/students.py – active_student_emails(): přímý dotaz do
+  internal.students JOIN auth.users (aktivní studentské účty s e-mailem).
+- app/main.py – FastAPI:
+  - GET  /general/me      – ailacore.auth.get_current_user, 401 když nepřihlášen.
+  - GET  /general/history – dosavadní konverzace přihlášeného uživatele.
+  - POST /general {"prompt": "..."} – vyžaduje přihlášení, vrací
+    {"reply": "...", "data": <volitelně>}.
+  CORS povolený jen pro http://aila.localhost (portál), allow_credentials=True
+  (cookie musí jít cross-origin z aila.localhost na assistant.aila.localhost).
+
+Env: POSTGRES_* (sdílená agentdb, viz docker-compose.yml), ROUTER_API_KEY /
+ROUTER_MODEL pro 9Router v .env (v praxi stejný klíč jako Projects/.env a
+AccessAgents/.env, viz .env.example). INVENTORY_URL / PROCUREMENT_URL /
+MESSENGER_URL přepíší defaultní adresy Skladníka/Nákupčího/Messengeru.
+
+Spuštění (bez Dockeru, z kořene repa – ailacore musí být nainstalovaný,
+`pip install -e Shared`, a Postgres dostupný podle POSTGRES_* env):
+    cd General
+    uvicorn app.main:app --reload --host 0.0.0.0 --port 8008
+
+Spuštění přes docker-compose (z kořene repa):
+    docker compose up --build general

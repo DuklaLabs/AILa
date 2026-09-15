@@ -8,21 +8,17 @@ picks the real project/phase/assignee in the UI before `propose_tasks`
 files anything, so no fuzzy name-matching happens server-side.
 """
 import json
-import os
 import re
 from typing import Any, Optional
 
-import httpx
 from fastapi import HTTPException
 
 from ailacore import pocket
+from ailacore.llm import complete as llm_complete
 from ailacore.models import User
 
 from app.services import proposals as proposals_service
 from app.services.base import require
-
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:14b")
 
 EXTRACTION_PROMPT = """Jsi asistent, který z přepisu schůzky vytáhne konkrétní úkoly (akční položky).
 
@@ -107,18 +103,9 @@ async def extract_task_candidates(user: User, recording_id: str) -> dict:
     if not text.strip():
         return {"recording": _recording_summary(recording), "candidates": []}
 
-    async with httpx.AsyncClient(timeout=300) as client:
-        resp = await client.post(
-            f"{OLLAMA_URL}/api/generate",
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": EXTRACTION_PROMPT.format(transcript=text),
-                "stream": False,
-                "format": "json",
-            },
-        )
-        resp.raise_for_status()
-        raw = resp.json()["response"]
+    raw = await llm_complete(
+        EXTRACTION_PROMPT.format(transcript=text), sensitive=True, json_mode=True, timeout=300,
+    )
     return {
         "recording": _recording_summary(recording),
         "candidates": _parse_json_array(raw),

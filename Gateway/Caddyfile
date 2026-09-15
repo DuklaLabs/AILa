@@ -31,9 +31,6 @@ http://projects.aila.localhost {
 	reverse_proxy projects-server:8006
 }
 
-# Rezervováno pro budoucí chat s asistentem (General rozšířený o tool-calling).
-# General dnes není v docker-compose nasazený – blok zůstává zakomentovaný,
-# dokud tam nebude co proxovat.
-# http://assistant.aila.localhost {
-# 	reverse_proxy general:8000
-# }
+http://assistant.aila.localhost {
+	reverse_proxy general:8008
+}

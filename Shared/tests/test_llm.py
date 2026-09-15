@@ -100,6 +100,10 @@ async def test_sensitive_false_builds_messages_with_system(monkeypatch):
         {"role": "system", "content": "jsi asistent"},
         {"role": "user", "content": "ahoj"},
     ]
+    # 9Router defaults to SSE streaming unless told otherwise — without this
+    # the response body is `data: {...}\n\ndata: {...}` chunks, not one JSON
+    # object, and resp.json() blows up.
+    assert payload["stream"] is False
 
 
 async def test_sensitive_false_json_mode_sets_response_format(monkeypatch):
@@ -191,3 +195,29 @@ def test_decide_non_object_json_is_fallback(monkeypatch):
     out = llm.decide("s", "u")
 
     assert llm.is_fallback(out)
+
+
+def test_decide_strips_markdown_code_fence(monkeypatch):
+    # Seen via 9Router: response_format=json_object still wraps in ```json.
+    recorder = _Recorder(json_body={"response": '```json\n{"verdict": "ok"}\n```'})
+    _mock_sync_client_for(monkeypatch, recorder)
+
+    out = llm.decide("s", "u")
+
+    assert out == {"verdict": "ok"}
+
+
+def test_decide_with_router_backend_calls_router_not_ollama(monkeypatch):
+    monkeypatch.setattr(llm, "LLM_SENSITIVE_BACKEND", "router")
+    monkeypatch.setattr(llm, "ROUTER_API_KEY", "rk_test")
+    monkeypatch.setattr(llm, "ROUTER_MODEL", "kr/claude-sonnet-4.5")
+    recorder = _Recorder(json_body={"choices": [{"message": {"content": '{"verdict": "ok"}'}}]})
+    _mock_sync_client_for(monkeypatch, recorder)
+
+    out = llm.decide("s", "u")
+
+    req = recorder.requests[0]
+    assert req.url.path == "/v1/chat/completions"
+    payload = _json.loads(req.read())
+    assert payload["stream"] is False
+    assert out == {"verdict": "ok"}
