@@ -110,6 +110,7 @@ async def test_patch_note_sets_operation_headers(mock_obsidian):
     assert req.headers["operation"] == "append"
     assert req.headers["target-type"] == "heading"
     assert req.headers["target"] == "Memory%3A%3ADecisions"
+    assert req.headers["markdown-patch-version"] == "1"
     assert req.content == b"new fact"
 
 

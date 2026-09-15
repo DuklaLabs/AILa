@@ -106,6 +106,14 @@ scope `recordings:write`, org klíč na to nemá práva), `OLLAMA_URL` /
 `OLLAMA_MODEL` (extrakce úkolů, default `http://ollama:11434` /
 `qwen2.5:14b`). Bez nich panel v SPA běží dál, jen tyhle akce vrátí chybu.
 
+`ailacore.obsidian` (paměť agentů, viz `Shared/README.md`) potřebuje
+`OBSIDIAN_API_KEY` — zkopíruj `Projects/.env.example` do `Projects/.env`
+a dosaď klíč z nastavení pluginu Local REST API v Obsidianu.
+`docker-compose.yml` už má pro `projects-server` nastavené
+`OBSIDIAN_BASE_URL=https://host.docker.internal:27124` a `extra_hosts`, takže
+kontejner doťuká na Obsidian běžící přímo na hostitelském stroji — Obsidian
+tam prostě musí být spuštěný s otevřeným vaultem.
+
 ```
 # DB (jednou)
 cd Database && POSTGRES_HOST=localhost alembic upgrade head

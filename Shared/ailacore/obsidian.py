@@ -101,12 +101,17 @@ async def patch_note(
     `target`: the heading path (e.g. "Memory::Decisions"), block id, or
     frontmatter field name to act on.
     """
+    # Plugin >=4.x supports two incompatible PATCH formats and 400s as
+    # "ambiguous" without this header telling it which one we're speaking —
+    # we use the legacy 1.x header-driven format (Target/Target-Type/
+    # Target-Delimiter as headers), so this is always "1", not a knob.
     headers = _headers(
         Operation=operation,
         **{
             "Target-Type": target_type,
             "Target": quote(target, safe=""),
             "Content-Type": "text/markdown",
+            "Markdown-Patch-Version": "1",
         },
     )
     if target_delimiter:
