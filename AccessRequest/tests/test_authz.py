@@ -17,6 +17,7 @@ from app.open_hours import router as open_hours_router
 from app.students import router_students
 from app.release import router_release
 from app.decisions import router_decisions
+from app.agent_review import router_agent_review
 from app import router as router_mod
 
 
@@ -30,6 +31,15 @@ CASES = [
     ("POST", "/api/students/1/approve", "internal.student:write"),
     ("GET", "/api/students/release-pending", "internal.release:manage"),
     ("GET", "/api/decisions/scheduler", "internal.release:manage"),
+    ("GET", "/api/agents/proposals", "agent.proposal:review"),
+    ("POST", "/api/agents/proposals/1/approve", "agent.proposal:review"),
+    ("POST", "/api/agents/proposals/1/reject", "agent.proposal:review"),
+    ("POST", "/api/agents/proposals/1/ack", "agent.proposal:review"),
+    ("GET", "/api/agents/reports", "agent.report:read"),
+    ("GET", "/api/agents/reports/1", "agent.report:read"),
+    ("GET", "/api/agents/runs", "agent.proposal:review"),
+    ("GET", "/api/agents/registry", "agent.proposal:review"),
+    ("POST", "/api/agents/run/monthly_lab_report", "agent.run:trigger"),
 ]
 
 
@@ -57,7 +67,7 @@ async def _fake_pool():
 @pytest.fixture
 def env(monkeypatch):
     for mod in ("app.mail_log", "app.open_hours", "app.students",
-                "app.release", "app.decisions"):
+                "app.release", "app.decisions", "app.agent_review"):
         monkeypatch.setattr(f"{mod}.get_pool", _fake_pool, raising=True)
 
     perms = {"set": frozenset()}
@@ -69,7 +79,7 @@ def env(monkeypatch):
 
     app = FastAPI()
     for r in (router_mail_log, open_hours_router, router_students,
-              router_release, router_decisions):
+              router_release, router_decisions, router_agent_review):
         app.include_router(r)
     app.dependency_overrides[get_current_user] = lambda: User(
         id=1, username="t", role="member", is_active=True

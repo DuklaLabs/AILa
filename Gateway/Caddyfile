@@ -1,0 +1,39 @@
+# Reverse proxy sjednocující AILa pod jednu doménu (*.aila.localhost v devu,
+# *.labs.<vaše-doména> na produkci – stačí tyhle hostnames přepsat).
+#
+# Host-based routing (ne path-prefix): AccessRequest i Projects mají v
+# šablonách/JS natvrdo root-relativní absolutní cesty (/static/..., /login,
+# /admin/rbac/, /app/projects/, fetch("/api/...")), takže path-prefix routing
+# by vyžadoval přepisování Location hlaviček i řetězců v HTML/JS. Subdomény
+# tohle obcházejí – každá služba dál vidí svoje cesty jako kořenové.
+#
+# SSO funguje díky SESSION_COOKIE_DOMAIN=".aila.localhost" nastavenému u
+# access-request-server a projects-server (viz docker-compose.yml) – cookie
+# dl_session pak platí pro všechny subdomény najednou.
+#
+# Explicitní "http://" schéma u každého bloku: bez něj by Caddy pro tyhle
+# hostnames sám zapnul automatický HTTPS (self-signed cert pro "special"
+# TLD jako .localhost) a přesměroval port 80 na 443 – ten ale compose
+# nepublikuje. Pro produkční doménu (labs.domena.cz) toto "http://" prostě
+# odstranit, ať Caddy sám vydá reálný certifikát a obsluhuje 443.
+
+http://aila.localhost {
+	root * /srv/portal
+	file_server
+	try_files {path} /index.html
+}
+
+http://access.aila.localhost {
+	reverse_proxy access-request-server:8003
+}
+
+http://projects.aila.localhost {
+	reverse_proxy projects-server:8006
+}
+
+# Rezervováno pro budoucí chat s asistentem (General rozšířený o tool-calling).
+# General dnes není v docker-compose nasazený – blok zůstává zakomentovaný,
+# dokud tam nebude co proxovat.
+# http://assistant.aila.localhost {
+# 	reverse_proxy general:8000
+# }

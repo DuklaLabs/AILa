@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "dev:projects": "vite --config vite.projects.config.js",
+    "dev:portal": "vite --config vite.portal.config.js",
     "build": "vite build",
     "build:projects": "vite build --config vite.projects.config.js",
+    "build:portal": "vite build --config vite.portal.config.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

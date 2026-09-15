@@ -7,6 +7,8 @@ Po přihlášení se přesměruje rovnou do SPA na `/app/projects/`.
 (Dedup do `ailacore.webauth` je vhodný follow-up – zatím to má i AccessRequest
 u sebe.)
 """
+import os
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -43,6 +45,7 @@ async def _attach_session_cookie(response, user_id: int) -> None:
         httponly=True,
         samesite="lax",
         max_age=int(SESSION_TTL.total_seconds()),
+        domain=os.getenv("SESSION_COOKIE_DOMAIN") or None,
     )
 
 
@@ -99,7 +102,7 @@ async def logout(request: Request):
     token = request.cookies.get(SESSION_COOKIE)
     if token:
         await revoke_session(token)
-    response.delete_cookie(SESSION_COOKIE)
+    response.delete_cookie(SESSION_COOKIE, domain=os.getenv("SESSION_COOKIE_DOMAIN") or None)
     return response
 
 

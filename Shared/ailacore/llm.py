@@ -15,9 +15,17 @@ caller via `sensitive`:
 There is no default for `sensitive` on purpose — a caller has to say which
 one it means, rather than silently inheriting a guess that could send
 something sensitive to a third-party provider.
+
+`decide()` is a synchronous, JSON-mode convenience wrapper around the same
+local Ollama backend, for scheduler-driven agents (AccessAgents/*) that call
+it as a plain blocking function and always want a structured dict back. It
+never raises: on any failure it returns `{"_fallback": True, "_error": ...}`
+so a caller can treat that as "needs manual review" and never crash on a
+flaky or absent LLM (check with `is_fallback()`).
 """
+import json
 import os
-from typing import Optional
+from typing import Any, Optional
 
 import httpx
 
@@ -91,3 +99,65 @@ async def _complete_router(
         )
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"]
+
+
+def is_fallback(result: dict) -> bool:
+    """True when `decide()` didn't return a real model decision."""
+    return bool(result.get("_fallback"))
+
+
+def _fallback(error: str) -> dict:
+    print(f"[ailacore.llm] fallback: {error}", flush=True)
+    return {"_fallback": True, "_error": error}
+
+
+def decide(
+    system: str,
+    user: str,
+    *,
+    schema: Optional[dict] = None,
+    model: Optional[str] = None,
+    temperature: float = 0.0,
+    timeout: float = 60.0,
+) -> dict:
+    """Ask the local Ollama model a question, get a parsed JSON dict back.
+
+    `schema` is an optional JSON-schema fragment describing the expected
+    shape; when given it's both appended to the system prompt (so the model
+    sees it in plain text) and passed as Ollama's structured-output `format`.
+    Any failure — network, timeout, non-JSON or non-object response — is
+    reported through the `_fallback` contract instead of an exception, since
+    callers are scheduler jobs that must keep running.
+    """
+    sys_prompt = system.strip()
+    if schema is not None:
+        sys_prompt += (
+            "\n\nOdpověz výhradně JSON objektem odpovídajícím tomuto schématu "
+            "(žádný text okolo):\n" + json.dumps(schema, ensure_ascii=False)
+        )
+
+    fmt: Any = schema if schema is not None else "json"
+    body = {
+        "model": model or OLLAMA_MODEL,
+        "prompt": f"{sys_prompt}\n\n{user}",
+        "stream": False,
+        "format": fmt,
+        "options": {"temperature": temperature},
+    }
+
+    try:
+        with httpx.Client(timeout=timeout) as client:
+            resp = client.post(f"{OLLAMA_URL}/api/generate", json=body)
+            resp.raise_for_status()
+            content = resp.json().get("response") or ""
+    except Exception as e:  # noqa: BLE001 - agent must never crash on LLM errors
+        return _fallback(f"LLM nedostupný: {e}")
+
+    try:
+        parsed = json.loads(content)
+    except (ValueError, TypeError) as e:
+        return _fallback(f"nevalidní JSON z modelu: {e}: {content[:200]!r}")
+
+    if not isinstance(parsed, dict):
+        return _fallback(f"model nevrátil objekt, ale {type(parsed).__name__}")
+    return parsed

@@ -694,3 +694,132 @@
 .oh-empty {
     color: #9ca3af;
 }
+
+/* --- agentní vrstva (návrhy / reporty / běhy) --- */
+.agent-sub {
+    font-size: 13px;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin: 16px 0 6px;
+}
+
+.agent-history {
+    margin-top: 12px;
+}
+
+.agent-history > summary {
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.agent-acts {
+    white-space: nowrap;
+}
+
+.agent-acts button {
+    margin-left: 4px;
+}
+
+.agent-stat {
+    font-size: 12px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: #374151;
+    color: #e5e7eb;
+}
+
+.agent-stat-pending { background: #92400e; color: #fde68a; }
+.agent-stat-info { background: #1e3a5f; color: #bfdbfe; }
+.agent-stat-approved { background: #14532d; color: #bbf7d0; }
+.agent-stat-rejected { background: #7f1d1d; color: #fecaca; }
+.agent-stat-acknowledged { background: #374151; color: #d1d5db; }
+
+/* jistota (confidence) */
+.conf-bar {
+    display: inline-block;
+    width: 54px;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.14);
+    vertical-align: middle;
+    overflow: hidden;
+}
+
+.conf-fill {
+    display: block;
+    height: 100%;
+    background: #38bdf8;
+}
+
+.conf-num {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-left: 4px;
+}
+
+/* detail v modalu */
+.agent-checks {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.agent-checks .check {
+    display: inline-block;
+    width: 18px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.agent-checks .check.ok { color: #22c55e; }
+.agent-checks .check.bad { color: #ef4444; }
+.agent-checks .check.neutral { color: #9ca3af; }
+
+.rec-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.rec-badge.rec-ok { background: #14532d; color: #bbf7d0; }
+.rec-badge.rec-no { background: #7f1d1d; color: #fecaca; }
+.rec-badge.rec-maybe { background: #78350f; color: #fde68a; }
+
+.agent-raw {
+    margin-top: 14px;
+}
+
+.agent-raw > summary {
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+.agent-raw pre {
+    white-space: pre-wrap;
+    font-size: 12px;
+    background: #11151c;
+    padding: 10px;
+    border-radius: 6px;
+    max-height: 40vh;
+    overflow: auto;
+}
+
+/* spouštěcí panel */
+.agent-run-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.agent-run-buttons button:disabled {
+    opacity: 0.55;
+    cursor: default;
+}

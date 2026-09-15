@@ -87,7 +87,15 @@ services:
       JWT_SECRET: "dev-jwt-secret-zmen-v-produkci"
       INITIAL_PASSWORD: "admin"
 
-
+  ollama-pull-models:
+    image: ollama/ollama:latest
+    container_name: ollama_pull_models
+    volumes:
+      - ollama-data:/root/.ollama
+    # Zde definujete, které modely se mají stáhnout (oddělené mezerou)
+    entrypoint: /bin/sh -c "ollama serve & sleep 5 && ollama pull qwen2.5"
+    depends_on:
+      - ollama
 
   access-request-server:
     build:
@@ -117,9 +125,18 @@ services:
       # DUKLA_SUPERVISORS na adresy (oddělovač ";", volitelně víc řádků).
       MESSENGER_URL: http://messenger:8005
       SUPERVISOR_EMAILS: "Bc. Jan Petrášek=petrasek@spssecb.cz"
+      # Ovládání agentní vrstvy z admin panelu (karta „Běhy a spouštění agentů“).
+      # ACCESS_AGENT_RUN_TOKEN musí být STEJNÝ jako u služby access-agents.
+      # V produkci silná náhodná hodnota z prostředí, necommitovat.
+      ACCESS_AGENTS_URL: http://access-agents:8007
+      ACCESS_AGENT_RUN_TOKEN: "dev-run-token"
       # Veřejná URL serveru — odkazy v e-mailu (rozhodovací stránka) z ní
       # vycházejí. V produkci nastavit na skutečnou (https) adresu.
-      PUBLIC_BASE_URL: "http://localhost:8003"
+      PUBLIC_BASE_URL: "http://access.aila.localhost"
+      # Sdílená doména session cookie (dl_session) napříč službami za gateway
+      # (viz Gateway/). Prázdné/nenastavené = cookie platí jen pro přesný host,
+      # co ji vydal (dnešní chování, žádné SSO). V produkci ".labs.<doména>".
+      SESSION_COOKIE_DOMAIN: ".aila.localhost"
       # Podpis rozhodovacích odkazů. V produkci nastavit na náhodnou hodnotu;
       # její změna zneplatní všechny dříve rozeslané odkazy.
       DECISION_SECRET: "dev-decision-secret-zmen-v-produkci"
@@ -247,7 +264,11 @@ services:
       POSTGRES_PASSWORD: agentpass
       POSTGRES_HOST: postgres
       # Veřejná URL serveru (odkazy v UI/e-mailech). V produkci https adresa.
-      PUBLIC_BASE_URL: "http://localhost:8006"
+      PUBLIC_BASE_URL: "http://projects.aila.localhost"
+      # Sdílená doména session cookie (dl_session) napříč službami za gateway
+      # (viz Gateway/). Prázdné/nenastavené = cookie platí jen pro přesný host,
+      # co ji vydal (dnešní chování, žádné SSO). V produkci ".labs.<doména>".
+      SESSION_COOKIE_DOMAIN: ".aila.localhost"
       # Interní hodinová sazba a týdenní kapacita člověka pro finanční/kapacitní
       # výpočty. Přednost má řádek v projects.settings, pak tyhle env, pak default.
       PROJECTS_HOURLY_RATE_CZK: "500"
@@ -269,7 +290,86 @@ services:
     env_file:
       - ./Projects/.env
 
+  # Agentní vrstva nad AccessRequest (§21 databanky). Vlastní plánovač +
+  # ruční POST /run/{agent}. Čte agentdb přes ailacore, e-maily přes Messenger,
+  # LLM přes Ollamu. Návrhy/reporty píše do sdíleného schématu `agent`;
+  # schvalují se v access-request-server (admin panel).
+  access-agents:
+    build:
+      context: .
+      dockerfile: AccessAgents/Dockerfile
+    container_name: access-agents
+    ports:
+      - "8007:8007"
+    networks:
+      - agentnet
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+      ollama:
+        condition: service_started
+      messenger:
+        condition: service_started
+      access-request-server:
+        condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      POSTGRES_DB: agentdb
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
+      POSTGRES_HOST: postgres
+      MESSENGER_URL: http://messenger:8005
+      PUBLIC_BASE_URL: "http://access.aila.localhost"
+      OLLAMA_HOST: http://ollama:11434
+      AILA_AGENT_MODEL: "qwen2.5:latest"
+      # BEZPEČNÁ BRZDA: "false" = plánovač nezaregistruje žádný job.
+      # Agenti jdou pořád spustit ručně přes POST /run/{agent}. Zapínat
+      # postupně, agent po agentovi.
+      ACCESS_AGENT_ENABLED: "false"
+      SCHEDULER_TZ: "Europe/Prague"
+      # #1 měsíční report o využívání laborky
+      MONTHLY_REPORT_DAY: "1"
+      MONTHLY_REPORT_HOUR: "6"
+      # #2 hlídač uvolněných hodin podle předmětu (práh streaku)
+      SUBJECT_RELEASE_STREAK: "3"
+      # sdílený tajný token pro POST /run/{agent} bez session (skripty/testy
+      # i proxy z admin panelu). STEJNÁ hodnota jako u access-request-server.
+      ACCESS_AGENT_RUN_TOKEN: "dev-run-token"
+      # adresář koordinátorů (jinak hodnoty ze SUPERVISOR_EMAILS)
+      RELEASE_COORDINATOR_EMAILS: ""
+      SUPERVISOR_EMAILS: "Bc. Jan Petrášek=petrasek@spssecb.cz"
+      # duklamaps rozvrh (předmět k hodině, poptávka) – stejné jako u AccessRequest
+      DUKLA_PG_HOST: "host.docker.internal"
+      DUKLA_PG_PORT: "5433"
+      DUKLA_PG_DB: "duklamaps"
+      DUKLA_PG_USER: "duklamaps"
+      DUKLA_PG_PASSWORD: "duklamaps"
+      DUKLA_SUPERVISORS: "Bc. Jan Petrášek, Václav Hlaváč"
+      DUKLA_DAY_BASE: "0"
+      DUKLA_PERMANENT_FALLBACK: "0"
 
+  # Reverse proxy (Caddy) sjednocující přístup pod jednu doménu: portálový
+  # shell na aila.localhost, jednotlivé služby na svých subdoménách
+  # (access.aila.localhost, projects.aila.localhost, ...). Viz Gateway/Caddyfile.
+  # Díky SESSION_COOKIE_DOMAIN výše se tu přihlášení sdílí napříč službami (SSO).
+  gateway:
+    build:
+      context: .
+      dockerfile: Gateway/Dockerfile
+    container_name: aila-gateway
+    ports:
+      - "80:80"
+    networks:
+      - agentnet
+    depends_on:
+      access-request-server:
+        condition: service_started
+      projects-server:
+        condition: service_started
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
 
 networks:
   agentnet:
@@ -278,3 +378,5 @@ volumes:
   postgres_data:
   ollama-data:
   router-data:
+  caddy_data:
+  caddy_config:

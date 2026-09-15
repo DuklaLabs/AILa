@@ -496,11 +496,49 @@ async def decision_list_submit(token: str, request: Request):
 
 def _item(r) -> dict:
     return {
+        "id": r["id"],
         "first_name": r["first_name"], "last_name": r["last_name"],
         "class_group": r["class_group"], "day": r["date"],
         "hour_number": r["hour_number"], "start_time": r["start_time"],
         "end_time": r["end_time"], "note": r["note"], "approved": r["approved"],
     }
+
+
+async def _load_release_advice(conn, booking_ids: list[int]) -> dict[int, dict]:
+    """Doporučení agenta release_advisor k daným rezervacím
+    (`agent.proposals` kind='release.advice'). Best-effort – když schéma
+    `agent` ještě neexistuje, vrátí prázdno."""
+    if not booking_ids:
+        return {}
+    try:
+        rows = await conn.fetch(
+            """
+            SELECT DISTINCT ON (target_id)
+                   target_id, summary, confidence, payload
+            FROM agent.proposals
+            WHERE module = 'access' AND kind = 'release.advice'
+              AND target_id = ANY($1::text[])
+            ORDER BY target_id, created_at DESC
+            """,
+            [str(b) for b in booking_ids],
+        )
+    except Exception:  # noqa: BLE001 - agentní vrstva je volitelná
+        return {}
+    out: dict[int, dict] = {}
+    for r in rows:
+        payload = r["payload"]
+        if isinstance(payload, str):
+            import json as _json
+            payload = _json.loads(payload)
+        try:
+            out[int(r["target_id"])] = {
+                "recommendation": (payload or {}).get("recommendation"),
+                "reason": (payload or {}).get("reason") or r["summary"],
+                "confidence": r["confidence"],
+            }
+        except (TypeError, ValueError):
+            continue
+    return out
 
 
 async def run_teacher_digest(send_all: bool = False) -> dict:
@@ -509,6 +547,7 @@ async def run_teacher_digest(send_all: bool = False) -> dict:
     pool = await get_pool()
     async with pool.acquire() as conn:
         rows = await conn.fetch(_UPCOMING_SQL)
+        advice = await _load_release_advice(conn, [r["id"] for r in rows])
     recipients, _teachers = await _resolve(rows)
     by_id = {r["id"]: r for r in rows}
 
@@ -523,7 +562,9 @@ async def run_teacher_digest(send_all: bool = False) -> dict:
         if not has_new and not send_all:
             skipped.append({"kind": kind, "name": name, "duvod": "žádné nové"})
             continue
-        res = await send_decision_digest(kind, name, email, [_item(r) for r in grp])
+        res = await send_decision_digest(
+            kind, name, email, [_item(r) for r in grp], advice=advice
+        )
         if res.get("error"):
             errors.append(res)
         else:

@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/static/css/forms.css" />
 
     <!-- Specifický styl pro open hours (?v = cache-buster při změnách) -->
-    <link rel="stylesheet" href="/static/css/open_hours.css?v=14" />
+    <link rel="stylesheet" href="/static/css/open_hours.css?v=15" />
 </head>
 
 <body>
@@ -70,6 +70,35 @@
         <div id="mailLogList">Načítám…</div>
     </section>
 
+    <!-- BĚHY A SPOUŠTĚNÍ AGENTŮ -->
+    <section class="card" id="agentRunsCard" style="display:none;">
+        <h2>🛠️ Běhy a spouštění agentů</h2>
+        <p class="hint">
+            „Spustit teď“ zavolá agenta mimo plánovač – běh je synchronní a přes
+            jazykový model může trvat desítky sekund. Níže je historie posledních běhů.
+        </p>
+        <div id="agentRunButtons">Načítám…</div>
+        <div id="agentRunsList"></div>
+    </section>
+
+    <!-- NÁVRHY AGENTŮ -->
+    <section class="card" id="agentProposalsCard" style="display:none;">
+        <h2>🤖 Návrhy agentů (<span id="agentProposalsCount">0</span>)</h2>
+        <p class="hint">
+            Návrhy a upozornění od agentní vrstvy. U položek „čeká na rozhodnutí“
+            je <em>Detail</em>, <em>Schválit</em> (provede odpovídající akci) a
+            <em>Zamítnout</em>. Položky „na vědomí“ se odbaví tlačítkem
+            <em>Beru na vědomí</em>.
+        </p>
+        <div id="agentProposalsList">Načítám…</div>
+    </section>
+
+    <!-- MĚSÍČNÍ REPORTY -->
+    <section class="card" id="agentReportsCard" style="display:none;">
+        <h2>📈 Měsíční reporty o využívání laborky</h2>
+        <div id="agentReportsList">Načítám…</div>
+    </section>
+
     <!-- TÝDENNÍ MŘÍŽKA -->
     <section class="card">
         <div class="card-head">
@@ -105,11 +134,16 @@
     </div>
 </div>
 
-<script src="/static/js/timetable.js?v=14"></script>
+<script src="/static/js/timetable.js?v=15"></script>
 <script src="/static/js/pending_students.js"></script>
 <script src="/static/js/pending_release.js"></script>
 <script src="/static/js/decisions_admin.js"></script>
 <script src="/static/js/mail_log.js"></script>
-<script src="/static/js/open_hours.js?v=14"></script>
+<script src="/static/js/open_hours.js?v=15"></script>
+<!-- agentní vrstva – po open_hours.js (recykluje jeho helpery toast/dialog/modal) -->
+<script src="/static/js/agent_labels.js"></script>
+<script src="/static/js/agent_runs.js"></script>
+<script src="/static/js/agent_proposals.js"></script>
+<script src="/static/js/agent_reports.js"></script>
 </body>
 </html>

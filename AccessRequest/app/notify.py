@@ -360,7 +360,26 @@ async def _send_via_messenger(payload: dict, source: str | None = None) -> str |
 # rozhodování probíhá na webové stránce /rozhodovani/{token}.
 # ----------------------------------------------------------------------
 
-def _digest_row_html(item: dict) -> str:
+_ADVICE_COLORS = {"povolit": "#1a7f37", "zamitnout": "#b42318", "zvazit": "#9a6700"}
+
+
+def _advice_row_html(advice: dict) -> str:
+    """Druhý řádek pod studentem – doporučení asistenta (agent release_advisor)."""
+    e = _html.escape
+    rec = (advice.get("recommendation") or "").lower()
+    color = _ADVICE_COLORS.get(rec, "#555")
+    label = {"povolit": "doporučeno povolit", "zamitnout": "doporučeno zamítnout",
+             "zvazit": "zvážit"}.get(rec, rec or "doporučení")
+    reason = e(advice.get("reason") or "")
+    return (
+        f'<tr><td colspan="3" style="padding:0 0 8px;border-bottom:1px solid #eee;'
+        f'font-size:12px;color:#555;">'
+        f'🤖 <strong style="color:{color};">{e(label)}</strong>'
+        f'{(" – " + reason) if reason else ""}</td></tr>'
+    )
+
+
+def _digest_row_html(item: dict, advice: dict | None = None) -> str:
     e = _html.escape
     d: date = item["day"]
     weekday = _CZ_WEEKDAYS[d.weekday()]
@@ -380,7 +399,7 @@ def _digest_row_html(item: dict) -> str:
     if item.get("class_group"):
         student += f" ({e(item['class_group'])})"
     note = f" – {e(item['note'])}" if item.get("note") else ""
-    return (
+    row = (
         f'<tr>'
         f'<td style="padding:6px 10px 6px 0;border-bottom:1px solid #eee;">{student}</td>'
         f'<td style="padding:6px 10px 6px 0;border-bottom:1px solid #eee;'
@@ -388,6 +407,9 @@ def _digest_row_html(item: dict) -> str:
         f'<td style="padding:6px 0;border-bottom:1px solid #eee;">{stav}</td>'
         f'</tr>'
     )
+    if advice:
+        row += _advice_row_html(advice)
+    return row
 
 
 def _cz_zadost(n: int) -> str:
@@ -400,12 +422,17 @@ def _cz_zadost(n: int) -> str:
 
 
 def build_digest_email(
-    recipient_name: str, items: list[dict], *, link: str, intro: str | None = None
+    recipient_name: str, items: list[dict], *, link: str, intro: str | None = None,
+    advice: dict | None = None,
 ) -> tuple[str, str]:
-    """items: dicts s klíči first_name,last_name,class_group,day,hour_number,
-    start_time,end_time,note,approved. Předpokládá aspoň jednu položku."""
+    """items: dicts s klíči id,first_name,last_name,class_group,day,hour_number,
+    start_time,end_time,note,approved. Předpokládá aspoň jednu položku.
+    `advice`: {booking_id: {recommendation, reason, ...}} od agenta release_advisor."""
+    advice = advice or {}
     new_count = sum(1 for it in items if it.get("approved") is None)
-    rows = "".join(_digest_row_html(it) for it in items)
+    rows = "".join(
+        _digest_row_html(it, advice.get(it.get("id"))) for it in items
+    )
 
     if new_count:
         adj = "nová" if new_count == 1 else "nové" if new_count <= 4 else "nových"
@@ -453,10 +480,12 @@ def build_digest_email(
 
 
 async def send_decision_digest(
-    kind: str, name: str, email: str, items: list[dict]
+    kind: str, name: str, email: str, items: list[dict],
+    advice: dict | None = None,
 ) -> dict:
     """Pošle jedné identitě (učitel/dozor) rozhodovací digest.
-    kind ∈ {"teacher","supervisor"}; email je předvyřešený volajícím."""
+    kind ∈ {"teacher","supervisor"}; email je předvyřešený volajícím.
+    `advice`: {booking_id: {...}} doporučení od agenta release_advisor."""
     result: dict = {"kind": kind, "name": name, "sent_to": None, "error": None}
     if not NOTIFY_ENABLED:
         result["error"] = "notifikace vypnuté (NOTIFY_ENABLED)"
@@ -476,7 +505,9 @@ async def send_decision_digest(
         )
     else:
         intro = "Tyto zápisy spadají pod vás jako dozora DuklaLabs."
-    subject, body = build_digest_email(name, items, link=link, intro=intro)
+    subject, body = build_digest_email(
+        name, items, link=link, intro=intro, advice=advice
+    )
     payload = {"to": [email], "subject": subject, "body": body, "html": True}
     if BOOKING_NOTIFY_CC:
         payload["cc"] = BOOKING_NOTIFY_CC
