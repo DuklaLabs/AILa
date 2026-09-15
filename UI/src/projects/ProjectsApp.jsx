@@ -5,6 +5,7 @@ import BoardView from './panels/BoardView'
 import TaskDrawer from './panels/TaskDrawer'
 import CostSummary from './panels/CostSummary'
 import ProposalsPanel from './panels/ProposalsPanel'
+import PocketPanel from './panels/PocketPanel'
 import RunningTimer from './panels/TimerPanel'
 import GanttView from './panels/GanttView'
 
@@ -18,6 +19,7 @@ export default function ProjectsApp() {
   const [taskId, setTaskId] = useState(null)
   const [view, setView] = useState('board')
   const [showProposals, setShowProposals] = useState(false)
+  const [showPocket, setShowPocket] = useState(false)
   const [sideOpen, setSideOpen] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
 
@@ -41,6 +43,7 @@ export default function ProjectsApp() {
   const perms = me?.permissions || []
   const canReviewProposals = can(perms, 'projects.proposal:review')
   const canFinance = can(perms, 'projects.finance:read')
+  const canUseAi = can(perms, 'projects.ai:use')
 
   function pickProject(id) {
     setProjectId(id)
@@ -60,6 +63,9 @@ export default function ProjectsApp() {
         <div className="brand"><span className="logo">DL</span> Projekty</div>
         <RunningTimer reloadKey={reloadKey} users={users} onChange={bump} onError={setError} />
         <div className="spacer" />
+        {canUseAi && (
+          <button className="ghost" onClick={() => setShowPocket(true)}>🎙 Pocket</button>
+        )}
         {canReviewProposals && (
           <button className="ghost" onClick={() => setShowProposals(true)}>⚑ Návrhy AI</button>
         )}
@@ -157,6 +163,15 @@ export default function ProjectsApp() {
           users={users}
           onClose={() => setShowProposals(false)}
           onReviewed={bump}
+          onError={setError}
+        />
+      )}
+
+      {showPocket && (
+        <PocketPanel
+          users={users}
+          onClose={() => setShowPocket(false)}
+          onProposed={() => { bump(); setShowPocket(false); setShowProposals(true) }}
           onError={setError}
         />
       )}
