@@ -15,24 +15,8 @@ let supAllMap = {};  // totéž bez filtru – pro zákaz dozora v inline formul
 let supNames = [];   // pořadí dozorů z configu
 const SUP_COLORS = ["#eab308", "#38bdf8", "#a78bfa", "#f472b6", "#34d399", "#fb923c"];
 
-function esc(s) {
-    return String(s ?? "").replace(/[&<>"']/g, c => (
-        { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
-    ));
-}
-
-// krátké nenáročné potvrzení v rohu (úspěch)
-function toast(message, type = "success") {
-    const host = document.getElementById("toastHost");
-    if (!host) return;
-    const el = document.createElement("div");
-    el.className = `toast toast-${type}`;
-    el.textContent = message;
-    const remove = () => el.remove();
-    el.addEventListener("click", remove);
-    host.appendChild(el);
-    setTimeout(remove, 2500);
-}
+// esc(), closeOhModal() a toast() jsou teď ve sdíleném ui_common.js (načíst
+// před tímto souborem) – používají je i jiné stránky (Analytika, Stroje).
 
 // celoobrazovkové okno; vrací Promise s hodnotou stisknutého tlačítka
 function appDialog({ title, message, variant = "info", buttons }) {
@@ -312,14 +296,6 @@ async function showBookings(id, date, hour) {
         </table>
     `;
 }
-
-function closeOhModal() {
-    document.getElementById("ohModal").style.display = "none";
-}
-
-document.addEventListener("keydown", e => {
-    if (e.key === "Escape") closeOhModal();
-});
 
 // --- inline formuláře -------------------------------------------------
 

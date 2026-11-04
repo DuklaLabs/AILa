@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DuklaLabs – Uživatelé</title>
+    <link rel="stylesheet" href="/static/css/base.css" />
+    <link rel="stylesheet" href="/static/css/layout.css" />
+    <link rel="stylesheet" href="/static/css/buttons.css" />
+    <link rel="stylesheet" href="/static/css/forms.css" />
+    <link rel="stylesheet" href="/static/css/common.css" />
+</head>
+
+<body>
+
+<header class="topbar">
+    <h1>⚙️ DuklaLabs – Uživatelé</h1>
+</header>
+
+<main class="container">
+
+    <!-- SPRÁVA RBAC (sdílená konzole z ailacore) -->
+    <section class="card">
+        <h2>🔑 Role a oprávnění</h2>
+        <p class="hint">Správa rolí, katalogu oprávnění a přiřazení uživatelům (jen pro adminy).</p>
+        <a class="btn-primary" href="/admin/rbac/">Otevřít konzoli</a>
+    </section>
+
+    <!-- ČEKAJÍCÍ NA SCHVÁLENÍ UVOLŇOVÁNÍ -->
+    <section class="card" id="releaseCard" style="display:none;">
+        <h2>🎓 Souhlas s uvolňováním z výuky (<span id="releaseCount">0</span>)</h2>
+        <p class="hint">
+            Dokud nedá souhlas třídní učitel i koordinátor, student se nemůže
+            zapsat na hodinu, kdy má podle rozvrhu vlastní výuku.
+        </p>
+        <div id="releaseList">Načítám…</div>
+    </section>
+
+</main>
+
+<script src="/static/js/pending_release.js"></script>
+</body>
+</html>

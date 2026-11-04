@@ -2,11 +2,13 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DuklaLabs – Admin panel</title>
     <link rel="stylesheet" href="/static/css/base.css" />
     <link rel="stylesheet" href="/static/css/layout.css" />
     <link rel="stylesheet" href="/static/css/buttons.css" />
     <link rel="stylesheet" href="/static/css/forms.css" />
+    <link rel="stylesheet" href="/static/css/common.css" />
 
     <!-- Specifický styl pro open hours (?v = cache-buster při změnách) -->
     <link rel="stylesheet" href="/static/css/open_hours.css?v=15" />
@@ -20,27 +22,10 @@
 
 <main class="container">
 
-    <!-- SPRÁVA RBAC (sdílená konzole z ailacore) -->
-    <section class="card">
-        <h2>🔑 Role a oprávnění</h2>
-        <p class="hint">Správa rolí, katalogu oprávnění a přiřazení uživatelům (jen pro adminy).</p>
-        <a class="btn-primary" href="/admin/rbac/">Otevřít konzoli</a>
-    </section>
-
     <!-- ČEKAJÍCÍ REGISTRACE -->
     <section class="card" id="pendingCard" style="display:none;">
         <h2>🔔 Čekající registrace (<span id="pendingCount">0</span>)</h2>
         <div id="pendingList">Načítám...</div>
-    </section>
-
-    <!-- ČEKAJÍCÍ NA SCHVÁLENÍ UVOLŇOVÁNÍ -->
-    <section class="card" id="releaseCard" style="display:none;">
-        <h2>🎓 Souhlas s uvolňováním z výuky (<span id="releaseCount">0</span>)</h2>
-        <p class="hint">
-            Dokud nedá souhlas třídní učitel i koordinátor, student se nemůže
-            zapsat na hodinu, kdy má podle rozvrhu vlastní výuku.
-        </p>
-        <div id="releaseList">Načítám…</div>
     </section>
 
     <!-- ROZESLÁNÍ E-MAILŮ K UVOLNĚNÍ -->
@@ -57,19 +42,6 @@
         <span id="digestResult" class="hint"></span>
     </section>
 
-    <!-- LOG ODESLANÝCH E-MAILŮ -->
-    <section class="card" id="mailLogCard">
-        <div class="card-head">
-            <h2>📮 Log odeslaných e-mailů</h2>
-            <div class="week-toggle">
-                <button type="button" data-flt="" class="active">Vše</button>
-                <button type="button" data-flt="ERROR">Jen chyby</button>
-            </div>
-        </div>
-        <p class="hint" id="mailLogCounts"></p>
-        <div id="mailLogList">Načítám…</div>
-    </section>
-
     <!-- BĚHY A SPOUŠTĚNÍ AGENTŮ -->
     <section class="card" id="agentRunsCard" style="display:none;">
         <h2>🛠️ Běhy a spouštění agentů</h2>
@@ -81,26 +53,8 @@
         <div id="agentRunsList"></div>
     </section>
 
-    <!-- NÁVRHY AGENTŮ -->
-    <section class="card" id="agentProposalsCard" style="display:none;">
-        <h2>🤖 Návrhy agentů (<span id="agentProposalsCount">0</span>)</h2>
-        <p class="hint">
-            Návrhy a upozornění od agentní vrstvy. U položek „čeká na rozhodnutí“
-            je <em>Detail</em>, <em>Schválit</em> (provede odpovídající akci) a
-            <em>Zamítnout</em>. Položky „na vědomí“ se odbaví tlačítkem
-            <em>Beru na vědomí</em>.
-        </p>
-        <div id="agentProposalsList">Načítám…</div>
-    </section>
-
-    <!-- MĚSÍČNÍ REPORTY -->
-    <section class="card" id="agentReportsCard" style="display:none;">
-        <h2>📈 Měsíční reporty o využívání laborky</h2>
-        <div id="agentReportsList">Načítám…</div>
-    </section>
-
     <!-- TÝDENNÍ MŘÍŽKA -->
-    <section class="card">
+    <section class="card" id="openHoursCard">
         <div class="card-head">
             <h2>Otevřené hodiny</h2>
             <div class="week-toggle">
@@ -134,16 +88,13 @@
     </div>
 </div>
 
+<script src="/static/js/ui_common.js"></script>
 <script src="/static/js/timetable.js?v=15"></script>
 <script src="/static/js/pending_students.js"></script>
-<script src="/static/js/pending_release.js"></script>
 <script src="/static/js/decisions_admin.js"></script>
-<script src="/static/js/mail_log.js"></script>
 <script src="/static/js/open_hours.js?v=15"></script>
-<!-- agentní vrstva – po open_hours.js (recykluje jeho helpery toast/dialog/modal) -->
+<!-- agentní vrstva – po open_hours.js (recykluje jeho helpery toast/dialog) -->
 <script src="/static/js/agent_labels.js"></script>
 <script src="/static/js/agent_runs.js"></script>
-<script src="/static/js/agent_proposals.js"></script>
-<script src="/static/js/agent_reports.js"></script>
 </body>
 </html>

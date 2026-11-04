@@ -26,6 +26,7 @@ async function loadPendingRelease() {
             <td>
               <button class="btn-primary" onclick="coordRelease(${s.student_id}, true)">Schválit</button>
               <button class="delete-btn" onclick="coordRelease(${s.student_id}, false)">Zamítnout</button>
+              <button class="btn-ghost" onclick="resendRelease(${s.student_id})">Poslat žádost</button>
             </td></tr>`;
     });
     list.innerHTML = html + "</table>";
@@ -39,6 +40,19 @@ async function coordRelease(studentId, ok) {
     });
     if (!res.ok) { alert("Nepodařilo se uložit."); return; }
     loadPendingRelease();
+}
+
+async function resendRelease(studentId) {
+    const res = await fetch(`/api/students/${studentId}/release-resend`, { method: "POST" });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || data.status !== "ok") {
+        alert("Nepodařilo se odeslat žádost.");
+        return;
+    }
+    const r = data.result || {};
+    const sent = (r.sent || []).length;
+    const problems = [...(r.skipped || []), ...(r.errors || [])];
+    alert(`Odesláno: ${sent}.` + (problems.length ? ` Problémy: ${problems.length} (viz log odeslané pošty).` : ""));
 }
 
 loadPendingRelease();

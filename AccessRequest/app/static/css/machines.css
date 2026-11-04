@@ -1,0 +1,93 @@
+/* Stránka Stroje (/machines) – vlastní jen status pill a mřížku karet,
+   zbytek (karta, tlačítka, hint, toast) je v base.css/common.css. */
+
+.mch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+}
+
+.mch-card {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 14px 16px;
+}
+
+.mch-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.mch-name {
+    font-weight: 600;
+}
+
+.mch-type {
+    color: #9aa0ad;
+    font-size: 12px;
+}
+
+.mch-location {
+    color: #9aa0ad;
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.mch-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 3px 10px;
+    margin-top: 10px;
+}
+
+.mch-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.mch-status-idle { background: rgba(178, 190, 195, 0.18); color: #b2bec3; }
+.mch-status-idle .mch-status-dot { background: #b2bec3; }
+
+.mch-status-running { background: rgba(0, 184, 148, 0.16); color: #00d9a6; }
+.mch-status-running .mch-status-dot { background: #00b894; }
+
+.mch-status-broken { background: rgba(214, 48, 49, 0.16); color: #ff6b6b; }
+.mch-status-broken .mch-status-dot { background: #d63031; }
+
+.mch-status-offline { background: rgba(99, 110, 114, 0.18); color: #9aa0ad; }
+.mch-status-offline .mch-status-dot { background: #636e72; }
+
+.mch-note {
+    font-size: 13px;
+    color: #c9ccd3;
+    margin-top: 8px;
+}
+
+.mch-updated {
+    font-size: 11px;
+    color: #74798a;
+    margin-top: 6px;
+}
+
+.mch-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.mch-actions button {
+    font-size: 12px;
+    padding: 5px 10px;
+}
+
+.mch-empty {
+    color: #9aa0ad;
+}

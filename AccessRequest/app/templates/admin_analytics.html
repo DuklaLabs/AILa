@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DuklaLabs – Analytika</title>
+    <link rel="stylesheet" href="/static/css/base.css" />
+    <link rel="stylesheet" href="/static/css/layout.css" />
+    <link rel="stylesheet" href="/static/css/buttons.css" />
+    <link rel="stylesheet" href="/static/css/forms.css" />
+    <link rel="stylesheet" href="/static/css/common.css" />
+
+    <!-- jen pro styl detailního modalu (.oh-modal*), sdíleného s Otevřenými hodinami -->
+    <link rel="stylesheet" href="/static/css/open_hours.css?v=15" />
+</head>
+
+<body>
+
+<header class="topbar">
+    <h1>📊 DuklaLabs – Analytika</h1>
+</header>
+
+<main class="container">
+
+    <!-- MĚSÍČNÍ REPORTY -->
+    <section class="card" id="agentReportsCard" style="display:none;">
+        <h2>📈 Měsíční reporty o využívání laborky</h2>
+        <div id="agentReportsList">Načítám…</div>
+    </section>
+
+    <!-- LOG ODESLANÝCH E-MAILŮ -->
+    <section class="card" id="mailLogCard">
+        <div class="card-head">
+            <h2>📮 Log odeslaných e-mailů</h2>
+            <div class="week-toggle">
+                <button type="button" data-flt="" class="active">Vše</button>
+                <button type="button" data-flt="ERROR">Jen chyby</button>
+            </div>
+        </div>
+        <p class="hint" id="mailLogCounts"></p>
+        <div id="mailLogList">Načítám…</div>
+    </section>
+
+</main>
+
+<!-- Detail měsíčního reportu -->
+<div id="ohModal" class="oh-modal" style="display:none;" onclick="if(event.target===this)closeOhModal()">
+    <div class="oh-modal-box">
+        <button type="button" class="oh-modal-close" onclick="closeOhModal()">×</button>
+        <div id="ohModalBody"></div>
+    </div>
+</div>
+
+<script src="/static/js/ui_common.js"></script>
+<script src="/static/js/mail_log.js"></script>
+<script src="/static/js/agent_reports.js"></script>
+</body>
+</html>

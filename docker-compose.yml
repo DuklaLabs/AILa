@@ -100,6 +100,10 @@ services:
       # DUKLA_SUPERVISORS na adresy (oddělovač ";", volitelně víc řádků).
       MESSENGER_URL: http://messenger:8005
       SUPERVISOR_EMAILS: "Bc. Jan Petrášek=petrasek@spssecb.cz"
+      # Portálový shell (Gateway, aila.localhost) čte /api/whoami odsud přes
+      # cross-origin fetch s cookies – potřebuje CORS na tento origin.
+      # V produkci nastavit na skutečnou (https) adresu portálu.
+      PORTAL_ORIGINS: "http://aila.localhost"
       # Ovládání agentní vrstvy z admin panelu (karta „Běhy a spouštění agentů“).
       # ACCESS_AGENT_RUN_TOKEN musí být STEJNÝ jako u služby access-agents.
       # V produkci silná náhodná hodnota z prostředí, necommitovat.

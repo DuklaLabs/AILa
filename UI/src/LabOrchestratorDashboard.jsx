@@ -1,303 +1,241 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./LabOrchestratorDashboard.css";
 
+// Portálový shell na kořeni domény (aila.localhost) – navigační rozcestník
+// pod jednotným přihlášením. Session cookie dl_session je společná pro
+// všechny *.aila.localhost služby (SESSION_COOKIE_DOMAIN), takže se sem
+// člověk přihlásí jednou (na access.aila.localhost/login) a dál už jen
+// naviguje. Stav přihlášení si portál čte přes CORS fetch na
+// access-request-server (PORTAL_ORIGINS v jeho konfiguraci).
+const ACCESS_ORIGIN = "http://access.aila.localhost";
+const PROJECTS_ORIGIN = "http://projects.aila.localhost";
+const PORTAL_URL = "http://aila.localhost/";
 
-/**
- * Jednoduchá dashboardová stránka:
- * - horní černý header
- * - levý výsuvný panel s agenty
- * - střed: chat s "generálem"
- * - pravý panel: detail vybraného agenta (např. stroje)
- */
+// Hlavní nabídka – to, co člověk v laborce reálně potřebuje. `href` je
+// hotový a funkční modul; `comingSoon` zatím nemá backend a tile jen
+// vysvětlí, co tam jednou bude. Některé tily se liší podle role – dozor/
+// admin/staff potřebuje u otevřených hodin administraci, ne přihlašovací
+// formulář pro studenty.
+function buildTiles(role) {
+  const isStaff = role === "admin" || role === "staff";
 
-// Položky se `href` navigují na reálnou (cross-origin) subdoménu dané služby –
-// SSO cookie (SESSION_COOKIE_DOMAIN=".aila.localhost") zajišťuje, že tam
-// uživatel není znovu vyzván k přihlášení. Položky s `comingSoon` zatím nemají
-// žádný backend/UI a zůstávají jen mock náhledem v pravém panelu.
-const AGENTS = [
-  { id: "orchestrator", name: "AILa", description: "Hlavní agent, který rozděluje práci." },
-  {
-    id: "assistant",
-    name: "Generál",
-    description: "Chat s asistentem – zatím ukázkový, čeká na napojení na backend (General).",
-    comingSoon: true,
-  },
-  {
-    id: "access",
-    name: "Vrátný",
-    description: "Přístupy, RFID, registrace a otevřené hodiny.",
-    href: "http://access.aila.localhost/admin",
-  },
-  {
-    id: "rbac",
-    name: "Oprávnění",
-    description: "Správa rolí a oprávnění napříč systémem (RBAC konzole).",
-    href: "http://access.aila.localhost/admin/rbac/",
-  },
-  {
-    id: "projects",
-    name: "Projekty",
-    description: "Kanban, Gantt a sledování času na projektech.",
-    href: "http://projects.aila.localhost/app/projects/",
-  },
-  { id: "machines", name: "Strojník", description: "Správa strojů a jejich stavů.", comingSoon: true },
-  { id: "inventory", name: "Skladník", description: "Materiál, sklady, zásoby.", comingSoon: true },
-  { id: "orders", name: "Nákupčík", description: "Objednávky materiálu.", comingSoon: true },
-  { id: "analytics", name: "Analytik", description: "Přehledy, statistiky, reporty.", comingSoon: true },
-];
+  const tiles = [
+    isStaff
+      ? {
+          id: "open-hours",
+          title: "Administrace volných hodin",
+          description: "Správa otevřených hodin, uvolňování z výuky a docházky.",
+          icon: "🕒",
+          href: `${ACCESS_ORIGIN}/admin#openHoursCard`,
+        }
+      : {
+          id: "open-hours",
+          title: "Přihlášení na volnou hodinu",
+          description: "Zápis na otevřené hodiny DuklaLabs, uvolňování z výuky.",
+          icon: "🕒",
+          href: `${ACCESS_ORIGIN}/student-hours`,
+        },
+    {
+      id: "projects",
+      title: "Projekty",
+      description: "Kanban, hierarchie úkolů, time tracking a finance.",
+      icon: "📋",
+      href: `${PROJECTS_ORIGIN}/app/projects/`,
+    },
+    {
+      id: "machines",
+      title: "Stroje",
+      description: "Provozní stav strojů – kdo co používá, co je mimo provoz.",
+      icon: "🖨️",
+      href: `${ACCESS_ORIGIN}/machines`,
+    },
+    {
+      id: "wiki",
+      title: "DuklaWiki",
+      description: "Návody, troubleshooting a znalostní báze laborky.",
+      icon: "📖",
+      comingSoon: true,
+    },
+    {
+      id: "inventory",
+      title: "Sklad",
+      description: "Materiál, zásoby a stav skladu.",
+      icon: "📦",
+      comingSoon: true,
+    },
+    {
+      id: "orders",
+      title: "Objednávky",
+      description: "Objednávky materiálu a schvalování.",
+      icon: "🛒",
+      comingSoon: true,
+    },
+    isStaff
+      ? {
+          id: "analytics",
+          title: "Analytika",
+          description: "Měsíční reporty o využívání laborky a log odeslaných e-mailů.",
+          icon: "📊",
+          href: `${ACCESS_ORIGIN}/admin/analytics`,
+        }
+      : {
+          id: "analytics",
+          title: "Analytika",
+          description: "Přehledy a statistiky napříč moduly.",
+          icon: "📊",
+          comingSoon: true,
+        },
+  ];
 
-const MOCK_MACHINES = [
-  { id: 1, name: "FDM tiskárna 1", type: "FDM", status: "running", currentUser: "Jan Novák" },
-  { id: 2, name: "FDM tiskárna 2", type: "FDM", status: "idle", currentUser: null },
-  { id: 3, name: "Laser 1", type: "Laser", status: "error", currentUser: "Petr Svoboda" },
-  { id: 4, name: "SLA tiskárna 1", type: "SLA", status: "running", currentUser: "Eva Dvořáková" },
-];
-
-const statusColor = (status) => {
-  switch (status) {
-    case "running":
-      return "#00b894"; // zelená
-    case "idle":
-      return "#b2bec3"; // šedá
-    case "error":
-      return "#d63031"; // červená
-    default:
-      return "#636e72";
+  if (isStaff) {
+    tiles.push({
+      id: "users",
+      title: "Uživatelé",
+      description: "Role a oprávnění, souhlas s uvolňováním z výuky – na jednom místě.",
+      icon: "👤",
+      href: `${ACCESS_ORIGIN}/admin/users`,
+    });
   }
-};
+
+  return tiles;
+}
+
+// Admin/staff navíc vidí odkaz na obecnou administraci (čekající registrace,
+// rozesílání digestů, běhy agentů) – drženo mimo hlavní nabídku, ať zůstane
+// přehledná i pro studenty.
+const ADMIN_LINKS = [
+  { id: "admin", title: "Administrace přístupů", href: `${ACCESS_ORIGIN}/admin` },
+];
+
+function useCurrentUser() {
+  const [state, setState] = useState({ status: "loading", user: null });
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${ACCESS_ORIGIN}/api/whoami`, { credentials: "include" })
+      .then((res) => {
+        if (cancelled) return;
+        if (res.status === 401) {
+          setState({ status: "anonymous", user: null });
+          return;
+        }
+        if (!res.ok) throw new Error(`whoami ${res.status}`);
+        return res.json().then((user) => setState({ status: "ok", user }));
+      })
+      .catch(() => {
+        if (!cancelled) setState({ status: "error", user: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return state;
+}
 
 export default function LabOrchestratorDashboard() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [selectedAgent, setSelectedAgent] = useState(AGENTS[0]);
-  const [messages, setMessages] = useState([
-    { from: "agent", text: "Zdravím, jsem Generál. Jak ti dnes můžu pomoct v laboratoři?" },
-  ]);
-  const [input, setInput] = useState("");
-
-  // Chat zatím nemá skutečný backend (General je jen nenasazený prototyp bez
-  // /api/chat) – místo síťového volání jen zobrazíme, že asistent zatím čeká
-  // na napojení. Až bude General rozšířený o tool-calling, přijde sem znovu
-  // fetch na `assistant.aila.localhost`.
-  const handleSend = () => {
-    if (!input.trim()) return;
-    const userMessage = { from: "user", text: input.trim() };
-    const agentMessage = {
-      from: "agent",
-      text: "Asistent zatím není napojen na backend – bude dostupný v příští fázi.",
-    };
-    setMessages((prev) => [...prev, userMessage, agentMessage]);
-    setInput("");
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  const { status, user } = useCurrentUser();
 
   return (
-    <div className="lab-shell">
-      {/* Horní lišta */}
-      <header className="lab-header">
-        <div className="lab-header-left">
-          <div className="lab-logo">LAB CONTROL</div>
-          <div className="lab-header-title">Agentní orchestrátor laboratoře</div>
+    <div className="portal-shell">
+      <header className="portal-header">
+        <div className="portal-brand">
+          <span className="portal-logo">AILa</span>
+          <span className="portal-subtitle">DuklaLabs – portál</span>
         </div>
-        <div className="lab-header-right">
-          <span className="lab-user-role">Admin</span>
-          <div className="lab-user-avatar">JD</div>
+        <div className="portal-account">
+          {status === "ok" && user && (
+            <>
+              <span className="portal-user">
+                {user.full_name || user.username}
+                <span className="portal-role">{user.role}</span>
+              </span>
+              <a
+                className="portal-btn portal-btn-ghost"
+                href={`${ACCESS_ORIGIN}/logout?next=${encodeURIComponent(PORTAL_URL)}`}
+              >
+                Odhlásit
+              </a>
+            </>
+          )}
+          {status === "anonymous" && (
+            <a
+              className="portal-btn portal-btn-primary"
+              href={`${ACCESS_ORIGIN}/login?next=${encodeURIComponent(PORTAL_URL)}`}
+            >
+              Přihlásit se
+            </a>
+          )}
         </div>
       </header>
 
-      {/* Hlavní layout */}
-      <div className="lab-main">
-        {/* Levý panel s agenty */}
-        <div className={`lab-sidebar ${sidebarOpen ? "open" : "closed"}`}>
-          <div className="lab-sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen ? "⟨" : "⟩"}
+      <main className="portal-main">
+        {status === "loading" && <p className="portal-hint">Zjišťuji přihlášení…</p>}
+
+        {status === "error" && (
+          <p className="portal-hint portal-hint-error">
+            Nepodařilo se ověřit přihlášení ({ACCESS_ORIGIN} neodpovídá). Zkus to prosím znovu.
+          </p>
+        )}
+
+        {status === "anonymous" && (
+          <div className="portal-login-card">
+            <h1>Přihlas se</h1>
+            <p>
+              Jedno přihlášení platí pro všechny moduly DuklaLabs – docházku,
+              projekty i sklad.
+            </p>
+            <a
+              className="portal-btn portal-btn-primary"
+              href={`${ACCESS_ORIGIN}/login?next=${encodeURIComponent(PORTAL_URL)}`}
+            >
+              Přihlásit se
+            </a>
           </div>
+        )}
 
-          {sidebarOpen && (
-            <>
-              <div className="lab-sidebar-title">Agenti</div>
-              <div className="lab-sidebar-list">
-                {AGENTS.map((agent) => (
-                  <button
-                    key={agent.id}
-                    className={
-                      "lab-agent-item" +
-                      (selectedAgent.id === agent.id ? " lab-agent-item-active" : "")
-                    }
-                    onClick={() =>
-                      agent.href ? (window.location.href = agent.href) : setSelectedAgent(agent)
-                    }
-                  >
-                    <div className="lab-agent-name">
-                      {agent.name}
-                      {agent.comingSoon && (
-                        <span className="lab-agent-badge">Připravujeme</span>
-                      )}
-                    </div>
-                    <div className="lab-agent-desc">{agent.description}</div>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Střední panel – chat s generálem */}
-        <div className="lab-center">
-          <div className="lab-panel lab-chat-panel">
-            <div className="lab-panel-header">
-              <div>
-                <div className="lab-panel-title">Konverzace s Generálem</div>
-                <div className="lab-panel-subtitle">
-                  Hlavní orchestrátor – přijímá příkazy a řídí ostatní agenty.
-                </div>
-              </div>
-              <span className="lab-status-pill">Online</span>
-            </div>
-
-            <div className="lab-chat-messages">
-              {messages.map((m, idx) => (
-                <div
-                  key={idx}
-                  className={
-                    "lab-chat-message " +
-                    (m.from === "user" ? "lab-chat-message-user" : "lab-chat-message-agent")
-                  }
-                >
-                  <div className="lab-chat-bubble">
-                    <div className="lab-chat-label">
-                      {m.from === "user" ? "Ty" : "Generál"}
-                    </div>
-                    <div>{m.text}</div>
-                  </div>
-                </div>
+        {status === "ok" && (
+          <>
+            <div className="portal-grid">
+              {buildTiles(user?.role).map((tile) => (
+                <PortalTile key={tile.id} tile={tile} />
               ))}
             </div>
 
-            <div className="lab-chat-input-row">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Zeptej se generála – např. „Kdo je aktuálně v laborce?“ nebo „Povol FDM tiskárnu 1 pro Jana Nováka“..."
-                className="lab-chat-textarea"
-              />
-              <button
-                className="lab-chat-send-btn"
-                onClick={handleSend}
-                disabled={!input.trim()}
-              >
-                Odeslat
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Pravý panel – detail vybraného agenta */}
-        <div className="lab-right">
-          <div className="lab-panel lab-detail-panel">
-            <div className="lab-panel-header">
-              <div>
-                <div className="lab-panel-title">Detail agenta</div>
-                <div className="lab-panel-subtitle">{selectedAgent.name}</div>
+            {user?.role === "admin" || user?.role === "staff" ? (
+              <div className="portal-admin-row">
+                {ADMIN_LINKS.map((link) => (
+                  <a key={link.id} className="portal-admin-link" href={link.href}>
+                    {link.title}
+                  </a>
+                ))}
               </div>
-            </div>
+            ) : null}
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
 
-            {/* Obsah podle typu agenta. `access`/`rbac`/`projects` sem nikdy
-                nedorazí – jejich kliknutí naviguje pryč (mají `href`). */}
-            {selectedAgent.id === "machines" ? (
-              <MachinesOverview />
-            ) : selectedAgent.id === "inventory" ? (
-              <InventoryOverview />
-            ) : (
-              <GenericAgentOverview agent={selectedAgent} />
-            )}
-          </div>
-        </div>
+function PortalTile({ tile }) {
+  const body = (
+    <>
+      <div className="portal-tile-icon">{tile.icon}</div>
+      <div className="portal-tile-title">
+        {tile.title}
+        {tile.comingSoon && <span className="portal-tile-badge">Připravujeme</span>}
       </div>
-    </div>
+      <div className="portal-tile-desc">{tile.description}</div>
+    </>
   );
-}
 
-/** Přehled strojů pro Machines Agenta */
-function MachinesOverview() {
+  if (tile.comingSoon) {
+    return <div className="portal-tile portal-tile-disabled">{body}</div>;
+  }
   return (
-    <div className="lab-detail-content">
-      <h3 className="lab-section-title">Stroje v laboratoři</h3>
-      <div className="lab-machines-grid">
-        {MOCK_MACHINES.map((m) => (
-          <div key={m.id} className="lab-card">
-            <div className="lab-card-header">
-              <span className="lab-card-title">{m.name}</span>
-              <span
-                className="lab-card-status-dot"
-                style={{ backgroundColor: statusColor(m.status) }}
-              />
-            </div>
-            <div className="lab-card-body">
-              <div className="lab-card-row">
-                <span className="lab-card-label">Typ:</span>
-                <span>{m.type}</span>
-              </div>
-              <div className="lab-card-row">
-                <span className="lab-card-label">Stav:</span>
-                <span>{m.status}</span>
-              </div>
-              <div className="lab-card-row">
-                <span className="lab-card-label">Uživatel:</span>
-                <span>{m.currentUser || "—"}</span>
-              </div>
-            </div>
-            <div className="lab-card-footer">
-              <button className="lab-card-btn">Detail</button>
-              <button className="lab-card-btn lab-card-btn-outline">Lock</button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Jednoduchý placeholder pro Inventory Agenta */
-function InventoryOverview() {
-  return (
-    <div className="lab-detail-content">
-      <h3 className="lab-section-title">Inventář (placeholder)</h3>
-      <p>Sem přijde přehled materiálů, stav zásob a upozornění na potřebu doobjednat.</p>
-      <ul className="lab-list">
-        <li className="lab-list-item">
-          <div>
-            <div className="lab-list-title">PLA filament – červený</div>
-            <div className="lab-list-subtitle">Zbývá: 3,2 kg (nad minimem)</div>
-          </div>
-        </li>
-        <li className="lab-list-item">
-          <div>
-            <div className="lab-list-title">Pryskyřice – průhledná</div>
-            <div className="lab-list-subtitle">Zbývá: 0,5 l (blízko minima)</div>
-          </div>
-          <button className="lab-list-btn lab-card-btn-outline">Navrhnout objednávku</button>
-        </li>
-      </ul>
-    </div>
-  );
-}
-
-/** Defaultní detail pro ostatní agenty */
-function GenericAgentOverview({ agent }) {
-  return (
-    <div className="lab-detail-content">
-      <h3 className="lab-section-title">{agent.name}</h3>
-      <p>{agent.description}</p>
-      <p style={{ marginTop: 8 }}>
-        Tady může být speciální dashboard, grafy nebo nastavení pro tohohle agenta.
-      </p>
-    </div>
+    <a className="portal-tile" href={tile.href}>
+      {body}
+    </a>
   );
 }

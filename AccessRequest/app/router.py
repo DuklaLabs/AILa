@@ -35,11 +35,35 @@ async def render_admin(request: Request):
     return templates.TemplateResponse(request, "admin.html")
 
 
+@router.get("/admin/users")
+async def render_admin_users(request: Request):
+    if await _require_staff(request) is None:
+        return RedirectResponse(url="/login")
+    return templates.TemplateResponse(request, "admin_users.html")
+
+
+@router.get("/admin/analytics")
+async def render_admin_analytics(request: Request):
+    if await _require_staff(request) is None:
+        return RedirectResponse(url="/login")
+    return templates.TemplateResponse(request, "admin_analytics.html")
+
+
 @router.get("/student-hours")
 async def student_hours(request: Request):
     if await _require_any_login(request) is None:
         return RedirectResponse(url="/login")
     return templates.TemplateResponse(request, "student_hours.html")
+
+
+@router.get("/machines")
+async def render_machines(request: Request):
+    # Otevřené pro kohokoli přihlášeného (i studenta) – vidět stav stroje se
+    # může hodit každému. Měnit stav může jen kdo má lab.machine:manage
+    # (ověřuje API, tlačítka v šabloně se podle toho schovají).
+    if await _require_any_login(request) is None:
+        return RedirectResponse(url="/login")
+    return templates.TemplateResponse(request, "machines.html")
 
 
 router.include_router(bookings_router)

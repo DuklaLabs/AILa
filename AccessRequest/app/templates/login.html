@@ -25,6 +25,7 @@
       {% endif %}
 
       <form method="POST" action="/login-check" style="text-align:left; margin-top:10px;">
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
         <label for="username">Uživatel</label>
         <input id="username" name="username" type="text" required />
 
