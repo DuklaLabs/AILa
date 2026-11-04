@@ -11,28 +11,35 @@ personál nemohl stav strojů měnit. Čtení stavu nemá vlastní oprávnění,
 stejně jako /student-hours: stačí přihlášení (ať vidí stav stroje i
 studenti, ne jen staff).
 
-Revision ID: 0018_machines
-Revises: 0017_agent_layer
+Revision ID: 0020_machines
+Revises: 0019_general_chat
 Create Date: 2026-11-04
 
 """
 from alembic import op
 
-revision = "0018_machines"
-down_revision = "0017_agent_layer"
+revision = "0020_machines"
+down_revision = "0019_general_chat"
 branch_labels = None
 depends_on = None
 
 
 def upgrade() -> None:
+    # IF NOT EXISTS: this was originally written as 0018_machines straight
+    # off 0017_agent_layer, before the merge with main revealed 0018/0019
+    # were already taken by the excuse-workflow/general-chat merge chain.
+    # Re-numbered to land after those, but the dev DB already had this
+    # migration's own changes applied under the old revision id — so
+    # upgrade() must tolerate running again against a DB that already has
+    # them.
     op.execute(
         """
         ALTER TABLE lab.machines
-            ADD COLUMN status VARCHAR(16) NOT NULL DEFAULT 'idle'
+            ADD COLUMN IF NOT EXISTS status VARCHAR(16) NOT NULL DEFAULT 'idle'
                 CHECK (status IN ('idle', 'running', 'broken', 'offline')),
-            ADD COLUMN current_user_id INTEGER REFERENCES auth.users(id),
-            ADD COLUMN status_note TEXT,
-            ADD COLUMN status_updated_at TIMESTAMP NOT NULL DEFAULT NOW();
+            ADD COLUMN IF NOT EXISTS current_user_id INTEGER REFERENCES auth.users(id),
+            ADD COLUMN IF NOT EXISTS status_note TEXT,
+            ADD COLUMN IF NOT EXISTS status_updated_at TIMESTAMP NOT NULL DEFAULT NOW();
 
         INSERT INTO auth.role_permissions (role_name, permission_name)
         VALUES ('staff', 'lab.machine:manage')
