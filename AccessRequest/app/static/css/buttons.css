@@ -1,4 +1,8 @@
-.btn {
+/* .btn-primary / .btn-ghost carry the full button shape on their own –
+   templates and JS-generated markup mostly use them without the .btn base. */
+.btn,
+.btn-primary,
+.btn-ghost {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -21,6 +25,12 @@
 .btn-primary:hover {
     transform: translateY(-2px);
     filter: brightness(1.05);
+}
+
+.btn-primary:disabled {
+    opacity: 0.55;
+    cursor: default;
+    transform: none;
 }
 
 .btn-ghost {

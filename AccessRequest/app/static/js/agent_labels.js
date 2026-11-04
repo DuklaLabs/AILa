@@ -1,5 +1,5 @@
-// Přátelské názvy agentů a druhů návrhů. Sdílené mezi agent_proposals.js,
-// agent_reports.js a agent_runs.js (načíst tenhle soubor jako první).
+// Přátelské názvy agentů a druhů návrhů. Používá agent_runs.js
+// (načíst tenhle soubor jako první).
 
 const AGENT_LABEL = {
     monthly_lab_report: "Měsíční report laborky",

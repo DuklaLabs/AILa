@@ -1,0 +1,185 @@
+/* Sdílená "kostra" přihlášené appky (admin, analytika, uživatelé, studentské
+   hodiny) – dřív napůl žila v open_hours.css, takže stránky, co ho
+   nenačítaly, přišly o .hint/.delete-btn/toast apod. Tady je to na jednom
+   místě pro všechny. open_hours.css nadále obsahuje jen věci specifické pro
+   mřížku hodin (.timetable*, .tt-*, .sup-*, .oh-*, .agent-*). */
+
+.topbar {
+    padding: 20px 28px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.topbar h1 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 28px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.card-head h2 {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.week-toggle {
+    display: inline-flex;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.week-toggle button {
+    background: transparent;
+    border: none;
+    color: #ddd;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.week-toggle button:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.week-toggle button.active {
+    background: var(--accent);
+    color: #fff;
+}
+
+.hint {
+    color: #9ca3af;
+    font-size: 12px;
+    margin: 8px 0 16px;
+}
+
+.delete-btn {
+    background: #aa2a2a;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+}
+
+.delete-btn:hover {
+    background: #d13737;
+}
+
+/* --- toast hlášky (chyby / potvrzení) --- */
+.toast-host {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: min(360px, 90vw);
+}
+
+.toast {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.35;
+    color: #f3f4f6;
+    background: #1f2430;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-left: 3px solid #9ca3af;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    animation: toast-in 0.18s ease-out;
+}
+
+.toast-error {
+    border-left-color: #ef4444;
+}
+
+.toast-success {
+    border-left-color: #22c55e;
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateX(12px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* --- celoobrazovkové okno: chyba / potvrzení --- */
+.app-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.app-dialog-box {
+    width: min(440px, 90vw);
+    background: #1f2430;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: 4px solid #9ca3af;
+    border-radius: 12px;
+    padding: 22px 24px;
+    color: #f3f4f6;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: toast-in 0.15s ease-out;
+}
+
+.app-dialog-box.app-dialog-error { border-top-color: #ef4444; }
+.app-dialog-box.app-dialog-confirm { border-top-color: #eab308; }
+
+.app-dialog-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.app-dialog-error .app-dialog-title::before { content: "⚠ "; }
+
+.app-dialog-msg {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #d1d5db;
+    white-space: pre-wrap;
+}
+
+.app-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.app-dialog-actions button {
+    padding: 8px 18px;
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+}
+
+.app-dialog-cancel {
+    background: #374151;
+    color: #fff;
+}
+
+.app-dialog-cancel:hover {
+    background: #4b5563;
+}

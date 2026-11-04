@@ -2,6 +2,7 @@ import os
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -18,6 +19,7 @@ from app.mail_log import router_mail_log
 from app.agent_review import router_agent_review
 
 from app.open_hours import router as open_hours_router
+from app.machines import router_machines
 from app.dukla_db import close_dukla_pool
 from app.scheduler import shutdown_scheduler, start_scheduler
 from app.timetable_client import close_timetable_pool
@@ -34,6 +36,23 @@ app = FastAPI()
 # asyncpg doesn't support. Assumes a single access-request-server replica;
 # scaling out would need a distributed lock to avoid duplicate digests.
 scheduler = AsyncIOScheduler(timezone="Europe/Prague")
+
+# Portálový shell (aila.localhost, viz Gateway/) čte přihlášeného uživatele
+# přes fetch("/api/whoami", {credentials:"include"}) – cross-origin vůči
+# tomuto originu, takže potřebuje CORS. Cookie dl_session je společná
+# (SESSION_COOKIE_DOMAIN), CORS jen dovolí JS na portálu si přečíst odpověď.
+_portal_origins = [
+    o.strip() for o in os.getenv("PORTAL_ORIGINS", "http://aila.localhost").split(",")
+    if o.strip()
+]
+if _portal_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_portal_origins,
+        allow_credentials=True,
+        allow_methods=["GET"],
+        allow_headers=["*"],
+    )
 
 
 @app.on_event("startup")
@@ -86,6 +105,7 @@ app.include_router(router_mail_log)
 app.include_router(excuse_requests_router)
 app.include_router(excuse_requests_staff_router)
 app.include_router(router_agent_review)
+app.include_router(router_machines)
 
 # Sdílená RBAC administrace z ailacore (API + React konzole na /admin/rbac/).
 app.include_router(rbac_api_router)

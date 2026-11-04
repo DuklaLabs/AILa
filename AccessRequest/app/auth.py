@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -27,6 +26,25 @@ class RFIDLoginRequest(BaseModel):
     card_uid: str
 
 
+def _safe_next(url: str | None) -> str | None:
+    """Guard against open redirects: only follow `next` if it's a plain
+    relative path, or points at our own SSO domain (SESSION_COOKIE_DOMAIN,
+    e.g. ".aila.localhost", falling back to the bare "aila.localhost" dev
+    domain if unset). Used so other AILa services (e.g. the portal shell at
+    aila.localhost) can send people back to themselves after login/logout."""
+    if not url:
+        return None
+    if url.startswith("/"):
+        return url
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        return None
+    domain = (os.getenv("SESSION_COOKIE_DOMAIN") or "").lstrip(".") or "aila.localhost"
+    if parsed.hostname == domain or parsed.hostname.endswith("." + domain):
+        return url
+    return None
+
+
 async def _attach_session_cookie(response, user_id: int) -> None:
     token, _expires_at = await create_session(user_id)
     response.set_cookie(
@@ -39,25 +57,9 @@ async def _attach_session_cookie(response, user_id: int) -> None:
     )
 
 
-def _safe_next(url: Optional[str]) -> Optional[str]:
-    """Only allow bouncing back to something under *.aila.localhost (or the
-    bare domain) after login — anything else could be used as an open
-    redirect. `next` comes from other AILa services (e.g. the portal shell
-    at aila.localhost) that want the user back after SSO login here."""
-    if not url:
-        return None
-    parsed = urlparse(url)
-    if parsed.scheme not in ("http", "https"):
-        return None
-    host = parsed.hostname or ""
-    if host != "aila.localhost" and not host.endswith(".aila.localhost"):
-        return None
-    return url
-
-
 @router_auth.get("/login")
-async def login_page(request: Request, next: Optional[str] = None):
-    return templates.TemplateResponse(request, "login.html", {"next": next})
+async def login_page(request: Request, next: str | None = None):
+    return templates.TemplateResponse(request, "login.html", {"next": _safe_next(next)})
 
 
 @router_auth.post("/login-check")
@@ -65,8 +67,9 @@ async def login_check(
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
-    next: Optional[str] = Form(default=None),
+    next: str | None = Form(None),
 ):
+    next_url = _safe_next(next)
     user = await authenticate_password(username, password)
     if user is None:
         pending = await authenticate_password_ignoring_active(username, password)
@@ -74,17 +77,17 @@ async def login_check(
             return templates.TemplateResponse(
                 request,
                 "login.html",
-                {"error": "Účet zatím čeká na schválení administrátorem.", "next": next},
+                {"error": "Účet zatím čeká na schválení administrátorem.", "next": next_url},
                 status_code=403,
             )
         return templates.TemplateResponse(
             request,
             "login.html",
-            {"error": "Nesprávné přihlašovací údaje.", "next": next},
+            {"error": "Nesprávné přihlašovací údaje.", "next": next_url},
             status_code=401,
         )
 
-    target = _safe_next(next) or ("/admin" if user.role in ("admin", "staff") else "/student-hours")
+    target = next_url or ("/admin" if user.role in ("admin", "staff") else "/student-hours")
     response = RedirectResponse(url=target, status_code=302)
     await _attach_session_cookie(response, user.id)
     return response
@@ -105,7 +108,8 @@ async def login_rfid(payload: RFIDLoginRequest):
 
 @router_auth.get("/logout")
 async def logout(request: Request):
-    response = RedirectResponse(url="/")
+    target = _safe_next(request.query_params.get("next")) or "/"
+    response = RedirectResponse(url=target)
     token = request.cookies.get(SESSION_COOKIE)
     if token:
         await revoke_session(token)

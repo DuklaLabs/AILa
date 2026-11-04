@@ -8,8 +8,12 @@ Při registraci se e-mailem zeptáme třídního učitele i koordinátora
     POST /uvolneni/{token}   (role, volba)
          -> zapíše souhlas (release_teacher_ok / release_coord_ok); přepsatelné
 
-    GET  /api/students/release-pending           (admin/staff)
+    GET  /api/students/release-pending            (admin/staff)
     POST /api/students/{student_id}/release-coord (admin/staff)  body {ok: bool}
+    POST /api/students/{student_id}/release-resend (admin/staff)
+         -> znovu rozešle žádost o souhlas třídnímu + koordinátorům (pro
+         studenty, kteří do systému přibyli mimo /student-register, např.
+         hromadným importem, a tak jim žádost nikdy neodešla)
 
 Dokud NENÍ `release_teacher_ok AND release_coord_ok`, booking blokuje zápisy
 na hodiny, kdy má student podle rozvrhu vlastní výuku (viz app.bookings).
@@ -21,6 +25,8 @@ from fastapi.responses import HTMLResponse
 
 from ailacore.rbac import require_permission
 from ailacore.db import get_pool
+
+from app.students import request_release_consent
 
 router_release = APIRouter(tags=["Release"])
 
@@ -189,3 +195,20 @@ async def release_coord(student_id: int, request: Request):
     if res == "UPDATE 0":
         return {"status": "error", "detail": "Student nenalezen."}
     return {"status": "ok", "release_coord_ok": ok}
+
+
+@router_release.post(
+    "/api/students/{student_id}/release-resend",
+    dependencies=[Depends(require_permission("internal.release:manage"))],
+)
+async def release_resend(student_id: int):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT class_group FROM internal.students WHERE student_id = $1",
+            student_id,
+        )
+    if row is None:
+        return {"status": "error", "detail": "Student nenalezen."}
+    result = await request_release_consent(student_id, row["class_group"])
+    return {"status": "ok", "result": result}

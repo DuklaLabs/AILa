@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DuklaLabs – Stroje</title>
+    <link rel="stylesheet" href="/static/css/base.css" />
+    <link rel="stylesheet" href="/static/css/layout.css" />
+    <link rel="stylesheet" href="/static/css/buttons.css" />
+    <link rel="stylesheet" href="/static/css/forms.css" />
+    <link rel="stylesheet" href="/static/css/common.css" />
+    <link rel="stylesheet" href="/static/css/machines.css" />
+</head>
+
+<body>
+
+<header class="topbar">
+    <h1>🖨️ DuklaLabs – Stroje</h1>
+</header>
+
+<main class="container">
+
+    <section class="card">
+        <div class="card-head">
+            <h2>Stav strojů</h2>
+            <button type="button" class="btn-primary" id="addMachineBtn" style="display:none;">
+                + Nový stroj
+            </button>
+        </div>
+        <p class="hint">
+            Provozní stav strojů v laborce – kdo co teď používá, co je mimo
+            provoz a proč. Rezervace na konkrétní termín řeší jiný modul.
+        </p>
+        <div id="machinesList">Načítám…</div>
+    </section>
+
+</main>
+
+<div id="toastHost" class="toast-host"></div>
+
+<script src="/static/js/ui_common.js"></script>
+<script src="/static/js/machines.js"></script>
+</body>
+</html>
