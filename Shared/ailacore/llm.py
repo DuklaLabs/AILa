@@ -34,6 +34,16 @@ call it as a plain blocking function and always want a structured dict back.
 It never raises: on any failure it returns `{"_fallback": True, "_error":
 ...}` so a caller can treat that as "needs manual review" and never crash on
 a flaky or absent LLM (check with `is_fallback()`).
+
+`OLLAMA_FALLBACK_URL` (env, optional) is a second Ollama endpoint — typically
+another machine on the local network reachable by IP, e.g.
+`http://192.168.1.50:11434` — tried only when `OLLAMA_URL` is unreachable at
+the network level (connection refused/timeout). It is NOT tried on an HTTP
+error from a reachable server (bad request, model not found, ...), since
+that's a real answer, not an outage. This keeps `sensitive=True` traffic on
+our own network even when the primary box is off, instead of needing an
+operator to flip `LLM_SENSITIVE_BACKEND` to `"router"` (which sends it out
+to a cloud provider).
 """
 import json
 import os
@@ -43,6 +53,22 @@ import httpx
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:14b")
+
+# See module docstring. Empty = no fallback, same behavior as before.
+OLLAMA_FALLBACK_URL = os.getenv("OLLAMA_FALLBACK_URL", "").strip().rstrip("/")
+
+# Network-level failures worth retrying against the fallback. Deliberately
+# narrow: an HTTP error status (via raise_for_status) means the server
+# answered, so it's not retried here.
+_OLLAMA_CONNECT_ERRORS = (httpx.ConnectError, httpx.ConnectTimeout)
+
+
+def _ollama_base_urls() -> list[str]:
+    urls = [OLLAMA_URL]
+    if OLLAMA_FALLBACK_URL and OLLAMA_FALLBACK_URL != OLLAMA_URL:
+        urls.append(OLLAMA_FALLBACK_URL)
+    return urls
+
 
 # Client-side config for the 9Router service: ROUTER_URL points at its
 # OpenAI-compatible endpoint, ROUTER_API_KEY is a key minted in the 9Router
@@ -86,10 +112,18 @@ async def _complete_ollama(
     body: dict = {"model": model or OLLAMA_MODEL, "prompt": full_prompt, "stream": False}
     if json_mode:
         body["format"] = "json"
+    urls = _ollama_base_urls()
     async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(f"{OLLAMA_URL}/api/generate", json=body)
-        resp.raise_for_status()
-        return resp.json()["response"]
+        for i, base_url in enumerate(urls):
+            try:
+                resp = await client.post(f"{base_url}/api/generate", json=body)
+                resp.raise_for_status()
+                return resp.json()["response"]
+            except _OLLAMA_CONNECT_ERRORS:
+                if i + 1 == len(urls):
+                    raise
+                print(f"[ailacore.llm] Ollama {base_url} nedostupná, zkouším fallback {urls[i + 1]}", flush=True)
+    raise AssertionError("unreachable")  # urls is never empty
 
 
 async def _complete_router(
@@ -193,10 +227,18 @@ def _decide_ollama(
         "format": fmt,
         "options": {"temperature": temperature},
     }
+    urls = _ollama_base_urls()
     with httpx.Client(timeout=timeout) as client:
-        resp = client.post(f"{OLLAMA_URL}/api/generate", json=body)
-        resp.raise_for_status()
-        return resp.json().get("response") or ""
+        for i, base_url in enumerate(urls):
+            try:
+                resp = client.post(f"{base_url}/api/generate", json=body)
+                resp.raise_for_status()
+                return resp.json().get("response") or ""
+            except _OLLAMA_CONNECT_ERRORS:
+                if i + 1 == len(urls):
+                    raise
+                print(f"[ailacore.llm] Ollama {base_url} nedostupná, zkouším fallback {urls[i + 1]}", flush=True)
+    raise AssertionError("unreachable")  # urls is never empty
 
 
 def _decide_router(

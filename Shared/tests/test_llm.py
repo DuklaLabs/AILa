@@ -21,6 +21,23 @@ class _Recorder:
         return httpx.Response(200, json=self._json_body if self._json_body is not None else {})
 
 
+class _SequencedRecorder:
+    """Like _Recorder, but replies per-host: the primary Ollama URL always
+    raises `error`, any other host (the fallback) returns `json_body`."""
+
+    def __init__(self, json_body, error, primary_host: str):
+        self.requests: list[httpx.Request] = []
+        self._json_body = json_body
+        self._error = error
+        self._primary_host = primary_host
+
+    def handler(self, request: httpx.Request) -> httpx.Response:
+        self.requests.append(request)
+        if request.url.host == self._primary_host:
+            raise self._error
+        return httpx.Response(200, json=self._json_body)
+
+
 def _mock_client_for(monkeypatch, recorder):
     class _MockAsyncClient(httpx.AsyncClient):
         def __init__(self, *args, **kwargs):
@@ -71,6 +88,32 @@ async def test_sensitive_true_json_mode_sets_format(monkeypatch):
 
     payload = _json.loads(recorder.requests[0].read())
     assert payload["format"] == "json"
+
+
+async def test_sensitive_true_falls_back_to_network_ollama_on_connect_error(monkeypatch):
+    monkeypatch.setattr(llm, "OLLAMA_FALLBACK_URL", "http://192.168.1.50:11434")
+    recorder = _SequencedRecorder(
+        json_body={"response": "hello from fallback"},
+        error=httpx.ConnectError("connection refused"),
+        primary_host="ollama",
+    )
+    _mock_client_for(monkeypatch, recorder)
+
+    result = await llm.complete("ahoj", sensitive=True)
+
+    assert [r.url.host for r in recorder.requests] == ["ollama", "192.168.1.50"]
+    assert result == "hello from fallback"
+
+
+async def test_sensitive_true_no_fallback_configured_raises_on_connect_error(monkeypatch):
+    monkeypatch.setattr(llm, "OLLAMA_FALLBACK_URL", "")
+    recorder = _Recorder(error=httpx.ConnectError("connection refused"))
+    _mock_client_for(monkeypatch, recorder)
+
+    with pytest.raises(httpx.ConnectError):
+        await llm.complete("ahoj", sensitive=True)
+
+    assert len(recorder.requests) == 1
 
 
 async def test_sensitive_false_calls_router(monkeypatch):
@@ -204,6 +247,21 @@ def test_decide_strips_markdown_code_fence(monkeypatch):
 
     out = llm.decide("s", "u")
 
+    assert out == {"verdict": "ok"}
+
+
+def test_decide_falls_back_to_network_ollama_on_connect_error(monkeypatch):
+    monkeypatch.setattr(llm, "OLLAMA_FALLBACK_URL", "http://192.168.1.50:11434")
+    recorder = _SequencedRecorder(
+        json_body={"response": '{"verdict": "ok"}'},
+        error=httpx.ConnectError("connection refused"),
+        primary_host="ollama",
+    )
+    _mock_sync_client_for(monkeypatch, recorder)
+
+    out = llm.decide("s", "u")
+
+    assert [r.url.host for r in recorder.requests] == ["ollama", "192.168.1.50"]
     assert out == {"verdict": "ok"}
 
 

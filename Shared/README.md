@@ -167,11 +167,12 @@ data ven k cloudovému provideru):
 - `sensitive=True` → lokální Ollama (`docker-compose.yml` služba `ollama`) —
   nic neopustí naši síť. Použij pro cokoli s reálnými lidmi (jména, e-maily,
   obsah schůzek, DB výstupy) nebo kdykoli si nejsi jistý.
-- `sensitive=False` → [9Router](https://9router.com) (`docker-compose.yml`
-  služba `router`, image `decolua/9router`) — self-hosted OpenAI-kompatibilní
-  router před 40+ cloud/subscription/free providery. Použij pro požadavky bez
-  citlivého obsahu, kde se vyplatí větší/levnější/free model, než jaký běží
-  lokálně.
+- `sensitive=False` → OmniRoute (`docker-compose.yml` služba `router`, image
+  `diegosouzapw/omniroute`; reálně dnes běží jako samostatný `docker run`
+  kontejner `omniroute` mimo `docker compose up`, viz komentář u té služby) —
+  self-hosted OpenAI-kompatibilní router před mnoha cloud/subscription/free
+  providery. Použij pro požadavky bez citlivého obsahu, kde se vyplatí
+  větší/levnější/free model, než jaký běží lokálně.
 
 ```python
 from ailacore.llm import complete
@@ -189,7 +190,14 @@ reply = await complete(
 
 Env proměnné: `OLLAMA_URL` (default `http://ollama:11434`), `OLLAMA_MODEL`
 (default `qwen2.5:14b`) — stejné jako u ostatních přímých volání Ollamy v repu
-— a pro 9Router `ROUTER_URL` (default `http://router:20128/v1`),
+— a `OLLAMA_FALLBACK_URL` (nepovinné, default prázdné) — druhý Ollama server,
+typicky jiný stroj v síti podle IP, např. `http://192.168.1.50:11434`.
+Zkouší se **jen** když je `OLLAMA_URL` nedostupná na síťové úrovni (connection
+refused/timeout) — ne na HTTP chybu od modelu, to je reálná odpověď, ne
+výpadek. Tohle je jediný fallback, který necitlivá/citlivá data nechá na naší
+síti (na rozdíl od přepnutí `LLM_SENSITIVE_BACKEND` na `"router"`, což citlivá
+data posílá k cloudovému provideru) — nastavit, jakmile je na síti dostupná
+druhá Ollama (jiný stroj s GPU apod.). Pro 9Router `ROUTER_URL` (default `http://router:20128/v1`),
 `ROUTER_API_KEY`, `ROUTER_MODEL`. `ROUTER_API_KEY` je klíč vygenerovaný v
 9Router dashboardu (`http://localhost:20128` → Providers/Endpoint), ne
 sdílený se žádnou jinou službou — tam se také zakládají a spravují samotní
