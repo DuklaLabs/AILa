@@ -1,17 +1,21 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from app.session import async_session
-from app.models import Base, Material
+from app.db.models import Base, Material, Order, OrderItem
 from sqlalchemy.ext.asyncio import AsyncSession
 
-app = FastAPI(title="Procurement Agent – Minimal Version")
 
-
-@app.on_event("startup")
-async def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     async with async_session() as session:
         async with session.begin():
             await session.run_sync(Base.metadata.create_all)
+    yield
+
+
+app = FastAPI(title="Procurement Agent – Minimal Version", lifespan=lifespan)
 
 
 @app.post("/materials")
@@ -70,8 +74,10 @@ async def add_item(order_id: int, material_id: int, quantity: float):
 async def list_orders():
     """Vrátí kompletní přehled všech objednávek včetně položek"""
     async with async_session() as session:
-        result = await session.execute(select(Order))
-        orders = result.scalars().unique().all()
+        result = await session.execute(
+            select(Order).options(selectinload(Order.items))
+        )
+        orders = result.scalars().all()
 
         # načítáme položky ručně
         output = []

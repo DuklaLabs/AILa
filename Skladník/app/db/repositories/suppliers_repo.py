@@ -1,19 +1,22 @@
-class OrderService:
+from app.db.models import Supplier
+from sqlalchemy import select
 
-    def __init__(self, materials_repo, orders_repo):
-        self.materials = materials_repo
-        self.orders = orders_repo
 
-    async def auto_generate_order(self):
-        low_stock = await self.materials.get_below_min_stock()
+async def list_suppliers(db, skip: int = 0, limit: int = 100):
+    stmt = select(Supplier).offset(skip).limit(limit)
+    res = await db.execute(stmt)
+    return res.scalars().all()
 
-        if not low_stock:
-            return None
 
-        order = await self.orders.create_order()
+async def create_supplier(db, name: str, contact: str = None):
+    supplier = Supplier(name=name, contact=contact)
+    db.add(supplier)
+    await db.commit()
+    await db.refresh(supplier)
+    return supplier
 
-        for m in low_stock:
-            missing = max(m.min_stock - m.stock, 0)
-            await self.orders.add_item(order.id, m.id, missing)
 
-        return order
+async def get_supplier(db, supplier_id: int):
+    stmt = select(Supplier).where(Supplier.id == supplier_id)
+    res = await db.execute(stmt)
+    return res.scalars().first()
