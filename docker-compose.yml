@@ -367,12 +367,15 @@ services:
       - ./AccessAgents/.env
 
   # "Generál" – volná konverzace + akce: sklad/objednávky přes Skladník/
-  # Nakupcik (ani jedno zatím samo o sobě neběží, viz jejich README, ani
-  # není v tomto compose souboru – CHECK_STOCK/CREATE_ORDER dnes spadnou na
-  # chybu spojení) a e-mailová oznámení studentům přes Messenger (draft v
-  # chatu -> potvrzení -> POST messenger:8005/send). Generál samotný ale
-  # naběhne, jde promptovat a konverzace se ukládá pod účet
-  # (general.chat_messages, viz Database/migrations).
+  # Nakupcik a e-mailová oznámení studentům přes Messenger (draft v chatu ->
+  # potvrzení -> POST messenger:8005/send). Skladník už je v tomto compose
+  # souboru (viz `skladnik` níže), Nakupcik zatím NE – CREATE_ORDER dnes
+  # spadne na chybu spojení. CHECK_STOCK volá {INVENTORY_URL}/materials/low;
+  # trasy Skladníka teď leží pod prefixem /sklad a vyžadují SSO přihlášení,
+  # takže volání z Generála bez session cookie bude odmítnuto (401) – to je
+  # potřeba dořešit v General/app/agents/inventory.py (předat auth).
+  # Generál samotný ale naběhne, jde promptovat a konverzace se ukládá pod
+  # účet (general.chat_messages, viz Database/migrations).
   general:
     build:
       context: .
@@ -398,8 +401,36 @@ services:
       POSTGRES_HOST: postgres
       ROUTER_URL: "http://host.docker.internal:20128/v1"
       MESSENGER_URL: "http://messenger:8005"
+      # Trasy Skladníka jsou pod prefixem /sklad (viz URL_PREFIX u skladnik).
+      INVENTORY_URL: "http://skladnik:8001/sklad"
     env_file:
       - ./General/.env
+
+  # Skladník – sklad/materiál (FastAPI). Vlastní cesta /sklad za Gateway
+  # (viz Gateway/Caddyfile). Data skladu žijí ve vlastním SQLite souboru na
+  # pojmenovaném volume, odděleně od sdíleného Postgresu – ten používá jen
+  # pro SSO přihlášení přes ailacore.
+  skladnik:
+    build:
+      context: .
+      dockerfile: Skladník/Dockerfile
+    container_name: skladnik
+    ports:
+      - "8001:8001"
+    networks:
+      - agentnet
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_DB: agentdb
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
+      POSTGRES_HOST: postgres
+      URL_PREFIX: "/sklad"
+      SKLADNIK_DB_PATH: "/app/data/procurement.db"
+    volumes:
+      - skladnik_data:/app/data
 
   # Reverse proxy (Caddy) sjednocující přístup pod jednu doménu: portálový
   # shell na aila.localhost, jednotlivé služby na svých subdoménách
@@ -421,6 +452,8 @@ services:
         condition: service_started
       general:
         condition: service_started
+      skladnik:
+        condition: service_started
     volumes:
       - caddy_data:/data
       - caddy_config:/config
@@ -434,3 +467,4 @@ volumes:
   router-data:
   caddy_data:
   caddy_config:
+  skladnik_data:
