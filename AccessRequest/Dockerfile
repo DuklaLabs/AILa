@@ -4,6 +4,10 @@ WORKDIR /ui
 COPY UI/package*.json ./
 RUN npm ci
 COPY UI/ ./
+# Shared brand palette/fonts (see Shared/webui/theme.css) — single source for
+# all apps. scripts/sync-theme.mjs (run by the npm pre* hooks below) copies
+# it into src/theme.css; it expects it as a sibling of UI/, hence /Shared/...
+COPY Shared/webui/theme.css /Shared/webui/theme.css
 RUN npm run build      # -> /ui/dist (Vite base=/admin/rbac/)
 
 
@@ -29,6 +33,10 @@ COPY AccessRequest/requirements.txt .
 RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 COPY AccessRequest/ .
+
+# Shared brand palette/fonts (see Shared/webui/theme.css) — single source
+# for all apps, copied in rather than duplicated in base.css.
+COPY Shared/webui/theme.css app/static/css/theme.css
 
 # buildnutá RBAC konzole – ailacore.admin.mount_admin_ui ji hledá v RBAC_UI_DIST
 COPY --from=rbac-ui /ui/dist /app/rbac-ui-dist

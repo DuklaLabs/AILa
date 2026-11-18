@@ -1,10 +1,13 @@
 :root {
-  --portal-bg: #0b0d12;
-  --portal-panel: #14171f;
-  --portal-border: #262a35;
-  --portal-text: #e6e8ee;
-  --portal-text-muted: #9aa0ad;
-  --portal-accent: #4f7cff;
+  /* Repointed at the shared DuklaLabs brand palette (theme.css) instead of
+     the old generic blue, while keeping the --portal-* names so the rest
+     of this file doesn't need touching. */
+  --portal-bg: var(--bg);
+  --portal-panel: var(--surface);
+  --portal-border: var(--line);
+  --portal-text: var(--fg);
+  --portal-text-muted: var(--muted);
+  --portal-accent: var(--accent);
   --portal-accent-text: #ffffff;
 }
 
@@ -19,7 +22,7 @@ body,
   height: 100%;
   background: var(--portal-bg);
   color: var(--portal-text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--f-body);
 }
 
 .portal-shell {
@@ -43,6 +46,7 @@ body,
 }
 
 .portal-logo {
+  font-family: var(--f-display);
   font-size: 20px;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -127,6 +131,8 @@ body,
 .portal-login-card h1 {
   margin: 0 0 12px;
   font-size: 22px;
+  font-family: var(--f-display);
+  font-weight: 800;
 }
 
 .portal-login-card p {
@@ -156,6 +162,7 @@ body,
 .portal-tile:hover {
   border-color: var(--portal-accent);
   transform: translateY(-2px);
+  box-shadow: 0 10px 24px -6px var(--glow);
 }
 
 /* PortalTile renders the "Generál" tile as a <button> (it switches to the
@@ -184,6 +191,7 @@ body,
 }
 
 .portal-tile-title {
+  font-family: var(--f-display);
   font-weight: 700;
   font-size: 16px;
   display: flex;

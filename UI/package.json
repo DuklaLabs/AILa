@@ -4,11 +4,18 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "sync-theme": "node scripts/sync-theme.mjs",
+    "predev": "npm run sync-theme",
     "dev": "vite",
+    "predev:projects": "npm run sync-theme",
     "dev:projects": "vite --config vite.projects.config.js",
+    "predev:portal": "npm run sync-theme",
     "dev:portal": "vite --config vite.portal.config.js",
+    "prebuild": "npm run sync-theme",
     "build": "vite build",
+    "prebuild:projects": "npm run sync-theme",
     "build:projects": "vite build --config vite.projects.config.js",
+    "prebuild:portal": "npm run sync-theme",
     "build:portal": "vite build --config vite.portal.config.js",
     "lint": "eslint .",
     "preview": "vite preview"

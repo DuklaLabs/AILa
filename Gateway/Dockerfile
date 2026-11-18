@@ -4,6 +4,10 @@ WORKDIR /ui
 COPY UI/package*.json ./
 RUN npm ci
 COPY UI/ ./
+# Shared brand palette/fonts (see Shared/webui/theme.css) — single source for
+# all apps. scripts/sync-theme.mjs (run by the npm pre* hooks below) copies
+# it into src/theme.css; it expects it as a sibling of UI/, hence /Shared/...
+COPY Shared/webui/theme.css /Shared/webui/theme.css
 RUN npm run build:portal && cp dist-portal/index.portal.html dist-portal/index.html
 # -> /ui/dist-portal (Vite base=/). Vite names the entry after its input file
 # (index.portal.html, to not collide with the RBAC/Projects builds' own entry

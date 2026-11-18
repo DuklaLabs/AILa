@@ -1,19 +1,24 @@
 /* Projektový systém – sjednotný brand look s AccessRequest
-   (viz AccessRequest/app/static/css/base.css: tmavé téma, krvavě červený akcent). */
+   (viz AccessRequest/app/static/css/base.css: tmavé téma, krvavě červený akcent).
+   This app stays permanently dark (no light/OS-toggle), so the generic
+   tokens below are repointed at the DuklaLabs brand's *dark-mode* hex
+   values from theme.css directly (not var(), since --bg/--accent/--muted/
+   --line/--shadow collide by name with theme.css's :root and would
+   otherwise just shadow them – see UI/src/theme.css for the source values). */
 :root {
-  --bg: #1c1c1c;
-  --bg-alt: #0d0d0d;
-  --card-bg: #202020;
-  --card-bg2: #262626;
-  --accent: #c1272d;
-  --accent2: #7a1518;
-  --text: #e5e7eb;
-  --muted: #9ca3af;
+  --bg: #111214;
+  --bg-alt: #0b0c0d;
+  --card-bg: #1a1b1e;
+  --card-bg2: #26272b;
+  --accent: #dd2c3a;
+  --accent2: #6e1019;
+  --text: #f0f0f2;
+  --muted: #a0a2a9;
   --line: rgba(255, 255, 255, .08);
   --line-strong: rgba(255, 255, 255, .14);
   --radius-md: 12px;
   --radius-lg: 18px;
-  --shadow: 0 18px 40px rgba(0, 0, 0, .55);
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
   --shadow-sm: 0 8px 22px rgba(0, 0, 0, .4);
   --ease: cubic-bezier(.2, .8, .2, 1);
 
@@ -26,7 +31,7 @@
   --pj-border: var(--line);
   --pj-border-strong: var(--line-strong);
   --pj-accent: var(--accent);
-  --pj-accent-soft: rgba(193, 39, 45, .16);
+  --pj-accent-soft: rgba(221, 44, 58, .16);
   --pj-danger: #ef5350;
   --pj-ok: #4caf7d;
   --pj-radius: var(--radius-md);
@@ -54,7 +59,7 @@
 * { box-sizing: border-box; }
 body {
   display: block; margin: 0; color: var(--text);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--f-body);
   background: radial-gradient(circle at top, #2e2e2e 0%, #141414 55%, #000 100%);
   background-attachment: fixed;
 }
@@ -75,7 +80,7 @@ body {
 .pj button:active { transform: translateY(0); }
 .pj button.primary {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: #fff; border-color: transparent; box-shadow: 0 12px 30px rgba(193, 39, 45, .4);
+  color: #fff; border-color: transparent; box-shadow: 0 12px 30px rgba(221, 44, 58, .4);
 }
 .pj button.primary:hover { filter: brightness(1.07); transform: translateY(-2px); }
 .pj button.ghost { border-color: transparent; background: transparent; box-shadow: none; }
@@ -94,7 +99,7 @@ body {
   transition: 150ms var(--ease);
 }
 .pj input:focus, .pj select:focus, .pj textarea:focus {
-  border-color: var(--accent); box-shadow: 0 0 0 2px rgba(193, 39, 45, .3); background: rgba(15, 23, 42, .92);
+  border-color: var(--accent); box-shadow: 0 0 0 2px rgba(221, 44, 58, .3); background: rgba(15, 23, 42, .92);
 }
 .pj textarea { resize: vertical; }
 .pj label.fld { display: block; margin: 0.6rem 0; }
@@ -123,12 +128,12 @@ body {
   background: rgba(20, 20, 20, .92); border-bottom: 1px solid var(--line);
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
-.pj-top .brand { font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 0.55rem; }
+.pj-top .brand { font-family: var(--f-display); font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 0.55rem; }
 .pj-top .brand .logo {
   width: 30px; height: 30px; border-radius: 999px; color: #fff; font-size: 0.78rem; font-weight: 800;
   display: grid; place-items: center;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
-  box-shadow: 0 10px 26px rgba(193, 39, 45, .45);
+  box-shadow: 0 10px 26px rgba(221, 44, 58, .45);
 }
 .pj-top .spacer { flex: 1; }
 .pj-top .who { color: var(--muted); font-size: 0.85rem; }
@@ -137,7 +142,7 @@ body {
 .pj-timer {
   display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.83rem; font-weight: 600;
   background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff;
-  padding: 0.32rem 0.7rem; border-radius: 999px; box-shadow: 0 8px 20px rgba(193, 39, 45, .35);
+  padding: 0.32rem 0.7rem; border-radius: 999px; box-shadow: 0 8px 20px rgba(221, 44, 58, .35);
 }
 .pj-timer::before { content: ""; width: 7px; height: 7px; border-radius: 999px; background: #fff; animation: pj-blink 1.4s var(--ease) infinite; }
 @keyframes pj-blink { 50% { opacity: .3; } }
@@ -175,6 +180,7 @@ body {
 .pj-main { padding: 1.2rem 1.35rem 3rem; min-width: 0; }
 .pj-proj-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 .pj-proj-head h1 {
+  font-family: var(--f-display);
   font-size: 1.35rem; margin: 0; padding-bottom: 0.18rem;
   border-bottom: 2px solid color-mix(in srgb, var(--fc) 60%, transparent);
 }
@@ -194,7 +200,7 @@ body {
 .pj-seg button:hover { color: #fff; transform: none; border-color: transparent; }
 .pj-seg button.on {
   background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff;
-  box-shadow: 0 8px 20px rgba(193, 39, 45, .35);
+  box-shadow: 0 8px 20px rgba(221, 44, 58, .35);
 }
 
 /* ---- phase tabs ---- */
@@ -221,7 +227,7 @@ body {
 }
 .pj-col.drop-target {
   border-color: var(--accent); transform: translateY(-2px);
-  box-shadow: 0 0 0 2px var(--accent), 0 16px 34px rgba(193, 39, 45, .3);
+  box-shadow: 0 0 0 2px var(--accent), 0 16px 34px rgba(221, 44, 58, .3);
 }
 .pj-col-head { display: flex; align-items: center; gap: 0.45rem; margin: 0.15rem 0.2rem 0.6rem; font-weight: 600; font-size: 0.86rem; }
 .pj-dot { width: 9px; height: 9px; border-radius: 999px; flex: 0 0 auto; box-shadow: 0 0 8px var(--sd, transparent); }
@@ -252,7 +258,7 @@ body {
   width: 21px; height: 21px; border-radius: 999px; color: #fff; font-size: 0.66rem; font-weight: 700;
   display: grid; place-items: center; flex: 0 0 auto;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
-  box-shadow: 0 2px 8px rgba(193, 39, 45, .4);
+  box-shadow: 0 2px 8px rgba(221, 44, 58, .4);
 }
 .pj-tag { font-size: 0.72rem; padding: 0.06rem 0.44rem; border-radius: 6px; background: rgba(255, 255, 255, .07); color: var(--muted); }
 .pj-tag.due-over { background: rgba(239, 83, 80, .18); color: #fca5a5; font-weight: 600; }

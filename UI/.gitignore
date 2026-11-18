@@ -14,6 +14,11 @@ dist-portal
 dist-ssr
 *.local
 
+# Generated from ../Shared/webui/theme.css by scripts/sync-theme.mjs
+# (the npm "pre*" hooks run it before every dev/build command) — don't
+# commit it, edit the shared source instead.
+src/theme.css
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
