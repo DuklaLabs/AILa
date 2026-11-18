@@ -1,0 +1,60 @@
+/* DuklaLabs brand palette/typography — the single shared source of truth for
+   visual style across AILa, ported from the "Kroužek DuklaLabs" prototype
+   (Krouzek/app/static/krouzek.css). Every app draws from THIS file, copied
+   in at build time rather than duplicated by hand:
+     - Krouzek:            Dockerfile COPYs it to app/static/theme.css
+     - AccessRequest/Projects (server-rendered pages): Dockerfile COPYs it
+       to app/static/css/theme.css
+     - UI/ React builds (RBAC, Portal, Projects SPA): `npm run dev`/`build`
+       regenerate UI/src/theme.css from here via scripts/sync-theme.mjs
+       (see UI/package.json's pre* hooks) — don't edit UI/src/theme.css
+       directly, it's a generated copy.
+   Edit this file, nothing else, to change the brand look everywhere. */
+@property --ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+:root {
+  /* barvy z loga: karmínový blesk + grafitové ozubené kolo */
+  --bg: #f3f3f4;
+  --bg-glow-1: rgba(172, 31, 41, .13);
+  --bg-glow-2: rgba(48, 48, 52, .10);
+  --surface: #ffffff;
+  --surface-2: #ebebed;
+  --glass: rgba(255, 255, 255, .74);
+  --fg: #1c1d20;
+  --muted: #64666c;
+  --line: #e0e0e3;
+  --accent: #ac1f29;
+  --accent-2: #33353a;
+  --grad-end: #33353a;   /* where red gradients fade to */
+  --ring-2: #33353a;     /* second colour of the running light */
+  --logo-gear: #303033;
+  --accent-soft: #f7e0e2;
+  --glow: rgba(172, 31, 41, .32);
+  --p: #1f9d63;  --p-soft: #d6f2e3;
+  --a: #d6384a;  --a-soft: #fadde0;
+  --u: #d99a14;  --u-soft: #fbefcf;
+  --x: #8a8580;  --x-soft: #e7e4df;
+  --shadow: 0 1px 2px rgba(40,30,20,.06), 0 6px 18px rgba(40,30,20,.06);
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111214; --bg-glow-1: rgba(229, 65, 76, .17); --bg-glow-2: rgba(160, 166, 178, .07);
+  --surface: #1a1b1e; --surface-2: #26272b; --glass: rgba(26, 27, 30, .74); --fg: #f0f0f2; --muted: #a0a2a9; --line: #2e3034;
+  --accent: #dd2c3a; --accent-2: #9ba0aa; --grad-end: #6e1019; --ring-2: #ff7a84; --accent-soft: #3a1418; --glow: rgba(221, 44, 58, .5); --logo-gear: #e2e3e8;
+  --p: #3fcf8e; --p-soft: #133325; --a: #ff6b7a; --a-soft: #3a1b22; --u: #f0bb3c; --u-soft: #372c12; --x: #8a91a3; --x-soft: #252a37;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111214; --bg-glow-1: rgba(229, 65, 76, .17); --bg-glow-2: rgba(160, 166, 178, .07);
+  --surface: #1a1b1e; --surface-2: #26272b; --glass: rgba(26, 27, 30, .74); --fg: #f0f0f2; --muted: #a0a2a9; --line: #2e3034;
+  --accent: #dd2c3a; --accent-2: #9ba0aa; --grad-end: #6e1019; --ring-2: #ff7a84; --accent-soft: #3a1418; --glow: rgba(221, 44, 58, .5); --logo-gear: #e2e3e8;
+  --p: #3fcf8e; --p-soft: #133325; --a: #ff6b7a; --a-soft: #3a1b22; --u: #f0bb3c; --u-soft: #372c12; --x: #8a91a3; --x-soft: #252a37;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35); color-scheme: dark; }
+
+/* Base reset shared by every app so focus rings, box-sizing and default
+   heading/form fonts match, regardless of which app-specific stylesheet
+   loads on top of this one. */
+* { box-sizing: border-box; }
+h1, h2, h3 { font-family: var(--f-display); letter-spacing: -.01em; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
