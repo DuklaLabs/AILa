@@ -25,6 +25,12 @@ http://localhost {
 		reverse_proxy access-request-server:8003
 	}
 
+	# Skladník (sklad) – prefix /sklad drží služba sama (URL_PREFIX=/sklad).
+	@sklad path /sklad /sklad/*
+	handle @sklad {
+		reverse_proxy skladnik:8001
+	}
+
 	@projects path /projects /projects/*
 	handle @projects {
 		reverse_proxy projects-server:8006

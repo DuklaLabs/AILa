@@ -19,4 +19,6 @@ class OrderService:
             missing_amount = max(material.min_stock - material.stock, 0)
             await self.orders.add_item(order.id, material.id, missing_amount)
 
+        await self.orders.commit()
+
         return order

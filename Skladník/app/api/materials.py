@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
 from app.db.session import async_session
 from app.db.models import Material
 

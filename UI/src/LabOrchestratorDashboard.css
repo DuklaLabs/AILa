@@ -395,6 +395,101 @@ body,
   cursor: default;
 }
 
+/* Sklad (InventoryView) */
+
+.lab-status-pill-warn {
+  background: #c0392b;
+}
+
+.lab-table-wrap {
+  overflow-x: auto;
+}
+
+.lab-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.lab-table th,
+.lab-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--portal-border);
+}
+
+.lab-table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--portal-text-muted);
+}
+
+.lab-table-empty {
+  color: var(--portal-text-muted);
+}
+
+.lab-row-low td {
+  background: rgba(255, 128, 128, 0.12);
+  color: #ff8080;
+  font-weight: 600;
+}
+
+.lab-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--portal-border);
+}
+
+.lab-input {
+  width: 110px;
+  font-size: 13px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--portal-border);
+  background: var(--portal-bg);
+  color: var(--portal-text);
+  font-family: inherit;
+}
+
+.lab-input-grow {
+  flex: 1;
+  min-width: 160px;
+}
+
+.lab-input:focus {
+  outline: none;
+  border-color: var(--portal-accent);
+}
+
+.lab-order-list,
+.lab-order-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lab-order {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--portal-border);
+  font-size: 13px;
+}
+
+.lab-order-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.lab-order-items li {
+  color: var(--portal-text-muted);
+  padding-left: 8px;
+}
+
 @media (max-width: 480px) {
   .portal-header {
     flex-wrap: wrap;

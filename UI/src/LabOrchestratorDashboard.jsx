@@ -18,6 +18,10 @@ const PORTAL_URL = "/";
 // Kroužek (port Claude-artefaktového prototypu "Kroužek DuklaLabs") – vlastní
 // služba na 8009 (Krouzek/), vlastní podcesta přes Gateway/Caddyfile.
 const KROUZEK_ORIGIN = "/krouzek";
+// Skladník je za Gateway pod prefixem /sklad na stejném originu jako portál
+// (SSO cookie jde s sebou). Je to čistě JSON API bez UI, takže "Sklad" dole
+// přepne portál do inline view (viz InventoryView).
+const INVENTORY_ORIGIN = "/sklad";
 
 // Hlavní nabídka – to, co člověk v laborce reálně potřebuje. `href` je
 // hotový a funkční modul; `comingSoon` zatím nemá backend a tile jen
@@ -83,7 +87,7 @@ function buildTiles(role) {
       title: "Sklad",
       description: "Materiál, zásoby a stav skladu.",
       icon: "📦",
-      comingSoon: true,
+      action: "inventory",
     },
     {
       id: "orders",
@@ -157,7 +161,7 @@ function useCurrentUser() {
 
 export default function LabOrchestratorDashboard() {
   const { status, user } = useCurrentUser();
-  const [view, setView] = useState("home"); // "home" | "chat"
+  const [view, setView] = useState("home"); // "home" | "chat" | "inventory"
 
   return (
     <div className="portal-shell">
@@ -221,11 +225,15 @@ export default function LabOrchestratorDashboard() {
           <GeneralChat onBack={() => setView("home")} />
         )}
 
+        {status === "ok" && view === "inventory" && (
+          <InventoryView onBack={() => setView("home")} />
+        )}
+
         {status === "ok" && view === "home" && (
           <>
             <div className="portal-grid">
               {buildTiles(user?.role).map((tile) => (
-                <PortalTile key={tile.id} tile={tile} onOpenChat={() => setView("chat")} />
+                <PortalTile key={tile.id} tile={tile} onAction={setView} />
               ))}
             </div>
 
@@ -245,7 +253,7 @@ export default function LabOrchestratorDashboard() {
   );
 }
 
-function PortalTile({ tile, onOpenChat }) {
+function PortalTile({ tile, onAction }) {
   const body = (
     <>
       <div className="portal-tile-icon">{tile.icon}</div>
@@ -260,9 +268,13 @@ function PortalTile({ tile, onOpenChat }) {
   if (tile.comingSoon) {
     return <div className="portal-tile portal-tile-disabled">{body}</div>;
   }
-  if (tile.action === "chat") {
+  if (tile.action) {
     return (
-      <button type="button" className="portal-tile portal-tile-button" onClick={onOpenChat}>
+      <button
+        type="button"
+        className="portal-tile portal-tile-button"
+        onClick={() => onAction(tile.action)}
+      >
         {body}
       </button>
     );
@@ -448,6 +460,229 @@ function GeneralChat({ onBack }) {
             {sending ? "Posílám…" : "Odeslat"}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------
+// Sklad – Skladník je čistě JSON API (Skladník/app/main.py), tohle je jeho
+// jediné UI. Přidání materiálu: POST /materials má holé skalární parametry
+// bez Pydantic modelu, takže FastAPI čeká QUERY parametry, ne JSON tělo.
+// ----------------------------------------------------------------------
+
+function formatDate(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString("cs-CZ");
+}
+
+function InventoryView({ onBack }) {
+  const [materials, setMaterials] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [loadError, setLoadError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({ name: "", stock: "", min_stock: "" });
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState(null);
+
+  const redirectToLogin = () => {
+    window.location.href = `${ACCESS_ORIGIN}/login?next=${encodeURIComponent(PORTAL_URL)}`;
+  };
+
+  const loadAll = async () => {
+    try {
+      const [matRes, ordRes] = await Promise.all([
+        fetch(`${INVENTORY_ORIGIN}/materials`, { credentials: "include" }),
+        fetch(`${INVENTORY_ORIGIN}/orders`, { credentials: "include" }),
+      ]);
+      if (matRes.status === 401 || ordRes.status === 401) {
+        redirectToLogin();
+        return;
+      }
+      if (!matRes.ok) throw new Error(`materials: HTTP ${matRes.status}`);
+      if (!ordRes.ok) throw new Error(`orders: HTTP ${ordRes.status}`);
+      const [mats, ords] = await Promise.all([matRes.json(), ordRes.json()]);
+      setMaterials(mats);
+      setOrders(ords);
+      setLoadError(null);
+    } catch {
+      setLoadError("Nepodařilo se spojit se Skladem (Skladník/Gateway neběží?).");
+    }
+  };
+
+  useEffect(() => {
+    loadAll().finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    const name = form.name.trim();
+    if (!name || saving) return;
+    const stock = form.stock === "" ? 0 : Number(form.stock);
+    const minStock = form.min_stock === "" ? 0 : Number(form.min_stock);
+    if (Number.isNaN(stock) || Number.isNaN(minStock)) {
+      setFormError("Zásoba a minimum musí být čísla.");
+      return;
+    }
+    setSaving(true);
+    setFormError(null);
+    try {
+      // Query parametry, bez JSON těla (viz komentář výše).
+      const params = new URLSearchParams({
+        name,
+        stock: String(stock),
+        min_stock: String(minStock),
+      });
+      const res = await fetch(`${INVENTORY_ORIGIN}/materials?${params}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.status === 401) {
+        redirectToLogin();
+        return;
+      }
+      if (!res.ok) throw new Error(`add: HTTP ${res.status}`);
+      setForm({ name: "", stock: "", min_stock: "" });
+      await loadAll();
+    } catch {
+      setFormError("Materiál se nepodařilo přidat.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const materialName = (id) => materials.find((m) => m.id === id)?.name ?? `#${id}`;
+  const lowCount = materials.filter((m) => m.stock < m.min_stock).length;
+  const showCategory = materials.some((m) => m.category);
+  const showUnit = materials.some((m) => m.unit);
+
+  return (
+    <div className="portal-chat">
+      <button type="button" className="portal-btn portal-btn-ghost portal-back-btn" onClick={onBack}>
+        ← Zpět na rozcestník
+      </button>
+
+      {loadError && <p className="portal-hint portal-hint-error">{loadError}</p>}
+      {loading && !loadError && <p className="portal-hint">Načítám sklad…</p>}
+
+      <div className="lab-panel">
+        <div className="lab-panel-header">
+          <div>
+            <div className="lab-panel-title">Materiál na skladě</div>
+            <div className="lab-panel-subtitle">Aktuální zásoby a minimální stavy.</div>
+          </div>
+          {lowCount > 0 ? (
+            <span className="lab-status-pill lab-status-pill-warn">Nízká zásoba: {lowCount}</span>
+          ) : (
+            <span className="lab-status-pill">Vše v pořádku</span>
+          )}
+        </div>
+
+        <div className="lab-table-wrap">
+          <table className="lab-table">
+            <thead>
+              <tr>
+                <th>Název</th>
+                {showCategory && <th>Kategorie</th>}
+                <th>Zásoba</th>
+                <th>Minimum</th>
+              </tr>
+            </thead>
+            <tbody>
+              {materials.length === 0 && (
+                <tr>
+                  <td colSpan={showCategory ? 4 : 3} className="lab-table-empty">
+                    Zatím žádný materiál.
+                  </td>
+                </tr>
+              )}
+              {materials.map((m) => (
+                <tr key={m.id} className={m.stock < m.min_stock ? "lab-row-low" : undefined}>
+                  <td>{m.name}</td>
+                  {showCategory && <td>{m.category || "–"}</td>}
+                  <td>
+                    {m.stock}
+                    {showUnit && m.unit ? ` ${m.unit}` : ""}
+                  </td>
+                  <td>{m.min_stock}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <form className="lab-form-row" onSubmit={handleAdd}>
+          <input
+            className="lab-input lab-input-grow"
+            type="text"
+            placeholder="Název materiálu"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+          />
+          <input
+            className="lab-input"
+            type="number"
+            step="any"
+            min="0"
+            placeholder="Zásoba"
+            value={form.stock}
+            onChange={(e) => setForm({ ...form, stock: e.target.value })}
+          />
+          <input
+            className="lab-input"
+            type="number"
+            step="any"
+            min="0"
+            placeholder="Minimum"
+            value={form.min_stock}
+            onChange={(e) => setForm({ ...form, min_stock: e.target.value })}
+          />
+          <button
+            type="submit"
+            className="portal-btn portal-btn-primary"
+            disabled={!form.name.trim() || saving}
+          >
+            {saving ? "Přidávám…" : "Přidat materiál"}
+          </button>
+        </form>
+        {formError && <p className="portal-hint portal-hint-error">{formError}</p>}
+      </div>
+
+      <div className="lab-panel">
+        <div className="lab-panel-header">
+          <div>
+            <div className="lab-panel-title">Objednávky</div>
+            <div className="lab-panel-subtitle">Přehled objednávek (pouze ke čtení).</div>
+          </div>
+        </div>
+        {orders.length === 0 ? (
+          <p className="portal-hint">Zatím žádné objednávky.</p>
+        ) : (
+          <ul className="lab-order-list">
+            {orders.map((o) => (
+              <li key={o.order_id} className="lab-order">
+                <div className="lab-order-head">
+                  <strong>Objednávka #{o.order_id}</strong>
+                  <span className="lab-panel-subtitle">{formatDate(o.created_at)}</span>
+                </div>
+                {o.items && o.items.length > 0 ? (
+                  <ul className="lab-order-items">
+                    {o.items.map((it) => (
+                      <li key={it.item_id}>
+                        {materialName(it.material_id)} × {it.quantity}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="lab-panel-subtitle">Bez položek.</div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

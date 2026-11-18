@@ -404,6 +404,8 @@ services:
       ROUTER_URL: "http://host.docker.internal:20128/v1"
       MESSENGER_URL: "http://messenger:8005"
       # Vlastní cesta pod Gateway (viz Gateway/Caddyfile).
+      # Trasy Skladníka jsou pod prefixem /sklad (viz URL_PREFIX u skladnik).
+      INVENTORY_URL: "http://skladnik:8001/sklad"
       URL_PREFIX: "/assistant"
     env_file:
       - ./General/.env
@@ -432,6 +434,32 @@ services:
       # Vlastní cesta pod Gateway (viz Gateway/Caddyfile).
       URL_PREFIX: "/krouzek"
 
+  # Skladník – sklad/materiál (FastAPI). Vlastní cesta /sklad za Gateway
+  # (viz Gateway/Caddyfile). Data skladu žijí ve vlastním SQLite souboru na
+  # pojmenovaném volume, odděleně od sdíleného Postgresu – ten používá jen
+  # pro SSO přihlášení přes ailacore.
+  skladnik:
+    build:
+      context: .
+      dockerfile: Skladník/Dockerfile
+    container_name: skladnik
+    ports:
+      - "8001:8001"
+    networks:
+      - agentnet
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_DB: agentdb
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
+      POSTGRES_HOST: postgres
+      URL_PREFIX: "/sklad"
+      SKLADNIK_DB_PATH: "/app/data/procurement.db"
+    volumes:
+      - skladnik_data:/app/data
+
   # Reverse proxy (Caddy) sjednocující přístup pod jednu doménu a port:
   # portálový shell na kořeni localhost, jednotlivé služby jako podcesty
   # (localhost/access, localhost/projects, ...). Viz Gateway/Caddyfile.
@@ -455,6 +483,8 @@ services:
         condition: service_started
       krouzek:
         condition: service_started
+      skladnik:
+        condition: service_started
     volumes:
       - caddy_data:/data
       - caddy_config:/config
@@ -468,3 +498,4 @@ volumes:
   omniroute-data:
   caddy_data:
   caddy_config:
+  skladnik_data:

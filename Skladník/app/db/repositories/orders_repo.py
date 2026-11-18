@@ -15,5 +15,8 @@ class OrdersRepository:
     async def add_item(self, order_id, material_id, qty):
         item = OrderItem(order_id=order_id, material_id=material_id, quantity=qty)
         self.session.add(item)
-        await self.session.commit()
+        await self.session.flush()
         return item
+
+    async def commit(self):
+        await self.session.commit()
