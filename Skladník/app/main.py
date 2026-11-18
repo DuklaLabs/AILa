@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from app.session import async_session
+from app.session import async_session, engine
 from app.db.models import Base, Material, Order, OrderItem
 from sqlalchemy.ext.asyncio import AsyncSession
 from ailacore.auth import get_current_user
@@ -18,9 +18,8 @@ PREFIX = os.getenv("URL_PREFIX", "").rstrip("/")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with async_session() as session:
-        async with session.begin():
-            await session.run_sync(Base.metadata.create_all)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     yield
     await close_pool()
 
