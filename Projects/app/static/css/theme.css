@@ -34,6 +34,11 @@
   --u: #d99a14;  --u-soft: #fbefcf;
   --x: #8a8580;  --x-soft: #e7e4df;
   --shadow: 0 1px 2px rgba(40,30,20,.06), 0 6px 18px rgba(40,30,20,.06);
+  --line-soft: rgba(20, 20, 25, .10);
+  --hover: rgba(20, 20, 25, .05);
+  --overlay: rgba(20, 20, 25, .45);
+  --fg-2: #3f4147;
+  --on-accent: #ffffff;
   --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --f-body: "Inter", "Segoe UI", system-ui, sans-serif;
   --f-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
@@ -43,12 +48,14 @@
   --surface: #1a1b1e; --surface-2: #26272b; --glass: rgba(26, 27, 30, .74); --fg: #f0f0f2; --muted: #a0a2a9; --line: #2e3034;
   --accent: #dd2c3a; --accent-2: #9ba0aa; --grad-end: #6e1019; --ring-2: #ff7a84; --accent-soft: #3a1418; --glow: rgba(221, 44, 58, .5); --logo-gear: #e2e3e8;
   --p: #3fcf8e; --p-soft: #133325; --a: #ff6b7a; --a-soft: #3a1b22; --u: #f0bb3c; --u-soft: #372c12; --x: #8a91a3; --x-soft: #252a37;
+  --line-soft: rgba(255, 255, 255, .12); --hover: rgba(255, 255, 255, .08); --overlay: rgba(0, 0, 0, .6); --fg-2: #d1d5db;
   --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35); color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #111214; --bg-glow-1: rgba(229, 65, 76, .17); --bg-glow-2: rgba(160, 166, 178, .07);
   --surface: #1a1b1e; --surface-2: #26272b; --glass: rgba(26, 27, 30, .74); --fg: #f0f0f2; --muted: #a0a2a9; --line: #2e3034;
   --accent: #dd2c3a; --accent-2: #9ba0aa; --grad-end: #6e1019; --ring-2: #ff7a84; --accent-soft: #3a1418; --glow: rgba(221, 44, 58, .5); --logo-gear: #e2e3e8;
   --p: #3fcf8e; --p-soft: #133325; --a: #ff6b7a; --a-soft: #3a1b22; --u: #f0bb3c; --u-soft: #372c12; --x: #8a91a3; --x-soft: #252a37;
+  --line-soft: rgba(255, 255, 255, .12); --hover: rgba(255, 255, 255, .08); --overlay: rgba(0, 0, 0, .6); --fg-2: #d1d5db;
   --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35); color-scheme: dark; }
 
 /* Base reset shared by every app so focus rings, box-sizing and default
@@ -58,3 +65,17 @@
 h1, h2, h3 { font-family: var(--f-display); letter-spacing: -.01em; }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Page background shared by every app: flat --bg with the brand glow on top,
+   so light and dark both follow the palette instead of a hardcoded gradient. */
+body { background: radial-gradient(circle at top, var(--bg-glow-1), transparent 60%), var(--bg); background-attachment: fixed; color: var(--fg); }
+
+/* Light/dark switch (injected by theme-toggle.js unless the page has its own
+   #theme control, like Krouzek). Fixed bottom-right pill, same look as the
+   Krouzek one: knob slides under the active icon. */
+.aila-theme { position: fixed; right: 16px; bottom: 16px; z-index: 2147483000; display: inline-flex; padding: 3px; border-radius: 99px; cursor: pointer; background: var(--surface-2); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.aila-theme button { position: relative; z-index: 1; width: 34px; height: 28px; border: 0; border-radius: 99px; background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; transition: color .25s; }
+.aila-theme button[aria-pressed="true"] { color: #fff; }
+.aila-theme .knob { position: absolute; top: 3px; left: 3px; width: 34px; height: 28px; border-radius: 99px; background: linear-gradient(135deg, var(--accent), var(--grad-end)); box-shadow: 0 4px 14px var(--glow); transition: transform .35s cubic-bezier(.3,1.4,.5,1); }
+.aila-theme[data-mode="dark"] .knob { transform: translateX(34px); }
+.aila-theme svg { width: 16px; height: 16px; }

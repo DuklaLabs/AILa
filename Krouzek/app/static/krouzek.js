@@ -609,9 +609,9 @@ function setTheme(mode, save) {
   document.documentElement.dataset.theme = mode;
   $("#theme").dataset.mode = mode;
   $("#theme").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === mode));
-  if (save) try { localStorage.setItem("kruzek-theme", mode); } catch {}
+  if (save) try { localStorage.setItem("aila-theme", mode); } catch {}
 }
-let savedTheme = null; try { savedTheme = localStorage.getItem("kruzek-theme"); } catch {}
+let savedTheme = null; try { savedTheme = (localStorage.getItem("aila-theme") || localStorage.getItem("kruzek-theme")); } catch {}
 setTheme(savedTheme || document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"), false);
 $("#theme").addEventListener("click", e => {
   // a click anywhere on the switch flips the mode; the reveal starts from the target icon

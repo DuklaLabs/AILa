@@ -8,7 +8,7 @@
 }
 
 .mch-card {
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--line-soft);
     border-radius: 10px;
     padding: 14px 16px;
 }
@@ -25,12 +25,12 @@
 }
 
 .mch-type {
-    color: #9aa0ad;
+    color: var(--muted);
     font-size: 12px;
 }
 
 .mch-location {
-    color: #9aa0ad;
+    color: var(--muted);
     font-size: 12px;
     margin-top: 2px;
 }
@@ -61,18 +61,18 @@
 .mch-status-broken { background: rgba(214, 48, 49, 0.16); color: #ff6b6b; }
 .mch-status-broken .mch-status-dot { background: #d63031; }
 
-.mch-status-offline { background: rgba(99, 110, 114, 0.18); color: #9aa0ad; }
+.mch-status-offline { background: rgba(99, 110, 114, 0.18); color: var(--muted); }
 .mch-status-offline .mch-status-dot { background: #636e72; }
 
 .mch-note {
     font-size: 13px;
-    color: #c9ccd3;
+    color: var(--fg);
     margin-top: 8px;
 }
 
 .mch-updated {
     font-size: 11px;
-    color: #74798a;
+    color: var(--muted);
     margin-top: 6px;
 }
 
@@ -89,5 +89,5 @@
 }
 
 .mch-empty {
-    color: #9aa0ad;
+    color: var(--muted);
 }

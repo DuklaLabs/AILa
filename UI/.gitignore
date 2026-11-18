@@ -29,3 +29,4 @@ src/theme.css
 *.njsproj
 *.sln
 *.sw?
+src/theme-toggle.js

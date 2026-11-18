@@ -6,7 +6,7 @@
 
 .topbar {
     padding: 20px 28px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid var(--line-soft);
 }
 
 .topbar h1 {
@@ -38,7 +38,7 @@
 
 .week-toggle {
     display: inline-flex;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--line-soft);
     border-radius: 8px;
     overflow: hidden;
 }
@@ -46,14 +46,14 @@
 .week-toggle button {
     background: transparent;
     border: none;
-    color: #ddd;
+    color: var(--fg);
     padding: 8px 16px;
     cursor: pointer;
     font-size: 14px;
 }
 
 .week-toggle button:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--hover);
 }
 
 .week-toggle button.active {
@@ -62,7 +62,7 @@
 }
 
 .hint {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 12px;
     margin: 8px 0 16px;
 }
@@ -97,21 +97,21 @@
     border-radius: 8px;
     font-size: 13px;
     line-height: 1.35;
-    color: #f3f4f6;
-    background: #1f2430;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-left: 3px solid #9ca3af;
+    color: var(--fg);
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-left: 3px solid var(--muted);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
     cursor: pointer;
     animation: toast-in 0.18s ease-out;
 }
 
 .toast-error {
-    border-left-color: #ef4444;
+    border-left-color: var(--a);
 }
 
 .toast-success {
-    border-left-color: #22c55e;
+    border-left-color: var(--p);
 }
 
 @keyframes toast-in {
@@ -127,23 +127,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--overlay);
 }
 
 .app-dialog-box {
     width: min(440px, 90vw);
-    background: #1f2430;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-top: 4px solid #9ca3af;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-top: 4px solid var(--muted);
     border-radius: 12px;
     padding: 22px 24px;
-    color: #f3f4f6;
+    color: var(--fg);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     animation: toast-in 0.15s ease-out;
 }
 
-.app-dialog-box.app-dialog-error { border-top-color: #ef4444; }
-.app-dialog-box.app-dialog-confirm { border-top-color: #eab308; }
+.app-dialog-box.app-dialog-error { border-top-color: var(--a); }
+.app-dialog-box.app-dialog-confirm { border-top-color: var(--u); }
 
 .app-dialog-title {
     font-size: 16px;
@@ -156,7 +156,7 @@
 .app-dialog-msg {
     font-size: 14px;
     line-height: 1.5;
-    color: #d1d5db;
+    color: var(--fg);
     white-space: pre-wrap;
 }
 

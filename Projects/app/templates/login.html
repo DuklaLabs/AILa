@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs" data-theme="dark">
+<html lang="cs">
 <head>
   <meta charset="UTF-8" />
   <title>Přihlášení – DuklaLabs Projekty</title>
@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css">
+  <script src="{{ BASE }}/static/js/theme-toggle.js"></script>
   <link rel="stylesheet" href="{{ BASE }}/static/css/base.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/layout.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/buttons.css">
@@ -20,7 +21,7 @@
       <p class="subtitle">Přihlas se jménem a heslem</p>
 
       {% if error %}
-        <div style="color:#fecaca; margin-bottom:10px; font-size:13px;">{{ error }}</div>
+        <div style="color:var(--a); margin-bottom:10px; font-size:13px;">{{ error }}</div>
       {% endif %}
 
       <form method="POST" action="{{ BASE }}/login-check" style="text-align:left; margin-top:10px;">

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs" data-theme="dark">
+<html lang="cs">
 <head>
   <meta charset="UTF-8" />
   <title>Hromadné vyřízení žádostí – DuklaLabs</title>
@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css">
+  <script src="{{ BASE }}/static/js/theme-toggle.js"></script>
   <link rel="stylesheet" href="{{ BASE }}/static/css/base.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/forms.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/buttons.css">
@@ -31,7 +32,7 @@
 
         <table style="width:100%; margin:16px 0; border-collapse:collapse; font-size:14px;">
           <thead>
-            <tr style="text-align:left; border-bottom:1px solid #374151;">
+            <tr style="text-align:left; border-bottom:1px solid var(--line);">
               <th style="padding:6px 4px;">Student</th>
               <th style="padding:6px 4px;">Třída</th>
               <th style="padding:6px 4px;">Datum</th>
@@ -40,7 +41,7 @@
           </thead>
           <tbody>
             {% for item in items %}
-            <tr style="border-bottom:1px solid #1f2937;">
+            <tr style="border-bottom:1px solid var(--line);">
               <td style="padding:6px 4px;">{{ item.first_name }} {{ item.last_name }}</td>
               <td style="padding:6px 4px;">{{ item.class_group }}</td>
               <td style="padding:6px 4px;">{{ item.date }}</td>
