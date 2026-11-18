@@ -8,14 +8,16 @@ stejném originu; portál žádnou session nemá).
 
 | SPA | Vstupní bod | Vite config | `base` / cesta | Servíruje | Build příkaz |
 |---|---|---|---|---|---|
-| RBAC admin konzole | `src/main.jsx` → `src/App.jsx` → `src/rbac/RbacConsole.jsx` | `vite.config.js` | `/admin/rbac/` | `ailacore.admin.mount_admin_ui` (kterákoli služba, co si ji zamountuje — dnes `AccessRequest`) | `npm run build` → `dist/` |
-| Projekty | `src/projects/main.jsx` → `ProjectsApp.jsx` | `vite.projects.config.js` (`outDir: dist-projects`, `input: index.projects.html`) | `/app/projects/` | `Projects` server přes `ailacore.admin.mount_spa` | `npm run build:projects` → `dist-projects/` |
-| Portál (`LabOrchestratorDashboard`) | `src/main.portal.jsx` → `LabOrchestratorDashboard.jsx` | `vite.portal.config.js` (`outDir: dist-portal`, `input: index.portal.html`) | `/` | `Gateway` (Caddy, statické soubory) na `aila.localhost` | `npm run build:portal` → `dist-portal/` |
+| RBAC admin konzole | `src/main.jsx` → `src/App.jsx` → `src/rbac/RbacConsole.jsx` | `vite.config.js` | `/access/admin/rbac/` | `ailacore.admin.mount_admin_ui` (kterákoli služba, co si ji zamountuje — dnes `AccessRequest`, pod jejím prefixem `/access`) | `npm run build` → `dist/` |
+| Projekty | `src/projects/main.jsx` → `ProjectsApp.jsx` | `vite.projects.config.js` (`outDir: dist-projects`, `input: index.projects.html`) | `/projects/app/projects/` | `Projects` server přes `ailacore.admin.mount_spa`, pod jejím prefixem `/projects` | `npm run build:projects` → `dist-projects/` |
+| Portál (`LabOrchestratorDashboard`) | `src/main.portal.jsx` → `LabOrchestratorDashboard.jsx` | `vite.portal.config.js` (`outDir: dist-portal`, `input: index.portal.html`) | `/` | `Gateway` (Caddy, statické soubory) na kořeni `http://localhost` | `npm run build:portal` → `dist-portal/` |
 
 Portál je agentní dashboard s postranním panelem agentů a chatem s
-"Generálem" — chat volá `POST /general` na `General` serveru přes jeho
-vlastní subdoménu (`assistant.aila.localhost`, viz `Gateway/Caddyfile`),
-ne přes stejný origin jako zbylé dvě SPA.
+"Generálem" — chat volá `POST /assistant/general` na `General` serveru
+přes jeho vlastní cestu pod Gateway (`/assistant`, `URL_PREFIX`, viz
+`Gateway/Caddyfile`). Od zrušení subdomén (dřív `*.aila.localhost`) běží
+všechno na jednom originu (`http://localhost`), takže RBAC/Projekty SPA,
+portál i Generál jsou si navzájem same-origin.
 
 ## RBAC admin konzole (`src/rbac/`)
 
@@ -51,21 +53,21 @@ systému, viz `Projects/README.md` pro backend a RBAC.
 ```
 npm install
 
-npm run dev             # RBAC konzole — http://localhost:5173/admin/rbac/
-npm run dev:projects    # Projekty     — http://localhost:5173/app/projects/
+npm run dev             # RBAC konzole — http://localhost:5173/access/admin/rbac/
+npm run dev:projects    # Projekty     — http://localhost:5173/projects/app/projects/
 ```
 
 Každý dev server proxuje `/api/*` na svůj backend (`vite.config.js` →
 `:8003` access-request-server, `vite.projects.config.js` → `:8006`
 projects-server), přepsatelné přes `VITE_API_TARGET`. Backend musí běžet
-zvlášť; přihlas se ve druhém tabu na `/login` daného backendu — session
-cookie platí i pro dev server přes proxy.
+zvlášť; přihlas se ve druhém tabu na `/access/login` resp. `/projects/login`
+daného backendu — session cookie platí i pro dev server přes proxy.
 
 ## Build
 
 ```
-npm run build            # -> dist/           (RBAC konzole, base=/admin/rbac/)
-npm run build:projects   # -> dist-projects/  (Projekty,     base=/app/projects/)
+npm run build            # -> dist/           (RBAC konzole, base=/access/admin/rbac/)
+npm run build:projects   # -> dist-projects/  (Projekty,     base=/projects/app/projects/)
 ```
 
 `dist/` kopíruje do image `AccessRequest/Dockerfile` (stage `rbac-ui`) tam,

@@ -1,4 +1,5 @@
 import json
+import os
 import secrets
 
 from fastapi import APIRouter, Request, Form, HTTPException, Depends
@@ -19,6 +20,7 @@ from app.notify import send_release_requests
 
 router_students = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["BASE"] = os.getenv("URL_PREFIX", "").rstrip("/")
 
 _STUDENT_READ = [Depends(require_permission("internal.student:read"))]
 _STUDENT_WRITE = [Depends(require_permission("internal.student:write"))]

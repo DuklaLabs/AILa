@@ -553,6 +553,6 @@ def mount_spa(
     log.info("SPA namountováno na %s (z %s)", path, dist)
 
 
-def mount_admin_ui(app, dist_dir, *, path: str = "/admin/rbac") -> None:
+def mount_admin_ui(app, dist_dir, *, path: str = "/admin/rbac", login_url: str = "/login") -> None:
     """Naservíruje sdílenou RBAC konzoli (`UI/dist`) na `path`. Viz `mount_spa`."""
-    mount_spa(app, dist_dir, path=path, assets_name="rbac-ui-assets")
+    mount_spa(app, dist_dir, path=path, login_url=login_url, assets_name="rbac-ui-assets")

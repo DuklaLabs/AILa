@@ -3,6 +3,7 @@
 // uživatel nemá oprávnění, ovládací prvky se jen neukážou (zjištěno přes
 // /api/whoami, stejně jako na portálu).
 
+const BASE = window.BASE_PATH || "";
 const STATUS_LABEL = { idle: "Volný", running: "Běží", broken: "Porucha", offline: "Mimo provoz" };
 const STATUS_ORDER = ["idle", "running", "broken", "offline"];
 let canManage = false;
@@ -12,14 +13,14 @@ async function loadMachines() {
     const addBtn = document.getElementById("addMachineBtn");
 
     try {
-        const me = await fetch("/api/whoami").then(r => (r.ok ? r.json() : null));
+        const me = await fetch(`${BASE}/api/whoami`).then(r => (r.ok ? r.json() : null));
         canManage = !!me && (me.role === "admin" || me.role === "staff");
     } catch {
         canManage = false;
     }
     addBtn.style.display = canManage ? "inline-block" : "none";
 
-    const res = await fetch("/api/machines");
+    const res = await fetch(`${BASE}/api/machines`);
     if (!res.ok) {
         list.innerHTML = `<p class="mch-empty">Nepodařilo se načíst stroje (${res.status}).</p>`;
         return;
@@ -66,7 +67,7 @@ async function setStatus(id, status) {
     if (status === "broken") {
         note = prompt("Co se stalo? (nepovinné, zobrazí se u stroje)") || "";
     }
-    const res = await fetch(`/api/machines/${id}/status`, {
+    const res = await fetch(`${BASE}/api/machines/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status, note }),
@@ -81,7 +82,7 @@ async function setStatus(id, status) {
 
 async function removeMachine(id, name) {
     if (!confirm(`Vyřadit stroj „${name}“ z evidence?`)) return;
-    const res = await fetch(`/api/machines/${id}`, { method: "DELETE" });
+    const res = await fetch(`${BASE}/api/machines/${id}`, { method: "DELETE" });
     if (!res.ok) {
         toast("Nepodařilo se vyřadit stroj.", "error");
         return;
@@ -96,7 +97,7 @@ document.getElementById("addMachineBtn").addEventListener("click", async () => {
     const type = prompt("Typ (např. FDM tiskárna, Laser, CNC):") || "";
     const location = prompt("Umístění (nepovinné):") || null;
 
-    const res = await fetch("/api/machines", {
+    const res = await fetch(`${BASE}/api/machines`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, type, location }),

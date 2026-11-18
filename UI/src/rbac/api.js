@@ -1,6 +1,6 @@
 // Tenký fetch wrapper nad /api/rbac. Cookie session -> credentials: 'include'.
 
-const BASE = '/api/rbac'
+const BASE = import.meta.env.VITE_API_BASE || '/api/rbac'
 
 async function req(method, path, body) {
   const opts = { method, credentials: 'include', headers: {} }

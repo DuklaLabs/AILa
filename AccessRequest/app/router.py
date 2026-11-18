@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -7,8 +9,11 @@ from ailacore.rbac import user_has_permission
 
 from app.bookings import router as bookings_router
 
+PREFIX = os.getenv("URL_PREFIX", "").rstrip("/")
+
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["BASE"] = PREFIX
 
 
 async def _require_staff(request: Request):
@@ -31,28 +36,28 @@ async def _require_any_login(request: Request):
 @router.get("/admin")
 async def render_admin(request: Request):
     if await _require_staff(request) is None:
-        return RedirectResponse(url="/login")
+        return RedirectResponse(url=f"{PREFIX}/login")
     return templates.TemplateResponse(request, "admin.html")
 
 
 @router.get("/admin/users")
 async def render_admin_users(request: Request):
     if await _require_staff(request) is None:
-        return RedirectResponse(url="/login")
+        return RedirectResponse(url=f"{PREFIX}/login")
     return templates.TemplateResponse(request, "admin_users.html")
 
 
 @router.get("/admin/analytics")
 async def render_admin_analytics(request: Request):
     if await _require_staff(request) is None:
-        return RedirectResponse(url="/login")
+        return RedirectResponse(url=f"{PREFIX}/login")
     return templates.TemplateResponse(request, "admin_analytics.html")
 
 
 @router.get("/student-hours")
 async def student_hours(request: Request):
     if await _require_any_login(request) is None:
-        return RedirectResponse(url="/login")
+        return RedirectResponse(url=f"{PREFIX}/login")
     return templates.TemplateResponse(request, "student_hours.html")
 
 
@@ -62,7 +67,7 @@ async def render_machines(request: Request):
     # může hodit každému. Měnit stav může jen kdo má lab.machine:manage
     # (ověřuje API, tlačítka v šabloně se podle toho schovají).
     if await _require_any_login(request) is None:
-        return RedirectResponse(url="/login")
+        return RedirectResponse(url=f"{PREFIX}/login")
     return templates.TemplateResponse(request, "machines.html")
 
 

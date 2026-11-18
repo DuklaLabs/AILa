@@ -2,12 +2,14 @@
 //  - horní panel: tlačítko „Spustit teď" pro každého agenta (proxy na access-agents)
 //  - tabulka: historie běhů z auditního logu (GET /api/agents/runs)
 
+const BASE = window.BASE_PATH || "";
+
 async function loadAgentRuns() {
     const card = document.getElementById("agentRunsCard");
     // registr agentů (když je služba access-agents dole, vrátí prázdno)
     let registry = { agents: [] };
     try {
-        const rr = await fetch("/api/agents/registry");
+        const rr = await fetch(`${BASE}/api/agents/registry`);
         if (rr.status === 403) { card.style.display = "none"; return; } // bez oprávnění
         if (rr.ok) registry = await rr.json();
     } catch (e) { /* služba nedostupná */ }
@@ -24,7 +26,7 @@ async function loadAgentRuns() {
                 ▶ ${esc(agentLabel(a))}</button>`).join("") + `</div>`;
     }
 
-    const res = await fetch("/api/agents/runs");
+    const res = await fetch(`${BASE}/api/agents/runs`);
     const list = document.getElementById("agentRunsList");
     if (!res.ok) { list.innerHTML = ""; return; }
     const rows = await res.json();
@@ -58,7 +60,7 @@ async function runAgentNow(name, btn) {
     btn.textContent = "Spouštím…";
 
     try {
-        const res = await fetch(`/api/agents/run/${name}`, { method: "POST" });
+        const res = await fetch(`${BASE}/api/agents/run/${name}`, { method: "POST" });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
             errorDialog(data.detail || `Spuštění selhalo (${res.status}).`);

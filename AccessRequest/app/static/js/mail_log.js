@@ -1,4 +1,5 @@
 // Log odeslaných e-mailů (messaging.mail_log) – ověření, že mail odešel.
+const BASE = window.BASE_PATH || "";
 const mailLogState = { flt: "" };
 
 function mlEsc(s) {
@@ -14,7 +15,7 @@ function mlStatus(s) {
 }
 
 async function loadMailLog() {
-    const url = "/api/mail-log?limit=150" +
+    const url = `${BASE}/api/mail-log?limit=150` +
         (mailLogState.flt ? `&status=${mailLogState.flt}` : "");
     const res = await fetch(url);
     if (!res.ok) {

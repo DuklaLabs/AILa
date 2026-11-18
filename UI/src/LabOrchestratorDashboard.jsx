@@ -1,21 +1,23 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./LabOrchestratorDashboard.css";
 
-// Portálový shell na kořeni domény (aila.localhost) – navigační rozcestník
-// pod jednotným přihlášením. Session cookie dl_session je společná pro
-// všechny *.aila.localhost služby (SESSION_COOKIE_DOMAIN), takže se sem
-// člověk přihlásí jednou (na access.aila.localhost/login) a dál už jen
-// naviguje. Stav přihlášení si portál čte přes CORS fetch na
-// access-request-server (PORTAL_ORIGINS v jeho konfiguraci).
-const ACCESS_ORIGIN = "http://access.aila.localhost";
-const PROJECTS_ORIGIN = "http://projects.aila.localhost";
-// General je za Gateway na vlastní subdoméně (viz Gateway/Caddyfile), ne na
-// stejném originu jako tenhle portál – proto plná URL a CORS na straně
-// General/app/main.py. General je čistě JSON API bez vlastního UI, takže
-// "Generál" dole není `href` ven, ale přepne portál do chat view (viz
-// GeneralChat) – jinak by člověk skončil na holé JSON odpovědi.
-const ASSISTANT_ORIGIN = "http://assistant.aila.localhost";
-const PORTAL_URL = "http://aila.localhost/";
+// Portálový shell na kořeni domény (localhost) – navigační rozcestník pod
+// jednotným přihlášením. Všechny moduly běží na stejném originu jako podcesty
+// (viz Gateway/Caddyfile: /access, /projects, /assistant, /krouzek), takže
+// cookie dl_session je prostě host-only a platí všude bez SESSION_COOKIE_DOMAIN
+// ani CORS – fetch je same-origin.
+const ACCESS_ORIGIN = "/access";
+const PROJECTS_ORIGIN = "/projects";
+// General je za Gateway na vlastní podcestě (/assistant, viz Gateway/Caddyfile),
+// na stejném originu jako tenhle portál, takže čistý relativní fetch bez CORS.
+// General je čistě JSON API bez vlastního UI, takže "Generál" dole není `href`
+// ven, ale přepne portál do chat view (viz GeneralChat) – jinak by člověk
+// skončil na holé JSON odpovědi.
+const ASSISTANT_ORIGIN = "/assistant";
+const PORTAL_URL = "/";
+// Kroužek (port Claude-artefaktového prototypu "Kroužek DuklaLabs") – vlastní
+// služba na 8009 (Krouzek/), vlastní podcesta přes Gateway/Caddyfile.
+const KROUZEK_ORIGIN = "/krouzek";
 
 // Hlavní nabídka – to, co člověk v laborce reálně potřebuje. `href` je
 // hotový a funkční modul; `comingSoon` zatím nemá backend a tile jen
@@ -54,6 +56,13 @@ function buildTiles(role) {
       description: "Kanban, hierarchie úkolů, time tracking a finance.",
       icon: "📋",
       href: `${PROJECTS_ORIGIN}/app/projects/`,
+    },
+    {
+      id: "krouzek",
+      title: "Kroužek pro základky",
+      description: "Docházka, kalendář, projekty a kontakty kroužku (ZŠ i SŠ).",
+      icon: "🔧",
+      href: `${KROUZEK_ORIGIN}/`,
     },
     {
       id: "machines",

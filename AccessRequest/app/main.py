@@ -2,7 +2,6 @@ import os
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -29,6 +28,12 @@ from app.excuse_digest import run_weekly_digest
 
 app = FastAPI()
 
+# Cesta pod Gateway (viz Gateway/Caddyfile) – Caddy předává celou cestu
+# beze stripu, takže služba musí sama mountovat statiku/šablony/routery
+# pod tímhle prefixem místo na kořeni domény. Prázdné URL_PREFIX = služba
+# běží samostatně na vlastním kořeni (lokální vývoj bez Gateway).
+PREFIX = os.getenv("URL_PREFIX", "").rstrip("/")
+
 # In-process scheduler for the weekly teacher digest (excuse_digest.py).
 # AsyncIOScheduler (not BackgroundScheduler) because the job runs asyncpg
 # queries against a pool bound to uvicorn's own running event loop —
@@ -36,23 +41,6 @@ app = FastAPI()
 # asyncpg doesn't support. Assumes a single access-request-server replica;
 # scaling out would need a distributed lock to avoid duplicate digests.
 scheduler = AsyncIOScheduler(timezone="Europe/Prague")
-
-# Portálový shell (aila.localhost, viz Gateway/) čte přihlášeného uživatele
-# přes fetch("/api/whoami", {credentials:"include"}) – cross-origin vůči
-# tomuto originu, takže potřebuje CORS. Cookie dl_session je společná
-# (SESSION_COOKIE_DOMAIN), CORS jen dovolí JS na portálu si přečíst odpověď.
-_portal_origins = [
-    o.strip() for o in os.getenv("PORTAL_ORIGINS", "http://aila.localhost").split(",")
-    if o.strip()
-]
-if _portal_origins:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=_portal_origins,
-        allow_credentials=True,
-        allow_methods=["GET"],
-        allow_headers=["*"],
-    )
 
 
 @app.on_event("startup")
@@ -80,13 +68,15 @@ async def _shutdown():
     await close_timetable_pool()
 
 # statické soubory
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount(f"{PREFIX}/static", StaticFiles(directory="app/static"), name="static")
 
 # šablony
 templates = Jinja2Templates(directory="app/templates")
+# Prefix dostupný v šablonách pro odkazy/static assety (viz app/templates/*.html).
+templates.env.globals["BASE"] = PREFIX
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get(f"{PREFIX}/", response_class=HTMLResponse)
 async def read_root(request: Request):
     """
     Hlavní rozcestník – obsahuje odkazy na login, admin, student dashboard atd.
@@ -95,18 +85,23 @@ async def read_root(request: Request):
 
 
 # připojení routerů
-app.include_router(router_auth)
-app.include_router(router_students)
-app.include_router(admin_router)
-app.include_router(open_hours_router)
-app.include_router(router_decisions)
-app.include_router(router_release)
-app.include_router(router_mail_log)
-app.include_router(excuse_requests_router)
-app.include_router(excuse_requests_staff_router)
-app.include_router(router_agent_review)
-app.include_router(router_machines)
+app.include_router(router_auth, prefix=PREFIX)
+app.include_router(router_students, prefix=PREFIX)
+app.include_router(admin_router, prefix=PREFIX)
+app.include_router(open_hours_router, prefix=PREFIX)
+app.include_router(router_decisions, prefix=PREFIX)
+app.include_router(router_release, prefix=PREFIX)
+app.include_router(router_mail_log, prefix=PREFIX)
+app.include_router(excuse_requests_router, prefix=PREFIX)
+app.include_router(excuse_requests_staff_router, prefix=PREFIX)
+app.include_router(router_agent_review, prefix=PREFIX)
+app.include_router(router_machines, prefix=PREFIX)
 
 # Sdílená RBAC administrace z ailacore (API + React konzole na /admin/rbac/).
-app.include_router(rbac_api_router)
-mount_admin_ui(app, os.getenv("RBAC_UI_DIST", "rbac-ui-dist"))
+app.include_router(rbac_api_router, prefix=PREFIX)
+mount_admin_ui(
+    app,
+    os.getenv("RBAC_UI_DIST", "rbac-ui-dist"),
+    path=f"{PREFIX}/admin/rbac",
+    login_url=f"{PREFIX}/login",
+)

@@ -27,10 +27,13 @@ from ailacore.auth import (
 from ailacore.models import User
 from ailacore.rbac import get_effective_permissions
 
+PREFIX = os.getenv("URL_PREFIX", "").rstrip("/")
+
 router_auth = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["BASE"] = PREFIX
 
-SPA_HOME = "/app/projects/"
+SPA_HOME = f"{PREFIX}/app/projects/"
 
 
 class RFIDLoginRequest(BaseModel):
@@ -45,7 +48,6 @@ async def _attach_session_cookie(response, user_id: int) -> None:
         httponly=True,
         samesite="lax",
         max_age=int(SESSION_TTL.total_seconds()),
-        domain=os.getenv("SESSION_COOKIE_DOMAIN") or None,
     )
 
 
@@ -98,11 +100,11 @@ async def login_rfid(payload: RFIDLoginRequest):
 
 @router_auth.get("/logout")
 async def logout(request: Request):
-    response = RedirectResponse(url="/")
+    response = RedirectResponse(url=f"{PREFIX}/")
     token = request.cookies.get(SESSION_COOKIE)
     if token:
         await revoke_session(token)
-    response.delete_cookie(SESSION_COOKIE, domain=os.getenv("SESSION_COOKIE_DOMAIN") or None)
+    response.delete_cookie(SESSION_COOKIE)
     return response
 
 

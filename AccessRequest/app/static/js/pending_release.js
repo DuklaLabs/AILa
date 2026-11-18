@@ -4,8 +4,10 @@ function relState(v) {
     return v === true ? "ANO" : v === false ? "NE" : "čeká";
 }
 
+const BASE = window.BASE_PATH || "";
+
 async function loadPendingRelease() {
-    const res = await fetch("/api/students/release-pending");
+    const res = await fetch(`${BASE}/api/students/release-pending`);
     if (!res.ok) return;
     const rows = await res.json();
     const card = document.getElementById("releaseCard");
@@ -33,7 +35,7 @@ async function loadPendingRelease() {
 }
 
 async function coordRelease(studentId, ok) {
-    const res = await fetch(`/api/students/${studentId}/release-coord`, {
+    const res = await fetch(`${BASE}/api/students/${studentId}/release-coord`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ok }),
@@ -43,7 +45,7 @@ async function coordRelease(studentId, ok) {
 }
 
 async function resendRelease(studentId) {
-    const res = await fetch(`/api/students/${studentId}/release-resend`, { method: "POST" });
+    const res = await fetch(`${BASE}/api/students/${studentId}/release-resend`, { method: "POST" });
     const data = await res.json().catch(() => null);
     if (!res.ok || !data || data.status !== "ok") {
         alert("Nepodařilo se odeslat žádost.");

@@ -62,30 +62,29 @@ services:
     networks:
       - agentnet
 
-  # Multi-provider AI router (https://9router.com) — OpenAI-compatible
-  # endpoint in front of 40+ cloud/subscription/free providers, for requests
-  # that ailacore.llm.complete(..., sensitive=False) doesn't send to the
-  # local `ollama` above. Providers/models/API keys for callers are
-  # configured through its own dashboard (http://localhost:20128), not env
-  # vars — see Shared/README.md. JWT_SECRET/INITIAL_PASSWORD below are dev
-  # defaults; change both in production.
+  # Multi-provider AI router (OmniRoute) — OpenAI-compatible endpoint in
+  # front of many cloud/subscription/free providers, for requests that
+  # ailacore.llm.complete(..., sensitive=False) doesn't send to the local
+  # `ollama` above. Providers/models/API keys for callers are configured
+  # through its own dashboard (http://localhost:20128), not env vars — see
+  # Shared/README.md. Port published on all interfaces (not just
+  # 127.0.0.1), so it's reachable from other machines on the network too.
+  # NOTE: as of 2026-11, actually deployed via a standalone `docker run`
+  # (container name `omniroute`) rather than `docker compose up` — this
+  # block exists so the compose definition doesn't drift from what's
+  # really running; bringing the stack up with compose should find the
+  # existing container's config already matching.
   router:
-    image: decolua/9router:latest
-    container_name: router
-    restart: always
+    image: diegosouzapw/omniroute:latest
+    container_name: omniroute
+    restart: unless-stopped
+    stop_grace_period: 40s
     ports:
       - "20128:20128"
     volumes:
-      - router-data:/app/data
+      - omniroute-data:/app/data
     networks:
       - agentnet
-    environment:
-      DATA_DIR: /app/data
-      PORT: "20128"
-      HOSTNAME: "0.0.0.0"
-      NODE_ENV: production
-      JWT_SECRET: "dev-jwt-secret-zmen-v-produkci"
-      INITIAL_PASSWORD: "admin"
 
   ollama-pull-models:
     image: ollama/ollama:latest
@@ -125,22 +124,18 @@ services:
       # DUKLA_SUPERVISORS na adresy (oddělovač ";", volitelně víc řádků).
       MESSENGER_URL: http://messenger:8005
       SUPERVISOR_EMAILS: "Bc. Jan Petrášek=petrasek@spssecb.cz"
-      # Portálový shell (Gateway, aila.localhost) čte /api/whoami odsud přes
-      # cross-origin fetch s cookies – potřebuje CORS na tento origin.
-      # V produkci nastavit na skutečnou (https) adresu portálu.
-      PORTAL_ORIGINS: "http://aila.localhost"
+      # Vlastní cesta pod Gateway (viz Gateway/Caddyfile) – služba mountuje
+      # statiku/šablony/routery pod tímhle prefixem místo na kořeni domény.
+      URL_PREFIX: "/access"
       # Ovládání agentní vrstvy z admin panelu (karta „Běhy a spouštění agentů“).
       # ACCESS_AGENT_RUN_TOKEN musí být STEJNÝ jako u služby access-agents.
       # V produkci silná náhodná hodnota z prostředí, necommitovat.
       ACCESS_AGENTS_URL: http://access-agents:8007
       ACCESS_AGENT_RUN_TOKEN: "dev-run-token"
       # Veřejná URL serveru — odkazy v e-mailu (rozhodovací stránka) z ní
-      # vycházejí. V produkci nastavit na skutečnou (https) adresu.
-      PUBLIC_BASE_URL: "http://access.aila.localhost"
-      # Sdílená doména session cookie (dl_session) napříč službami za gateway
-      # (viz Gateway/). Prázdné/nenastavené = cookie platí jen pro přesný host,
-      # co ji vydal (dnešní chování, žádné SSO). V produkci ".labs.<doména>".
-      SESSION_COOKIE_DOMAIN: ".aila.localhost"
+      # vycházejí, včetně URL_PREFIX výše. V produkci nastavit na skutečnou
+      # (https) adresu, např. "https://labs.spssecb.cz/access".
+      PUBLIC_BASE_URL: "http://localhost/access"
       # Podpis rozhodovacích odkazů. V produkci nastavit na náhodnou hodnotu;
       # její změna zneplatní všechny dříve rozeslané odkazy.
       DECISION_SECRET: "dev-decision-secret-zmen-v-produkci"
@@ -267,12 +262,12 @@ services:
       POSTGRES_USER: agent
       POSTGRES_PASSWORD: agentpass
       POSTGRES_HOST: postgres
-      # Veřejná URL serveru (odkazy v UI/e-mailech). V produkci https adresa.
-      PUBLIC_BASE_URL: "http://projects.aila.localhost"
-      # Sdílená doména session cookie (dl_session) napříč službami za gateway
-      # (viz Gateway/). Prázdné/nenastavené = cookie platí jen pro přesný host,
-      # co ji vydal (dnešní chování, žádné SSO). V produkci ".labs.<doména>".
-      SESSION_COOKIE_DOMAIN: ".aila.localhost"
+      # Veřejná URL serveru (odkazy v UI/e-mailech), včetně URL_PREFIX níže.
+      # V produkci https adresa, např. "https://labs.spssecb.cz/projects".
+      PUBLIC_BASE_URL: "http://localhost/projects"
+      # Vlastní cesta pod Gateway (viz Gateway/Caddyfile) – služba mountuje
+      # statiku/šablony/routery/SPA pod tímhle prefixem místo na kořeni domény.
+      URL_PREFIX: "/projects"
       # Interní hodinová sazba a týdenní kapacita člověka pro finanční/kapacitní
       # výpočty. Přednost má řádek v projects.settings, pak tyhle env, pak default.
       PROJECTS_HOURLY_RATE_CZK: "500"
@@ -283,18 +278,24 @@ services:
       # stroji, ne v kontejneru, proto host.docker.internal místo 127.0.0.1.
       # OBSIDIAN_API_KEY viz Projects/.env.example.
       OBSIDIAN_BASE_URL: "https://host.docker.internal:27124"
-      # ailacore.llm — 9Router neběží jako služba v tomto compose souboru,
+      # ailacore.llm — OmniRoute neběží jako služba v tomto compose souboru,
       # ale jako samostatný kontejner (viz `docker ps`, image
-      # decolua/9router, port 20128 publikovaný na hosta) spravovaný mimo
-      # tento stack. Proto host.docker.internal místo service name "router".
+      # diegosouzapw/omniroute, port 20128 publikovaný na hosta) spravovaný
+      # mimo tento stack. Proto host.docker.internal místo service name "router".
       # ROUTER_API_KEY/ROUTER_MODEL jsou v Projects/.env (secrets, gitignored).
       ROUTER_URL: "http://host.docker.internal:20128/v1"
       # Bez GPU na tomhle stroji nejede lokální Ollama — dokud nebude, i
       # "citlivá" větev (Pocket extrakce z přepisů schůzek) jede přes
-      # 9Router místo lokálního modelu (viz Shared/ailacore/llm.py docstring
+      # OmniRoute místo lokálního modelu (viz Shared/ailacore/llm.py docstring
       # k LLM_SENSITIVE_BACKEND). Vypnout zpět na "ollama" (nebo smazat), až
       # bude lokální inference zase k dispozici.
       LLM_SENSITIVE_BACKEND: "router"
+      # Alternativa k LLM_SENSITIVE_BACKEND=router výše: pokud je v síti
+      # dostupná Ollama na jiném stroji (IP:port, typicky stroj s GPU),
+      # nastav sem jeho adresu, vrať LLM_SENSITIVE_BACKEND na "ollama" (nebo
+      # smaž) a citlivá data zůstanou na naší síti místo cloudu. Zkouší se
+      # jen když OLLAMA_URL (service `ollama`) neodpoví na síťové úrovni.
+      # OLLAMA_FALLBACK_URL: "http://192.168.1.50:11434"
     env_file:
       - ./Projects/.env
 
@@ -328,7 +329,7 @@ services:
       POSTGRES_PASSWORD: agentpass
       POSTGRES_HOST: postgres
       MESSENGER_URL: http://messenger:8005
-      PUBLIC_BASE_URL: "http://access.aila.localhost"
+      PUBLIC_BASE_URL: "http://localhost/access"
       OLLAMA_HOST: http://ollama:11434
       AILA_AGENT_MODEL: "qwen2.5:latest"
       # BEZPEČNÁ BRZDA: "false" = plánovač nezaregistruje žádný job.
@@ -359,10 +360,14 @@ services:
       # ailacore.llm / decide() — stejný důvod a stejná výhrada jako u
       # projects-server výše: bez GPU tu neběží lokální Ollama, takže i
       # agentí rozhodování (release_advisor, registration_triage, ...),
-      # které pracuje s reálnými jmény studentů, dočasně jede přes 9Router
+      # které pracuje s reálnými jmény studentů, dočasně jede přes OmniRoute
       # místo lokálního modelu. ROUTER_API_KEY/ROUTER_MODEL viz AccessAgents/.env.
       ROUTER_URL: "http://host.docker.internal:20128/v1"
       LLM_SENSITIVE_BACKEND: "router"
+      # Stejná alternativa jako u projects-server výše — druhá Ollama v síti
+      # po IP:port, zkoušená jen když service `ollama` neodpoví na síťové
+      # úrovni (viz Shared/ailacore/llm.py).
+      # OLLAMA_FALLBACK_URL: "http://192.168.1.50:11434"
     env_file:
       - ./AccessAgents/.env
 
@@ -387,7 +392,7 @@ services:
         condition: service_completed_successfully
       messenger:
         condition: service_started
-    # 9Router neběží jako služba v tomto compose souboru (viz projects-server
+    # OmniRoute neběží jako služba v tomto compose souboru (viz projects-server
     # výše), proto host.docker.internal místo service name "router".
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -398,13 +403,40 @@ services:
       POSTGRES_HOST: postgres
       ROUTER_URL: "http://host.docker.internal:20128/v1"
       MESSENGER_URL: "http://messenger:8005"
+      # Vlastní cesta pod Gateway (viz Gateway/Caddyfile).
+      URL_PREFIX: "/assistant"
     env_file:
       - ./General/.env
 
-  # Reverse proxy (Caddy) sjednocující přístup pod jednu doménu: portálový
-  # shell na aila.localhost, jednotlivé služby na svých subdoménách
-  # (access.aila.localhost, projects.aila.localhost, ...). Viz Gateway/Caddyfile.
-  # Díky SESSION_COOKIE_DOMAIN výše se tu přihlášení sdílí napříč službami (SSO).
+  # Kroužek — správa kroužku pro ZŠ/SŠ (žáci, docházka, projekty, kontakty),
+  # port samostatného prototypu (statické HTML/JS) na flexibilní JSON
+  # document store (schéma `club`, viz Database/migrations/0021_club.py).
+  # Port 8009 — další volný po access-agents (8007) / general (8008).
+  krouzek:
+    build:
+      context: .
+      dockerfile: Krouzek/Dockerfile
+    container_name: krouzek
+    ports:
+      - "8009:8009"
+    networks:
+      - agentnet
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_DB: agentdb
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agentpass
+      POSTGRES_HOST: postgres
+      # Vlastní cesta pod Gateway (viz Gateway/Caddyfile).
+      URL_PREFIX: "/krouzek"
+
+  # Reverse proxy (Caddy) sjednocující přístup pod jednu doménu a port:
+  # portálový shell na kořeni localhost, jednotlivé služby jako podcesty
+  # (localhost/access, localhost/projects, ...). Viz Gateway/Caddyfile.
+  # Všechno běží na jednom originu, takže přihlášení (cookie dl_session) je
+  # sdílené napříč službami bez dalšího nastavení (SSO).
   gateway:
     build:
       context: .
@@ -421,6 +453,8 @@ services:
         condition: service_started
       general:
         condition: service_started
+      krouzek:
+        condition: service_started
     volumes:
       - caddy_data:/data
       - caddy_config:/config
@@ -431,6 +465,6 @@ networks:
 volumes:
   postgres_data:
   ollama-data:
-  router-data:
+  omniroute-data:
   caddy_data:
   caddy_config:

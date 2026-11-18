@@ -9,6 +9,7 @@ so an email client's link-prefetch bot (which only ever issues GET) can
 never approve/deny anything by accident.
 """
 import logging
+import os
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -27,6 +28,7 @@ staff_router = APIRouter(prefix="/api/excuse-requests", tags=["Excuse Requests (
 _STAFF_ONLY = [Depends(require_role("admin", "staff"))]
 
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["BASE"] = os.getenv("URL_PREFIX", "").rstrip("/")
 log = logging.getLogger(__name__)
 
 

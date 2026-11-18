@@ -2,6 +2,7 @@
 // panelu, přepínač Tento / Příští týden. Zeleně ✓ jsou hodiny, na které je
 // student už přihlášený (lze se z nich i odhlásit).
 
+const BASE = window.BASE_PATH || "";
 const state = { weekOffset: 0 };
 let slotMap = {};        // slotMap[date][hour] = slot
 let mine = new Set();    // open_hour_id, kam je student přihlášený
@@ -24,10 +25,10 @@ async function renderGrid() {
     });
 
     const [slots, periods, myIds, lessons] = await Promise.all([
-        fetch(`/api/open-hours/list?from=${from}&to=${to}`).then(r => r.json()).catch(() => []),
+        fetch(`${BASE}/api/open-hours/list?from=${from}&to=${to}`).then(r => r.json()).catch(() => []),
         fetchPeriods(),
-        fetch("/api/my-bookings").then(r => (r.ok ? r.json() : [])).catch(() => []),
-        fetch(`/api/my-lessons?from=${from}&to=${to}`).then(r => (r.ok ? r.json() : {})).catch(() => ({})),
+        fetch(`${BASE}/api/my-bookings`).then(r => (r.ok ? r.json() : [])).catch(() => []),
+        fetch(`${BASE}/api/my-lessons?from=${from}&to=${to}`).then(r => (r.ok ? r.json() : {})).catch(() => ({})),
     ]);
 
     mine = new Set(Array.isArray(myIds) ? myIds : []);
@@ -84,14 +85,14 @@ function cellHtml(date, hour) {
 }
 
 async function bookHour(id) {
-    const res = await fetch("/api/book-hour", {
+    const res = await fetch(`${BASE}/api/book-hour`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hour_id: id }),
     });
     if (res.status === 401) {
         alert("Musíš být přihlášený/á.");
-        window.location.href = "/login";
+        window.location.href = `${BASE}/login`;
         return;
     }
     const reply = await res.json().catch(() => ({}));
@@ -104,9 +105,9 @@ async function bookHour(id) {
 
 async function cancelHour(id) {
     if (!confirm("Opravdu se odhlásit z této hodiny?")) return;
-    const res = await fetch(`/api/book-hour/${id}`, { method: "DELETE" });
+    const res = await fetch(`${BASE}/api/book-hour/${id}`, { method: "DELETE" });
     if (res.status === 401) {
-        window.location.href = "/login";
+        window.location.href = `${BASE}/login`;
         return;
     }
     const reply = await res.json().catch(() => ({}));

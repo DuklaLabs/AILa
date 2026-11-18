@@ -1,6 +1,6 @@
 // Tenký fetch wrapper nad /api služby Projects. Cookie session -> credentials.
 
-const BASE = '/api'
+const BASE = import.meta.env.VITE_API_BASE || '/api'
 
 async function req(method, path, body) {
   const opts = { method, credentials: 'include', headers: {} }

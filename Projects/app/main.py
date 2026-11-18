@@ -32,27 +32,34 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Projects", lifespan=lifespan)
 
-app.include_router(router_auth)
-app.include_router(api_router)
+# Cesta pod Gateway (viz Gateway/Caddyfile) – Caddy předává celou cestu
+# beze stripu, takže služba musí sama mountovat statiku/šablony/routery/SPA
+# pod tímhle prefixem místo na kořeni domény.
+PREFIX = os.getenv("URL_PREFIX", "").rstrip("/")
+
+app.include_router(router_auth, prefix=PREFIX)
+app.include_router(api_router, prefix=PREFIX)
 
 if _mcp_app is not None:
-    app.mount("/mcp", _mcp_app)
+    app.mount(f"{PREFIX}/mcp", _mcp_app)
 
 # sdílený brand look (převzato z AccessRequest/app/static/css)
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount(f"{PREFIX}/static", StaticFiles(directory="app/static"), name="static")
 
 # React SPA (druhý build v UI/, Vite base=/app/projects/, vstup index.projects.html)
 mount_spa(
     app,
     os.getenv("PROJECTS_UI_DIST", "projects-ui-dist"),
-    path="/app/projects",
+    path=f"{PREFIX}/app/projects",
     index_name="index.projects.html",
+    login_url=f"{PREFIX}/login",
 )
 
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["BASE"] = PREFIX
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get(f"{PREFIX}/", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse(request, "index.html")
 

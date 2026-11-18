@@ -4,11 +4,12 @@ a Messenger, když o ně uživatel jasně požádá. Konverzace se ukládá pod 
 (general.chat_messages) – vyžaduje přihlášení sdílené s celým AILa
 (dl_session cookie, ailacore.auth).
 
-Stav: Generál sám o sobě naběhne, jde promptovat (POST /general) a je
-napojený na chat v portálovém UI (assistant.aila.localhost, viz
-Gateway/Caddyfile a UI/src/LabOrchestratorDashboard.jsx). Nepřihlášený
-požadavek dostane 401 – portál v tom případě přesměruje na
-access.aila.localhost/login?next=... a po přihlášení se vrátí zpátky.
+Stav: Generál sám o sobě naběhne, jde promptovat (POST /assistant/general)
+a je napojený na chat v portálovém UI (localhost/assistant, viz
+Gateway/Caddyfile – URL_PREFIX=/assistant – a
+UI/src/LabOrchestratorDashboard.jsx). Nepřihlášený požadavek dostane 401 –
+portál v tom případě přesměruje na localhost/access/login?next=... a po
+přihlášení se vrátí zpátky.
 Skladník ani Nakupcik ale zatím samy o sobě neběží (viz jejich README) a
 nejsou v docker-compose.yml – CHECK_STOCK i CREATE_ORDER proto dnes vrátí
 odpověď s poznámkou, že se nepodařilo spojit se službou, místo reálného
@@ -56,13 +57,15 @@ Architektura:
   AccessAgents, žádná auth navíc (interní síť).
 - app/agents/students.py – active_student_emails(): přímý dotaz do
   internal.students JOIN auth.users (aktivní studentské účty s e-mailem).
-- app/main.py – FastAPI:
-  - GET  /general/me      – ailacore.auth.get_current_user, 401 když nepřihlášen.
-  - GET  /general/history – dosavadní konverzace přihlášeného uživatele.
-  - POST /general {"prompt": "..."} – vyžaduje přihlášení, vrací
+- app/main.py – FastAPI (routy pod URL_PREFIX, viz docker-compose.yml a
+  Gateway/Caddyfile – dnes /assistant):
+  - GET  /assistant/general/me      – ailacore.auth.get_current_user, 401 když nepřihlášen.
+  - GET  /assistant/general/history – dosavadní konverzace přihlášeného uživatele.
+  - POST /assistant/general {"prompt": "..."} – vyžaduje přihlášení, vrací
     {"reply": "...", "data": <volitelně>}.
-  CORS povolený jen pro http://aila.localhost (portál), allow_credentials=True
-  (cookie musí jít cross-origin z aila.localhost na assistant.aila.localhost).
+  Žádný CORS – portál i Generál běží na jednom originu (http://localhost),
+  liší se jen cestou, takže fetch je same-origin a cookie dl_session
+  nepotřebuje sdílenou domain.
 
 Env: POSTGRES_* (sdílená agentdb, viz docker-compose.yml), ROUTER_API_KEY /
 ROUTER_MODEL pro 9Router v .env (v praxi stejný klíč jako Projects/.env a

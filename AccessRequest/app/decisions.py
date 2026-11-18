@@ -22,6 +22,7 @@ třída není v rozvrhu, DB nedostupná), spadne to na **dozora** otevřené hod
 from __future__ import annotations
 
 import datetime
+import os
 from datetime import date, time
 
 from fastapi import APIRouter, Depends, Request
@@ -42,6 +43,8 @@ from app.notify import (
 )
 
 router_decisions = APIRouter(tags=["Decisions"])
+
+PREFIX = os.getenv("URL_PREFIX", "").rstrip("/")
 
 _CZ_WEEKDAYS = ["pondělí", "úterý", "středa", "čtvrtek", "pátek", "sobota", "neděle"]
 _STAVY = {"nove", "povolene", "zamitnute", "vse"}
@@ -348,7 +351,7 @@ def _render_teacher(token, name, mine, teachers, stav) -> str:
       <p class="sub">Učitel: <strong>{_esc(name)}</strong> – studenti, které podle
         rozvrhu učíte v době jejich zápisu na DuklaLabs.</p>
       <div class="tabs">{tabs}</div>
-      <form method="post" action="/rozhodovani/{token}">
+      <form method="post" action="{PREFIX}/rozhodovani/{token}">
         <input type="hidden" name="stav" value="{stav}">
         {table}
         <div class="bar">
@@ -395,7 +398,7 @@ def _render_supervisor(token, name, mine, teachers) -> str:
       <h1>Docházka DuklaLabs – dozor</h1>
       <p class="sub">Dozor: <strong>{_esc(name)}</strong>. Studenti přihlášení na
         vaše otevřené hodiny. Můžete odklikat docházku i přepsat rozhodnutí učitele.</p>
-      <form method="post" action="/rozhodovani/{token}">
+      <form method="post" action="{PREFIX}/rozhodovani/{token}">
         {tables}
         <div class="bar">
           <button class="btn btn-primary" type="submit">Uložit</button>
@@ -487,7 +490,7 @@ async def decision_list_submit(token: str, request: Request):
 
     q = (f"?stav={stav}&ulozeno={changed}" if kind == "teacher"
          else f"?ulozeno={changed}")
-    return RedirectResponse(url=f"/rozhodovani/{token}{q}", status_code=303)
+    return RedirectResponse(url=f"{PREFIX}/rozhodovani/{token}{q}", status_code=303)
 
 
 # ----------------------------------------------------------------------
@@ -740,7 +743,7 @@ async def decision_one(token: str, request: Request):
             "Potvrzení",
             f"<h1>Potvrďte rozhodnutí</h1>{_one_detail(row)}"
             f"<p>Chystáte se <strong>{chce}</strong>.</p>"
-            f"<form method='post' action='/rozhodnuti/{token}'>"
+            f"<form method='post' action='{PREFIX}/rozhodnuti/{token}'>"
             f"<input type='hidden' name='volba' value='{volba}'>"
             f"<button class='btn {cls}' type='submit'>Potvrdit</button></form>",
         )
@@ -772,5 +775,5 @@ async def decision_one_submit(token: str, request: Request):
     msg = ("<h1>Uvolnění povoleno</h1>" if approved else "<h1>Účast zamítnuta</h1>")
     return _page(
         "Rozhodnutí zapsáno",
-        msg + f"<p class='muted'>Změnit lze <a href='/rozhodnuti/{token}'>zde</a>.</p>",
+        msg + f"<p class='muted'>Změnit lze <a href='{PREFIX}/rozhodnuti/{token}'>zde</a>.</p>",
     )

@@ -1,14 +1,17 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="cs" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <title>DuklaLabs – Studentský dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="/static/css/base.css">
-  <link rel="stylesheet" href="/static/css/layout.css">
-  <link rel="stylesheet" href="/static/css/buttons.css">
-  <link rel="stylesheet" href="/static/css/forms.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/base.css">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/layout.css">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/buttons.css">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/forms.css">
 
   <style>
     .booking-chips { display:flex; flex-wrap:wrap; gap:4px; }
@@ -26,7 +29,8 @@
     .chip-cancel:disabled { opacity:0.4; cursor:default; }
   </style>
 
-  <script src="/static/js/loader.js" defer></script>
+  <script>window.BASE_PATH = "{{ BASE }}";</script>
+  <script src="{{ BASE }}/static/js/loader.js" defer></script>
 </head>
 
 <body>
@@ -37,7 +41,7 @@
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">
         <button class="btn btn-primary" onclick="reloadStudents()">🔄 Aktualizovat</button>
-        <a href="/student-register" class="btn btn-ghost">✍️ Registrovat dalšího studenta</a>
+        <a href="{{ BASE }}/student-register" class="btn btn-ghost">✍️ Registrovat dalšího studenta</a>
       </div>
 
       <div id="loader" class="loader hidden"></div>
@@ -87,13 +91,14 @@
 // student_id of the logged-in viewer (null for staff/anonymous) – the ✕
 // "unregister" button is only shown on this student's own bookings.
 const MY_STUDENT_ID = {{ my_student_id | tojson }};
+const BASE = window.BASE_PATH || "";
 
 async function cancelBooking(hourId, btn) {
     if (!confirm("Opravdu se odhlásit z této hodiny?")) return;
     if (btn) btn.disabled = true;
     try {
-        const res = await fetch(`/api/book-hour/${hourId}`, { method: "DELETE" });
-        if (res.status === 401) { window.location.href = "/login"; return; }
+        const res = await fetch(`${BASE}/api/book-hour/${hourId}`, { method: "DELETE" });
+        if (res.status === 401) { window.location.href = `${BASE}/login`; return; }
         const reply = await res.json().catch(() => ({}));
         if (!res.ok) {
             alert(reply.detail || "Odhlášení se nezdařilo.");
@@ -113,7 +118,7 @@ async function reloadStudents() {
     loader.classList.remove("hidden");
 
     try {
-        const res = await fetch("/api/students");
+        const res = await fetch(`${BASE}/api/students`);
         if (!res.ok) throw new Error("Chyba při načítání dat");
         const data = await res.json();
 

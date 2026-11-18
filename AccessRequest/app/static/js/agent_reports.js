@@ -1,8 +1,10 @@
 // Historie periodických reportů agentní vrstvy (agent.reports, module=access).
 // Detail se otevírá v modalu #ohModal (sdílený s open_hours.js).
 
+const BASE = window.BASE_PATH || "";
+
 async function loadAgentReports() {
-    const res = await fetch("/api/agents/reports");
+    const res = await fetch(`${BASE}/api/agents/reports`);
     if (!res.ok) return; // bez agent.report:read → karta zůstane skrytá
     const rows = await res.json();
     const card = document.getElementById("agentReportsCard");
@@ -29,7 +31,7 @@ async function showAgentReport(id) {
     body.innerHTML = `<p>Načítám…</p>`;
     modal.style.display = "flex";
 
-    const res = await fetch(`/api/agents/reports/${id}`);
+    const res = await fetch(`${BASE}/api/agents/reports/${id}`);
     if (!res.ok) { body.innerHTML = `<p class="oh-empty">Nepodařilo se načíst.</p>`; return; }
     const r = await res.json();
     const p = r.payload || {};

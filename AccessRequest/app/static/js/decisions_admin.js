@@ -1,4 +1,6 @@
 // Rozesílání e-mailů k uvolnění z výuky. V ostré verzi to bude dělat plánovač.
+const BASE = window.BASE_PATH || "";
+
 async function postDigest(url, btn) {
     const out = document.getElementById("digestResult");
     btn.disabled = true;
@@ -29,7 +31,7 @@ async function postDigest(url, btn) {
 }
 
 document.getElementById("sendDigestBtn")?.addEventListener("click", (e) =>
-    postDigest("/api/decisions/send-digest", e.currentTarget));
+    postDigest(`${BASE}/api/decisions/send-digest`, e.currentTarget));
 
 document.getElementById("sendRosterBtn")?.addEventListener("click", (e) =>
-    postDigest("/api/decisions/send-supervisor-roster", e.currentTarget));
+    postDigest(`${BASE}/api/decisions/send-supervisor-roster`, e.currentTarget));

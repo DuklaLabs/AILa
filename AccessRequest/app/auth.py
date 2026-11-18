@@ -1,5 +1,4 @@
 import os
-from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -18,8 +17,11 @@ from ailacore.auth import (
 )
 from ailacore.models import User
 
+PREFIX = os.getenv("URL_PREFIX", "").rstrip("/")
+
 router_auth = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["BASE"] = PREFIX
 
 
 class RFIDLoginRequest(BaseModel):
@@ -28,19 +30,12 @@ class RFIDLoginRequest(BaseModel):
 
 def _safe_next(url: str | None) -> str | None:
     """Guard against open redirects: only follow `next` if it's a plain
-    relative path, or points at our own SSO domain (SESSION_COOKIE_DOMAIN,
-    e.g. ".aila.localhost", falling back to the bare "aila.localhost" dev
-    domain if unset). Used so other AILa services (e.g. the portal shell at
-    aila.localhost) can send people back to themselves after login/logout."""
+    relative path (and not protocol-relative, i.e. not starting with "//").
+    Everything else (portal shell, other AILa modules) is same-origin now,
+    so a relative path is all `next` ever needs to be."""
     if not url:
         return None
-    if url.startswith("/"):
-        return url
-    parsed = urlparse(url)
-    if parsed.scheme not in ("http", "https") or not parsed.hostname:
-        return None
-    domain = (os.getenv("SESSION_COOKIE_DOMAIN") or "").lstrip(".") or "aila.localhost"
-    if parsed.hostname == domain or parsed.hostname.endswith("." + domain):
+    if url.startswith("/") and not url.startswith("//"):
         return url
     return None
 
@@ -53,7 +48,6 @@ async def _attach_session_cookie(response, user_id: int) -> None:
         httponly=True,
         samesite="lax",
         max_age=int(SESSION_TTL.total_seconds()),
-        domain=os.getenv("SESSION_COOKIE_DOMAIN") or None,
     )
 
 
@@ -87,7 +81,7 @@ async def login_check(
             status_code=401,
         )
 
-    target = next_url or ("/admin" if user.role in ("admin", "staff") else "/student-hours")
+    target = next_url or (f"{PREFIX}/admin" if user.role in ("admin", "staff") else f"{PREFIX}/student-hours")
     response = RedirectResponse(url=target, status_code=302)
     await _attach_session_cookie(response, user.id)
     return response
@@ -108,12 +102,12 @@ async def login_rfid(payload: RFIDLoginRequest):
 
 @router_auth.get("/logout")
 async def logout(request: Request):
-    target = _safe_next(request.query_params.get("next")) or "/"
+    target = _safe_next(request.query_params.get("next")) or f"{PREFIX}/"
     response = RedirectResponse(url=target)
     token = request.cookies.get(SESSION_COOKIE)
     if token:
         await revoke_session(token)
-    response.delete_cookie(SESSION_COOKIE, domain=os.getenv("SESSION_COOKIE_DOMAIN") or None)
+    response.delete_cookie(SESSION_COOKIE)
     return response
 
 

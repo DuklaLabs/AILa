@@ -1,5 +1,7 @@
+const BASE = window.BASE_PATH || "";
+
 async function loadPendingStudents() {
-    const res = await fetch("/api/students/pending");
+    const res = await fetch(`${BASE}/api/students/pending`);
     if (!res.ok) return;
 
     const students = await res.json();
@@ -46,7 +48,7 @@ async function loadPendingStudents() {
 }
 
 async function approveStudent(userId) {
-    const res = await fetch(`/api/students/${userId}/approve`, { method: "POST" });
+    const res = await fetch(`${BASE}/api/students/${userId}/approve`, { method: "POST" });
     if (!res.ok) {
         const err = await res.json();
         alert(err.detail || "Nepodařilo se schválit.");
@@ -57,7 +59,7 @@ async function approveStudent(userId) {
 
 async function rejectStudent(userId) {
     if (!confirm("Opravdu zamítnout a smazat tuto registraci?")) return;
-    const res = await fetch(`/api/students/${userId}/reject`, { method: "POST" });
+    const res = await fetch(`${BASE}/api/students/${userId}/reject`, { method: "POST" });
     if (!res.ok) {
         const err = await res.json();
         alert(err.detail || "Nepodařilo se zamítnout.");

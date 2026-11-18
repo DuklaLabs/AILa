@@ -3,6 +3,7 @@
 // vlastní funkci pro obsah buňky (cellHtmlFn).
 
 const WEEKDAY_LABELS = ["Ne", "Po", "Út", "St", "Čt", "Pá", "So"];
+const BASE = window.BASE_PATH || "";
 
 function ttWeekdayLabel(dateStr) {
     const d = new Date(dateStr + "T00:00:00");
@@ -19,7 +20,7 @@ function ttTime(t) {
 }
 
 async function fetchPeriods() {
-    const res = await fetch("/api/open-hours/periods");
+    const res = await fetch(`${BASE}/api/open-hours/periods`);
     return res.json();
 }
 

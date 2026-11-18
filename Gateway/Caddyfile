@@ -1,36 +1,48 @@
-# Reverse proxy sjednocující AILa pod jednu doménu (*.aila.localhost v devu,
-# *.labs.<vaše-doména> na produkci – stačí tyhle hostnames přepsat).
+# Reverse proxy sjednocující AILa pod jednu doménu a jeden port: localhost v
+# devu, labs.<vaše-doména> na produkci (stačí tenhle hostname přepsat).
 #
-# Host-based routing (ne path-prefix): AccessRequest i Projects mají v
-# šablonách/JS natvrdo root-relativní absolutní cesty (/static/..., /login,
-# /admin/rbac/, /app/projects/, fetch("/api/...")), takže path-prefix routing
-# by vyžadoval přepisování Location hlaviček i řetězců v HTML/JS. Subdomény
-# tohle obcházejí – každá služba dál vidí svoje cesty jako kořenové.
+# Path-prefix routing (ne subdomény): každý modul má svou složku
+# (/access, /projects, /assistant, /krouzek), portál je na kořeni. Caddy
+# předává celou cestu beze stripu (handle, ne handle_path) – backend tak
+# dostane požadavek přesně na /krouzek/..., a sám ví o svém prefixu přes
+# env URL_PREFIX (viz docker-compose.yml). AccessRequest i Projects proto
+# mountují statiku/šablony/routery pod tímhle prefixem místo na kořeni.
 #
-# SSO funguje díky SESSION_COOKIE_DOMAIN=".aila.localhost" nastavenému u
-# access-request-server a projects-server (viz docker-compose.yml) – cookie
-# dl_session pak platí pro všechny subdomény najednou.
+# SSO teď funguje bez SESSION_COOKIE_DOMAIN – všechno běží na jednom
+# originu (http://localhost), takže cookie dl_session je prostě host-only
+# a platí pro všechny cesty. CORS mezi portálem a službami taky odpadl
+# (same-origin fetch).
 #
-# Explicitní "http://" schéma u každého bloku: bez něj by Caddy pro tyhle
-# hostnames sám zapnul automatický HTTPS (self-signed cert pro "special"
-# TLD jako .localhost) a přesměroval port 80 na 443 – ten ale compose
-# nepublikuje. Pro produkční doménu (labs.domena.cz) toto "http://" prostě
-# odstranit, ať Caddy sám vydá reálný certifikát a obsluhuje 443.
+# Explicitní "http://" schéma: bez něj by Caddy pro "localhost" sám zapnul
+# automatický HTTPS (self-signed cert) a přesměroval port 80 na 443 – ten
+# ale compose nepublikuje. Pro produkční doménu (labs.domena.cz) toto
+# "http://" prostě odstranit, ať Caddy sám vydá reálný certifikát a
+# obsluhuje 443.
 
-http://aila.localhost {
-	root * /srv/portal
-	file_server
-	try_files {path} /index.html
-}
+http://localhost {
+	@access path /access /access/*
+	handle @access {
+		reverse_proxy access-request-server:8003
+	}
 
-http://access.aila.localhost {
-	reverse_proxy access-request-server:8003
-}
+	@projects path /projects /projects/*
+	handle @projects {
+		reverse_proxy projects-server:8006
+	}
 
-http://projects.aila.localhost {
-	reverse_proxy projects-server:8006
-}
+	@assistant path /assistant /assistant/*
+	handle @assistant {
+		reverse_proxy general:8008
+	}
 
-http://assistant.aila.localhost {
-	reverse_proxy general:8008
+	@krouzek path /krouzek /krouzek/*
+	handle @krouzek {
+		reverse_proxy krouzek:8009
+	}
+
+	handle {
+		root * /srv/portal
+		file_server
+		try_files {path} /index.html
+	}
 }

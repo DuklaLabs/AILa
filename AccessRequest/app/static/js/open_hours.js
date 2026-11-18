@@ -5,6 +5,7 @@
 // hodiny dozorujících učitelů z oddělené duklamaps DB – každý dozor jako
 // samostatný barevný blok, s možností je ve filtru zapnout/vypnout.
 
+const BASE = window.BASE_PATH || "";
 const state = {
     weekOffset: 0,
     activeSupervisors: null,   // Set<string> | null (null = ještě nenačteno)
@@ -98,11 +99,11 @@ async function renderGrid() {
 
     const week = state.weekOffset === 1 ? "next" : "actual";
     const [slots, periods, sups, names] = await Promise.all([
-        fetch(`/api/open-hours/list?from=${from}&to=${to}`).then(r => r.json()).catch(() => []),
+        fetch(`${BASE}/api/open-hours/list?from=${from}&to=${to}`).then(r => r.json()).catch(() => []),
         fetchPeriods(),
-        fetch(`/api/open-hours/supervisions?from=${from}&to=${to}&week=${week}`)
+        fetch(`${BASE}/api/open-hours/supervisions?from=${from}&to=${to}&week=${week}`)
             .then(r => (r.ok ? r.json() : [])).catch(() => []),
-        fetch(`/api/open-hours/supervisors`)
+        fetch(`${BASE}/api/open-hours/supervisors`)
             .then(r => (r.ok ? r.json() : [])).catch(() => []),
     ]);
 
@@ -265,7 +266,7 @@ async function showBookings(id, date, hour) {
 
     let rows;
     try {
-        const res = await fetch(`/api/open-hours/${id}/bookings`);
+        const res = await fetch(`${BASE}/api/open-hours/${id}/bookings`);
         if (!res.ok) {
             const t = await res.text().catch(() => "");
             body.innerHTML = `${header}<p class="oh-empty">Chyba ${res.status}. ${esc(t.slice(0, 200))}</p>`;
@@ -374,7 +375,7 @@ async function submitAdd(btn) {
     form.append("note", note);
     form.append("supervisor", inlineSupervisorValue(cell));
 
-    const res = await fetch("/api/open-hours/add", { method: "POST", body: form });
+    const res = await fetch(`${BASE}/api/open-hours/add`, { method: "POST", body: form });
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         await errorDialog(err.detail || "Nepodařilo se uložit.");
@@ -411,7 +412,7 @@ async function submitEdit(id, btn) {
     form.append("note", note);
     form.append("supervisor", inlineSupervisorValue(cell));
 
-    const res = await fetch(`/api/open-hours/${id}`, { method: "PATCH", body: form });
+    const res = await fetch(`${BASE}/api/open-hours/${id}`, { method: "PATCH", body: form });
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         await errorDialog(err.detail || "Nepodařilo se uložit.");
@@ -424,7 +425,7 @@ async function submitEdit(id, btn) {
 async function deleteHour(id) {
     if (!(await confirmDialog("Opravdu smazat tuto otevřenou hodinu?", "Smazat"))) return;
 
-    const res = await fetch(`/api/open-hours/delete/${id}`, { method: "DELETE" });
+    const res = await fetch(`${BASE}/api/open-hours/delete/${id}`, { method: "DELETE" });
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         await errorDialog(err.detail || "Nepodařilo se smazat.");

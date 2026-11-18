@@ -1,13 +1,16 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="cs" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <title>Přihlášení – DuklaLabs Projekty</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="/static/css/base.css">
-  <link rel="stylesheet" href="/static/css/layout.css">
-  <link rel="stylesheet" href="/static/css/buttons.css">
-  <link rel="stylesheet" href="/static/css/forms.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/base.css">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/layout.css">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/buttons.css">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/forms.css">
 </head>
 <body>
   <div class="center-page">
@@ -20,7 +23,7 @@
         <div style="color:#fecaca; margin-bottom:10px; font-size:13px;">{{ error }}</div>
       {% endif %}
 
-      <form method="POST" action="/login-check" style="text-align:left; margin-top:10px;">
+      <form method="POST" action="{{ BASE }}/login-check" style="text-align:left; margin-top:10px;">
         <label for="username">Uživatel</label>
         <input id="username" name="username" type="text" autocomplete="username" required />
         <label for="password">Heslo</label>

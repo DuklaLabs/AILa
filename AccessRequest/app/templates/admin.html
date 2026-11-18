@@ -1,17 +1,20 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="cs" data-theme="dark">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DuklaLabs – Admin panel</title>
-    <link rel="stylesheet" href="/static/css/base.css" />
-    <link rel="stylesheet" href="/static/css/layout.css" />
-    <link rel="stylesheet" href="/static/css/buttons.css" />
-    <link rel="stylesheet" href="/static/css/forms.css" />
-    <link rel="stylesheet" href="/static/css/common.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css" />
+    <link rel="stylesheet" href="{{ BASE }}/static/css/base.css" />
+    <link rel="stylesheet" href="{{ BASE }}/static/css/layout.css" />
+    <link rel="stylesheet" href="{{ BASE }}/static/css/buttons.css" />
+    <link rel="stylesheet" href="{{ BASE }}/static/css/forms.css" />
+    <link rel="stylesheet" href="{{ BASE }}/static/css/common.css" />
 
     <!-- Specifický styl pro open hours (?v = cache-buster při změnách) -->
-    <link rel="stylesheet" href="/static/css/open_hours.css?v=15" />
+    <link rel="stylesheet" href="{{ BASE }}/static/css/open_hours.css?v=15" />
 </head>
 
 <body>
@@ -88,13 +91,14 @@
     </div>
 </div>
 
-<script src="/static/js/ui_common.js"></script>
-<script src="/static/js/timetable.js?v=15"></script>
-<script src="/static/js/pending_students.js"></script>
-<script src="/static/js/decisions_admin.js"></script>
-<script src="/static/js/open_hours.js?v=15"></script>
+<script>window.BASE_PATH = "{{ BASE }}";</script>
+<script src="{{ BASE }}/static/js/ui_common.js"></script>
+<script src="{{ BASE }}/static/js/timetable.js?v=15"></script>
+<script src="{{ BASE }}/static/js/pending_students.js"></script>
+<script src="{{ BASE }}/static/js/decisions_admin.js"></script>
+<script src="{{ BASE }}/static/js/open_hours.js?v=15"></script>
 <!-- agentní vrstva – po open_hours.js (recykluje jeho helpery toast/dialog) -->
-<script src="/static/js/agent_labels.js"></script>
-<script src="/static/js/agent_runs.js"></script>
+<script src="{{ BASE }}/static/js/agent_labels.js"></script>
+<script src="{{ BASE }}/static/js/agent_runs.js"></script>
 </body>
 </html>
