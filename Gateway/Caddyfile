@@ -18,9 +18,19 @@
 # odstranit, ať Caddy sám vydá reálný certifikát a obsluhuje 443.
 
 http://aila.localhost {
-	root * /srv/portal
-	file_server
-	try_files {path} /index.html
+	# Skladník (sklad) – cesta /sklad na portálovém originu, aby UI mohlo
+	# fetchovat /sklad/... bez CORS a s dl_session cookie. Skladník si prefix
+	# sám drží (URL_PREFIX=/sklad), proto se nic nepřepisuje.
+	@sklad path /sklad /sklad/*
+	handle @sklad {
+		reverse_proxy skladnik:8001
+	}
+
+	handle {
+		root * /srv/portal
+		try_files {path} /index.html
+		file_server
+	}
 }
 
 http://access.aila.localhost {
