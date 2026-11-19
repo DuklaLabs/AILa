@@ -30,3 +30,5 @@ src/theme.css
 *.sln
 *.sw?
 src/theme-toggle.js
+src/ui.css
+src/ui.js

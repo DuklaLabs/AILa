@@ -285,3 +285,15 @@ mount_admin_ui(app, os.getenv("RBAC_UI_DIST", "rbac-ui-dist"))  # /admin/rbac/ (
   `RBAC_UI_DIST` — vzor je stage `rbac-ui` v `AccessRequest/Dockerfile`.
 - Když build chybí (dev `pip install -e` bez `npm run build`), `mount_admin_ui` jen
   zaloguje varování a API běží dál.
+
+## Sdílená grafika (`Shared/webui/`)
+
+Jednotný vzhled DuklaLabs (převzatý z Kroužku). Jediný zdroj pravdy — soubory se při buildu kopírují do aplikací (Dockerfile / `UI/scripts/sync-theme.mjs`), needitovat kopie.
+
+- `theme.css` — barevné tokeny (světlý/tmavý), fonty, základní reset.
+- `ui.css` — komponenty: `.btn` (`.primary`, `.danger`), přepínač `.grp`/`.theme` s `.knob`, záložky `nav.tabs > .tabbar > .ind`, `.tile`, `.panel`, `.card`, `.pill`/`.chip`/`.cls`/`.nick`, `.progress`/`.ring`, `.legend`/`.dot`/`.s-*`, formuláře, `dialog` + `.dlg-actions`, `.seg`, `.toast`, `.empty`, `.sk`, `.avatar`…
+- `ui.js` — `AilaUI.knob()`, `AilaUI.tabs()`, `AilaUI.auto()` (posuvný indikátor u přepínačů a záložek).
+- `theme-toggle.js` — plovoucí přepínač světlý/tmavý.
+- `ui-demo.html` — katalog všech komponent (otevři přímo v prohlížeči).
+
+Krouzek `ui.css` už používá. AccessRequest/Projects mají kolizní vlastní `.btn*` (`buttons.css`), proto je `ui.css` zatím jen nakopírovaný (`static/css/ui.css`), nelinkovaný — stránka přejde po výměně lokálních tlačítek.

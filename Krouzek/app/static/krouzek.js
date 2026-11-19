@@ -492,10 +492,7 @@ function route() {
   requestAnimationFrame(moveInd);
 }
 function moveInd() {
-  const a = $("nav.tabs a[aria-current]"), ind = $("#ind");
-  if (!a) return;
-  ind.style.width = a.offsetWidth + "px";
-  ind.style.transform = `translateX(${a.offsetLeft}px)`;
+  AilaUI.tabs($("#tabbar"));
 }
 addEventListener("hashchange", route); addEventListener("resize", moveInd);
 document.fonts?.ready.then(moveInd);
@@ -568,8 +565,7 @@ document.querySelectorAll("dialog").forEach(dlg => {
 
 /* ZŠ / SŠ switch */
 function moveGrpKnob() {
-  const b = $(`.grp button[data-g="${G}"]`), k = $(".grp .knob");
-  k.style.width = b.offsetWidth + "px"; k.style.transform = `translateX(${b.offsetLeft}px)`;
+  AilaUI.knob($("#grp"));
 }
 function setGroup(g, animate) {
   G = g;

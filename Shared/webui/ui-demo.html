@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AILa UI katalog</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="ui.css">
+<style>
+  body { font: 15px/1.5 var(--f-body); margin: 0; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 80px; display: grid; gap: 28px; }
+  section { display: grid; gap: 12px; }
+  section > h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-family: var(--f-body); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  code { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 style="font-size:34px">AILa UI katalog</h1>
+  <p class="hint">Sdílená knihovna <code>theme.css</code> + <code>ui.css</code> + <code>ui.js</code>. Přepínač světlý/tmavý je vpravo dole.</p>
+
+  <section><h2>Tlačítka — .btn</h2>
+    <div class="row">
+      <button class="btn">Výchozí</button>
+      <button class="btn primary">Primární</button>
+      <button class="btn danger">Nebezpečné</button>
+      <button class="btn danger armed">Potvrdit smazání</button>
+      <button class="btn" disabled>Zakázané</button>
+    </div>
+  </section>
+
+  <section><h2>Přepínač — .grp (data-ui)</h2>
+    <div class="row">
+      <div class="grp" data-ui role="group" aria-label="Skupina">
+        <span class="knob"></span>
+        <button type="button" aria-pressed="true">Základní školy</button>
+        <button type="button" aria-pressed="false">Střední škola</button>
+      </div>
+      <code>&lt;div class="grp" data-ui&gt;&lt;span class="knob"&gt;&lt;/span&gt;&lt;button aria-pressed&gt;…</code>
+    </div>
+  </section>
+
+  <section><h2>Záložky — nav.tabs &gt; .tabbar (data-ui)</h2>
+    <nav class="tabs"><div class="wrap" style="padding:0"><div class="tabbar" data-ui id="demoTabs">
+      <span class="ind"></span>
+      <a href="#a" aria-current="page"><span>Přehled</span></a>
+      <a href="#b"><span>Kalendář</span></a>
+      <a href="#c"><span>Docházka</span></a>
+    </div></div></nav>
+  </section>
+
+  <section><h2>Dlaždice, panel, karta</h2>
+    <div class="tiles">
+      <div class="tile"><span class="k">Schůzek</span><span class="v">24</span><span class="s">letos</span></div>
+      <div class="tile hl"><span class="k">Docházka</span><span class="v">87 %</span><span class="s">průměr</span></div>
+    </div>
+    <div class="grid2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="panel"><h3>Panel</h3><p class="hint">Velký blok, jen světélkuje okraj.</p></div>
+      <div class="card"><h3>Karta</h3><div class="row"><span class="pill st-run">V běhu</span><span class="pill st-done">Hotovo</span><span class="pill st-pause">Pauza</span><span class="pill st-idea">Nápad</span></div><div class="progress"><i style="width:60%"></i></div></div>
+    </div>
+  </section>
+
+  <section><h2>Štítky, stavy, legenda</h2>
+    <div class="row"><span class="chip">Chip <em>role</em></span><span class="cls">3.A</span><span class="nick">přezdívka</span></div>
+    <div class="legend">
+      <span><i class="dot s-p"></i>Přítomen</span><span><i class="dot s-a"></i>Nepřítomen</span>
+      <span><i class="dot s-u"></i>Nezapsáno</span><span><i class="dot s-x"></i>Neaktivní</span>
+    </div>
+    <div class="sync ok"><i></i><span>Synchronizováno</span></div>
+  </section>
+
+  <section><h2>Formuláře</h2>
+    <div style="display:grid;gap:10px;max-width:420px">
+      <label class="f">Text<input type="text" placeholder="Např. pájení"></label>
+      <label class="f">Výběr<select><option>Pátek</option><option>Čtvrtek</option></select></label>
+      <label class="f">Poznámka<textarea></textarea></label>
+      <label class="chk"><input type="checkbox" checked><span>Zaškrtávátko<small>s popiskem</small></span></label>
+      <div class="seg"><button aria-pressed="true" style="--c:var(--p);--cs:var(--p-soft)">Ano</button><button aria-pressed="false">Ne</button></div>
+    </div>
+  </section>
+
+  <section><h2>Prázdný stav, skeleton, dialog</h2>
+    <div class="empty"><b>Zatím nic</b><span>Přidej první záznam.</span><button class="btn primary">Přidat</button></div>
+    <div class="sk" style="height:48px"></div>
+    <div class="row"><button class="btn" id="openDlg">Otevřít dialog</button><button class="btn" id="showToast">Toast</button></div>
+    <dialog id="dlg"><form method="dialog"><h3>Dialog</h3><label class="f">Pole<input type="text"></label>
+      <div class="dlg-actions"><button class="btn">Zrušit</button><button class="btn primary">Uložit</button></div></form></dialog>
+  </section>
+</div>
+<script src="theme-toggle.js"></script>
+<script src="ui.js"></script>
+<script>
+  AilaUI.auto();
+  document.getElementById("demoTabs").addEventListener("click", function (e) {
+    var a = e.target.closest("a"); if (!a) return; e.preventDefault();
+    this.querySelectorAll("a").forEach(function (x) { x.removeAttribute("aria-current"); });
+    a.setAttribute("aria-current", "page"); AilaUI.tabs(this);
+  });
+  document.getElementById("openDlg").onclick = function () { document.getElementById("dlg").showModal(); };
+  document.getElementById("showToast").onclick = function () {
+    var t = document.createElement("div"); t.className = "toast"; t.textContent = "Uloženo"; document.body.appendChild(t); setTimeout(function () { t.remove(); }, 2000);
+  };
+</script>
+</body>
+</html>

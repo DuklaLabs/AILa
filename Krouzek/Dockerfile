@@ -23,6 +23,7 @@ COPY Krouzek/ .
 # Shared brand palette/fonts (see Shared/webui/theme.css) — single source
 # for all apps, copied in rather than duplicated in krouzek.css.
 COPY Shared/webui/theme.css app/static/theme.css
+COPY Shared/webui/ui.css Shared/webui/ui.js app/static/
 
 EXPOSE 8009
 

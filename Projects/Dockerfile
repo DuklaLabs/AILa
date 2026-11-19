@@ -7,7 +7,7 @@ COPY UI/ ./
 # Shared brand palette/fonts (see Shared/webui/theme.css) — single source for
 # all apps. scripts/sync-theme.mjs (run by the npm pre* hooks below) copies
 # it into src/theme.css; it expects it as a sibling of UI/, hence /Shared/...
-COPY Shared/webui/theme.css Shared/webui/theme-toggle.js /Shared/webui/
+COPY Shared/webui/theme.css Shared/webui/theme-toggle.js Shared/webui/ui.css Shared/webui/ui.js /Shared/webui/
 RUN npm run build:projects     # -> /ui/dist-projects (Vite base=/app/projects/)
 
 
@@ -35,6 +35,9 @@ COPY Projects/ .
 # for all apps, copied in rather than duplicated in base.css.
 COPY Shared/webui/theme.css app/static/css/theme.css
 COPY Shared/webui/theme-toggle.js app/static/js/theme-toggle.js
+# Component library (opt-in: link ui.css/ui.js once a page migrates off the local .btn styles)
+COPY Shared/webui/ui.css app/static/css/ui.css
+COPY Shared/webui/ui.js app/static/js/ui.js
 
 # buildnutá SPA – ailacore.admin.mount_spa ji hledá v PROJECTS_UI_DIST
 COPY --from=projects-ui /ui/dist-projects /app/projects-ui-dist
