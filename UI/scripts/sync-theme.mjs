@@ -10,7 +10,7 @@ import { dirname, join } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-for (const name of ["theme.css", "theme-toggle.js"]) {
+for (const name of ["theme.css", "theme-toggle.js", "ui.css", "ui.js"]) {
   const source = join(here, "..", "..", "Shared", "webui", name);
   const dest = join(here, "..", "src", name);
   copyFileSync(source, dest);
