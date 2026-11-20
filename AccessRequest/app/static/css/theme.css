@@ -79,3 +79,9 @@ body { background: radial-gradient(circle at top, var(--bg-glow-1), transparent 
 .aila-theme .knob { position: absolute; top: 3px; left: 3px; width: 34px; height: 28px; border-radius: 99px; background: linear-gradient(135deg, var(--accent), var(--grad-end)); box-shadow: 0 4px 14px var(--glow); transition: transform .35s cubic-bezier(.3,1.4,.5,1); }
 .aila-theme[data-mode="dark"] .knob { transform: translateX(34px); }
 .aila-theme svg { width: 16px; height: 16px; }
+
+/* "← Rozcestník" bar injected by theme-toggle.js at the top of every page (button look comes from ui.css .btn.sm;
+   the fallback below keeps it usable on pages that don't load ui.css). */
+.aila-home { display: flex; align-items: center; padding: 10px max(16px, env(safe-area-inset-left, 0px)) 0; position: relative; z-index: 6; }
+.aila-home a:not(.btn) { text-decoration: none; color: var(--fg); font-weight: 600; font-size: 13px; padding: 5px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
+.aila-home a:not(.btn):hover { border-color: var(--accent); color: var(--accent); }
