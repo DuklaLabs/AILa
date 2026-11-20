@@ -1,6 +1,6 @@
 """Smoke test šablon: každá stránka se vykreslí a má kostru jako v Kroužku
-(header.top > .wrap, main > .wrap); stránky pro adminy mají nav.tabs s
-aria-current na aktuální záložce, ostatní (student/login/omluvenky) bez záložek."""
+(header.top > .wrap, main > .wrap); stránky modulu Stroje (přehled, analytika, uživatelé) mají nav.tabs s
+aria-current na aktuální záložce, ostatní (otevřené hodiny, student, login, omluvenky) bez záložek."""
 import re
 
 import pytest
@@ -10,13 +10,13 @@ templates = Jinja2Templates(directory="app/templates")
 templates.env.globals["BASE"] = "/ar"
 
 TABBED = {
-    "admin.html": "/ar/admin",
+    "machines.html": "/ar/machines",
     "admin_analytics.html": "/ar/admin/analytics",
     "admin_users.html": "/ar/admin/users",
-    "machines.html": "/ar/machines",
 }
 
 PLAIN = {
+    "admin.html": {},
     "index.html": {},
     "login.html": {"error": "x", "next": "/ar/admin"},
     "student_hours.html": {},
@@ -52,7 +52,13 @@ def test_tabbed_pages(name, href):
     assert '<span class="ind"></span>' in html
     current = re.findall(r'<a href="([^"]+)" aria-current="page"', html)
     assert current == [href]
-    assert html.count('<a href="/ar/') >= 4
+    # modul Stroje: právě tři záložky Přehled / Analytika / Uživatelé
+    assert re.findall(r'<nav class="tabs".*?</nav>', html, re.S)
+    tabs = re.search(r'<nav class="tabs".*?</nav>', html, re.S).group(0)
+    assert re.findall(r'<a href="([^"]+)"', tabs) == [
+        "/ar/machines", "/ar/admin/analytics", "/ar/admin/users"]
+    assert re.findall(r'<span>([^<]+)</span></a>', tabs) == ["Přehled", "Analytika", "Uživatelé"]
+    assert "Otevřené hodiny" not in tabs
     assert "AilaUI.auto()" in html and "static/js/ui.js" in html
 
 
@@ -67,3 +73,10 @@ def test_machines_hides_staff_tabs_for_students():
     html = render("machines.html", {"is_staff": False})
     _skeleton(html)
     assert '<nav class="tabs"' not in html
+
+
+def test_admin_hours_has_no_tabs():
+    html = render("admin.html", {})
+    _skeleton(html)
+    assert '<nav class="tabs"' not in html
+    assert "/machines" not in html.split("<main>")[0]

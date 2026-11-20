@@ -9,7 +9,7 @@
       <head> … {{ shell.assets() }} … </head>
       <body>
       {{ shell.header("Název", "Podtitul") }}
-      {{ shell.tabs("hours") }}          (jen stránky pro učitele/adminy)
+      {{ shell.tabs("overview") }}       (modul Stroje; jen pro učitele/adminy)
       <main><div class="wrap"> … </div></main>
 -#}
 
@@ -39,17 +39,17 @@
 </header>
 {%- endmacro %}
 
-{# Záložky mezi stránkami pro učitele/adminy – skutečné odkazy, aktivní má aria-current="page".
-   Klíče: hours | analytics | users | machines. Pozici .ind nastaví AilaUI.auto() (ui.js). #}
+{# Záložky modulu Stroje (jen pro učitele/adminy) – skutečné odkazy, aktivní má aria-current="page".
+   Klíče: overview | analytics | users. Pozici .ind nastaví AilaUI.auto() (ui.js).
+   Modul Otevřené hodiny má jedinou stránku, takže žádné záložky nemá. #}
 {% macro tabs(active, staff=true) -%}
 {% if staff %}<nav class="tabs" aria-label="Sekce">
   <div class="wrap">
     <div class="tabbar" data-ui>
       <span class="ind"></span>
-      <a href="{{ BASE }}/admin"{% if active == "hours" %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Otevřené hodiny</span></a>
+      <a href="{{ BASE }}/machines"{% if active == "overview" %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Přehled</span></a>
       <a href="{{ BASE }}/admin/analytics"{% if active == "analytics" %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Analytika</span></a>
       <a href="{{ BASE }}/admin/users"{% if active == "users" %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg><span>Uživatelé</span></a>
-      <a href="{{ BASE }}/machines"{% if active == "machines" %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg><span>Stroje</span></a>
     </div>
   </div>
 </nav>{% endif %}
