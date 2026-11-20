@@ -20,6 +20,11 @@ RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pyth
 
 COPY "Skladník/" .
 
+# Shared brand palette + UI library (see Shared/webui/) — single source for all
+# apps, copied in rather than duplicated in sklad.css.
+COPY Shared/webui/theme.css app/static/theme.css
+COPY Shared/webui/ui.css Shared/webui/ui.js Shared/webui/theme-toggle.js app/static/
+
 RUN mkdir -p /app/data
 
 EXPOSE 8001

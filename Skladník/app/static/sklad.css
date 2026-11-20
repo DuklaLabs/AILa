@@ -1,0 +1,62 @@
+/* Stránkově specifické styly modulů Sklad a Objednávky.
+   Vše ostatní (shell, .btn, .tile, .panel, .pill, .chips, .empty, label.f…) je ve sdílené ui.css. */
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+.hint { color: var(--muted); font-size: 13px; }
+[hidden] { display: none !important; }
+
+/* tlačítko-odkaz do druhého modulu v hlavičce */
+.tools a.btn { padding: 8px 16px; }
+
+/* ---- seznam materiálu ---- */
+.mlist { display: grid; gap: 6px; }
+.mrow { display: grid; grid-template-columns: minmax(0, 1fr) 110px 110px 120px; gap: 12px; align-items: center; padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid transparent; border-radius: 12px; transition: border-color .2s, transform .2s cubic-bezier(.3,1.4,.5,1); }
+.mrow:not(.mhead):hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); transform: translateX(2px); }
+.mrow.mhead { background: none; border-color: transparent; padding-block: 2px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.mrow .nm { font-weight: 600; overflow-wrap: anywhere; }
+.mrow .nm small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.mrow .qty { text-align: right; }
+.mrow.low { border-left-color: var(--a); background: color-mix(in srgb, var(--a-soft) 55%, var(--surface)); }
+.mrow.low .stock { color: var(--a); font-weight: 700; }
+.mrow .st { text-align: right; }
+@media (max-width: 640px) {
+  .mrow { grid-template-columns: 1fr auto; gap: 4px 12px; }
+  .mrow.mhead { display: none; }
+  .mrow .qty { text-align: left; font-size: 13px; color: var(--muted); }
+  .mrow .qty::before { content: attr(data-l) " "; }
+  .mrow .nm { grid-column: 1; }
+  .mrow .st { grid-column: 2; grid-row: 1; }
+}
+
+/* ---- formulář přidání materiálu ---- */
+.addform { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; }
+.addform label.f:first-child { grid-column: span 2; }
+.addform-actions { display: flex; }
+@media (max-width: 520px) { .addform label.f:first-child { grid-column: auto; } }
+
+/* ---- objednávky ---- */
+.orders { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; align-items: start; }
+.orders > .empty { grid-column: 1 / -1; }
+.order { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; transition: border-color .25s, box-shadow .25s; }
+.order:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); box-shadow: var(--shadow); }
+.order-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.order-head h3 { font-size: 16px; font-weight: 700; }
+.order-head .pill { margin-left: auto; }
+.order .when { color: var(--muted); font-size: 13px; }
+.order .note { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--surface-2); font-size: 14px; overflow-wrap: anywhere; }
+.order-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.order-actions .btn.danger { margin-left: auto; }
+
+/* ---- nová objednávka ---- */
+.newbar { display: grid; grid-template-columns: minmax(180px, 1fr) auto auto; gap: 10px; align-items: end; }
+@media (max-width: 640px) { .newbar { grid-template-columns: 1fr 1fr; } .newbar label.f { grid-column: 1 / -1; } }
+.matpick { display: grid; gap: 6px; max-height: 460px; overflow-y: auto; padding-right: 4px; }
+.pickrow { display: grid; grid-template-columns: minmax(0, 1fr) auto 120px; gap: 12px; align-items: center; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.pickrow.on { border-color: var(--accent); background: var(--accent-soft); }
+.pickrow .nm { font-weight: 600; overflow-wrap: anywhere; }
+.pickrow .nm small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.pickrow .stk { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.pickrow.low .stk { color: var(--a); font-weight: 600; }
+@media (max-width: 520px) { .pickrow { grid-template-columns: 1fr 100px; } .pickrow .stk { grid-column: 1; grid-row: 2; } }
+.dlg-actions-inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+.dlg-actions-inline .hint { margin-right: auto; }
