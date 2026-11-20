@@ -1,55 +1,18 @@
-:root {
-    /* Aliases onto the shared DuklaLabs tokens from theme.css (loaded
-       before this file — see the <link> order in templates; copied in at
-       build time from Shared/webui/theme.css, the same source Krouzek and
-       UI/ use). --accent, --muted, --shadow need no alias, same names.
-       <html data-theme="dark"> pins the shared palette's dark values
-       regardless of OS preference, since this app stays permanently dark. */
-    --card-bg: var(--surface);
-    --accent2: var(--grad-end);
-    --text: var(--fg);
-    --radius-md: 12px;
-    --radius-lg: 18px;
-}
-
+/* App-specific base only. Tokens/reset/page background come from theme.css,
+   components (.btn, .card, inputs, ...) from ui.css — both copied in from
+   Shared/webui/ at build time. */
 body {
     margin: 0;
-    padding: 0;
     font-family: var(--f-body);
-    background: radial-gradient(circle at top, var(--bg-glow-1), transparent 60%), var(--bg);
-    color: var(--text);
     min-height: 100vh;
-}
-
-.card {
-    background: var(--card-bg);
-    padding: 24px;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
-    border: 1px solid var(--line-soft);
 }
 
 .subtitle {
     font-size: 14px;
     color: var(--muted);
-    margin-top: 4px;
-    margin-bottom: 16px;
-}
-
-.loader {
-    width: 40px;
-    height: 40px;
-    border-radius: 999px;
-    border: 4px solid var(--line-soft);
-    border-top-color: var(--accent);
-    animation: spin 0.8s linear infinite;
-    margin: 16px auto 0;
+    margin: 0;
 }
 
 .hidden {
     display: none !important;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
 }
