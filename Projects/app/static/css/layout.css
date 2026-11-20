@@ -1,41 +1,9 @@
-.center-page {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 20px;
-}
-
-/* single centred card (landing / login): shared .card without the hover lift */
-.center-page .card {
-    width: 100%;
-    text-align: center;
-    gap: 14px;
-}
-.center-page .card:hover { transform: none; }
-.center-page .card h1 { margin: 0; }
-.center-page .card.narrow { max-width: 380px; }
-.center-page .card.wide { max-width: 420px; }
-.center-page .stack { display: flex; flex-direction: column; gap: 10px; }
-.center-page form { display: grid; gap: 12px; text-align: left; }
-.center-page .btn.block { width: 100%; }
-
-.logo-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 60px;
-    height: 60px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, var(--accent), var(--grad-end));
-    color: #fff;
-    font: 800 22px var(--f-display);
-    box-shadow: 0 8px 24px var(--glow);
-    margin: 0 auto;
-}
-
-.container-narrow {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 20px;
-}
+/* App-specific bits only. Page skeleton (.wrap, header.top, .brand, .logo, main)
+   comes from the shared APP SHELL block in ui.css. */
+main .wrap > .card { width: 100%; justify-self: center; gap: 14px; }
+main .wrap > .card:hover { transform: none; }
+main .wrap > .card.narrow { max-width: 420px; }
+main .wrap > .card h2 { font-size: 22px; font-weight: 700; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+main form { display: grid; gap: 12px; }
+.btn.block { width: 100%; }
