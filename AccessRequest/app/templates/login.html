@@ -1,27 +1,23 @@
+{%- import "_shell.html" as shell -%}
 <!DOCTYPE html>
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
   <title>Přihlášení – DuklaLabs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css">
-  <link rel="stylesheet" href="{{ BASE }}/static/css/ui.css">
-  <script src="{{ BASE }}/static/js/theme-toggle.js"></script>
-  <link rel="stylesheet" href="{{ BASE }}/static/css/base.css">
+  {{ shell.assets() }}
   <link rel="stylesheet" href="{{ BASE }}/static/css/forms.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/buttons.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/layout.css">
 </head>
 <body>
 
-  <div class="center-page">
-    <div class="panel" style="max-width:380px; text-align:center;">
-      <div class="logo-pill">DL</div>
-      <h1>Přihlášení</h1>
-      <p class="subtitle">Přihlas se e-mailem a heslem (studenti i správci)</p>
+  {{ shell.header("Přihlášení", "Přihlas se e-mailem a heslem (studenti i správci)") }}
+
+<main>
+<div class="wrap">
+<section class="view">
+<div class="panel solo" style="max-width:380px; text-align:center;">
 
       {% if error %}
         <div style="color:var(--a); margin-bottom:10px; font-size:13px;">
@@ -46,7 +42,9 @@
         Nemáš účet? <a href="{{ BASE }}/student-register">Zaregistruj se</a>.
       </p>
     </div>
-  </div>
+</section>
+</div>
+</main>
 
 </body>
 </html>

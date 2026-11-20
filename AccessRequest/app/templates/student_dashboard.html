@@ -1,16 +1,11 @@
+{%- import "_shell.html" as shell -%}
 <!DOCTYPE html>
 <html lang="cs">
 <head>
   <meta charset="UTF-8">
   <title>DuklaLabs – Studentský dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css">
-  <link rel="stylesheet" href="{{ BASE }}/static/css/ui.css">
-  <script src="{{ BASE }}/static/js/theme-toggle.js"></script>
-  <link rel="stylesheet" href="{{ BASE }}/static/css/base.css">
+  {{ shell.assets() }}
   <link rel="stylesheet" href="{{ BASE }}/static/css/layout.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/buttons.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/forms.css">
@@ -33,10 +28,12 @@
 </head>
 
 <body>
-  <div class="center-page">
-    <div class="panel" style="max-width:800px; width:100%;">
-      <h1>Studentský dashboard</h1>
-      <p class="subtitle">Seznam registrovaných studentů v databázi (Postgres).</p>
+  {{ shell.header("Studentský dashboard", "Seznam registrovaných studentů v databázi (Postgres).") }}
+
+<main>
+<div class="wrap">
+<section class="view">
+<div class="panel solo">
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">
         <button class="btn primary" onclick="reloadStudents()">🔄 Aktualizovat</button>
@@ -83,8 +80,10 @@
           <p style="color:var(--muted); font-size:14px;">Zatím žádní studenti v databázi.</p>
         {% endif %}
       </div>
-    </div>
-  </div>
+</div>
+</section>
+</div>
+</main>
 
 <script>
 // student_id of the logged-in viewer (null for staff/anonymous) – the ✕
