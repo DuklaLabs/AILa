@@ -20,31 +20,35 @@
      to edit the list — the Gateway routes are path prefixes on one origin). The module's own navigation
      (nav.tabs) is untouched and stays on the page. The module the visitor is in is highlighted. */
   function svg(path) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + path + '</svg>'; }
-  /* portal views live in the hash (#chat, #inventory, ...): one page, several "modules" */
-  var PORTAL_HASH = /^#(chat|inventory|orders|wiki)$/;
+  /* portal views live in the hash (#chat, #wiki): one page, two "modules" */
+  var PORTAL_HASH = /^#(chat|wiki)$/;
   function portal(h) { return function (path, hash) { return /^\/(index\.html)?$/.test(path) && hash === h; }; }
   var MODULES = [
     { title: "Rozcestník", href: "/", on: function (p, h) { return /^\/(index\.html)?$/.test(p) && !PORTAL_HASH.test(h); }, icon: svg('<path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/>') },
+    { title: "Moje Výuka", href: "/vyuka/", on: function (p) { return /^\/vyuka(\/|$)/.test(p); }, icon: svg('<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/>') },
+    { title: "Ročníkové práce", href: "/rocnikove-prace/", on: function (p) { return /^\/rocnikove-prace(\/|$)/.test(p); }, icon: svg('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>') },
     { title: "Volné hodiny", href: "/access/", on: function (p) { return /^\/access(\/|$)/.test(p) && !/^\/access\/(machines|admin\/(analytics|users))(\/|$)/.test(p); }, icon: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>') },
     { title: "Chat s AIla", href: "/#chat", on: portal("#chat"), icon: svg('<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/>') },
     { title: "Projekty", href: "/projects/app/projects/", on: function (p) { return /^\/projects(\/|$)/.test(p); }, icon: svg('<rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/>') },
     { title: "Kroužek", href: "/krouzek/", on: function (p) { return /^\/krouzek(\/|$)/.test(p); }, icon: svg('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>') },
     { title: "Stroje", href: "/access/machines", on: function (p) { return /^\/access\/machines(\/|$)/.test(p); }, icon: svg('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>') },
-    { title: "Sklad", href: "/#inventory", on: portal("#inventory"), icon: svg('<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/>') },
-    { title: "Objednávky", href: "/#orders", on: portal("#orders"), icon: svg('<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 12.4a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/>') },
+    { title: "Sklad", href: "/sklad/", on: function (p) { return /^\/sklad\/?$/.test(p); }, icon: svg('<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/>') },
+    { title: "Objednávky", href: "/sklad/objednavky/", on: function (p) { return /^\/sklad\/objednavky(\/|$)/.test(p); }, icon: svg('<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 12.4a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/>') },
     { title: "Analytika", href: "/access/admin/analytics", staff: true, on: function (p) { return /^\/access\/admin\/analytics(\/|$)/.test(p); }, icon: svg('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>') },
     { title: "Uživatelé", href: "/access/admin/users", staff: true, on: function (p) { return /^\/access\/admin\/users(\/|$)/.test(p); }, icon: svg('<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/>') },
     { title: "DuklaWiki", href: "/#wiki", on: portal("#wiki"), icon: svg('<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 19.5V4.5M9 7h7M9 11h7"/>') }
   ];
   /* Analytika / Uživatelé are staff-only pages: show them only to admin/staff (cached /access/api/whoami) */
-  var staffP = null;
+  var staffP = null, staffKnown = false;
   function isStaff() {
     if (!staffP) staffP = fetch("/access/api/whoami", { credentials: "include" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (u) { return !!u && (u.role === "admin" || u.role === "staff"); })
-      .catch(function () { return false; });
+      .catch(function () { return false; })
+      .then(function (v) { staffKnown = v; return v; });
     return staffP;
   }
+  isStaff();   // warm the cache once the script loads, so the first click already knows the role
   var menu = null, menuFor = null;
   function closeMenu() {
     if (menu) { menu.remove(); menu = null; }
@@ -59,21 +63,27 @@
     a.lastChild.textContent = label;
     return a;
   }
+  function fill(staff, animate) {
+    menu.textContent = "";
+    var n = 0;
+    MODULES.forEach(function (m) {
+      if (m.staff && !staff) return;
+      var el = item(m.title, m.icon, m.on(location.pathname, location.hash));
+      el.href = m.href;
+      if (animate) el.style.setProperty("--i", n++); else el.style.animation = "none";
+      menu.appendChild(el);
+    });
+  }
   function openMenu(logo) {
     closeMenu();
     menuFor = logo;
-    isStaff().then(function (staff) {
-      if (menuFor !== logo || menu) return;   // closed or re-opened meanwhile
-      menu = document.createElement("div");
-      menu.className = "aila-menu"; menu.setAttribute("role", "menu"); menu.setAttribute("aria-label", "Moduly");
-      MODULES.forEach(function (m) {
-        if (m.staff && !staff) return;
-        var el = item(m.title, m.icon, m.on(location.pathname, location.hash));
-        el.href = m.href;
-        menu.appendChild(el);
-      });
-      document.body.appendChild(menu);
-      place(logo);
+    menu = document.createElement("div");
+    menu.className = "aila-menu"; menu.setAttribute("role", "menu"); menu.setAttribute("aria-label", "Moduly");
+    fill(staffKnown, true);
+    document.body.appendChild(menu);
+    place(logo);
+    if (!staffKnown) isStaff().then(function (staff) {
+      if (staff && menu && menuFor === logo) { fill(true, false); place(logo); }   // role arrived late: add staff items in place
     });
   }
   function place(logo) {

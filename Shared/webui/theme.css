@@ -83,9 +83,11 @@ body { background: radial-gradient(circle at top, var(--bg-glow-1), transparent 
 /* Logo menu (theme-toggle.js): click on any .logo -> dropdown listing all modules. */
 .logo[data-menu] { cursor: pointer; border-radius: 16px; }
 .logo[data-menu]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.aila-menu { position: fixed; z-index: 2147482000; min-width: 220px; max-width: calc(100vw - 16px); padding: 6px; display: grid; gap: 2px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); animation: aila-menu-in .18s cubic-bezier(.3,1.3,.5,1); transform-origin: top left; }
-@keyframes aila-menu-in { from { opacity: 0; transform: translateY(-6px) scale(.96); } }
-.aila-menu-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 11px; color: var(--fg); text-decoration: none; font: 600 14px var(--f-body); cursor: pointer; transition: background .15s, color .15s; }
+.aila-menu { position: fixed; z-index: 2147482000; min-width: 230px; max-width: calc(100vw - 16px); max-height: calc(100dvh - 90px); overflow-y: auto; padding: 6px; display: grid; gap: 2px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); animation: aila-menu-in .22s cubic-bezier(.2,.9,.3,1.2); transform-origin: top left; }
+@keyframes aila-menu-in { from { opacity: 0; transform: translateY(-8px) scale(.95); } }
+/* items cascade in, 22 ms apart (the whole menu is settled in well under a second) */
+@keyframes aila-item-in { from { opacity: 0; transform: translateX(-8px); } }
+.aila-menu-item { animation: aila-item-in .24s cubic-bezier(.2,.9,.3,1) both; animation-delay: calc(var(--i, 0) * 22ms); display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 11px; color: var(--fg); text-decoration: none; font: 600 14px var(--f-body); cursor: pointer; transition: background .15s, color .15s; }
 .aila-menu-item svg { width: 17px; height: 17px; flex: none; color: var(--muted); }
 .aila-menu-item:hover, .aila-menu-item:focus-visible { background: color-mix(in srgb, var(--accent) 12%, transparent); outline: none; }
 .aila-menu-item:hover svg, .aila-menu-item:focus-visible svg { color: var(--accent); }
