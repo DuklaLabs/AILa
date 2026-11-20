@@ -34,14 +34,14 @@ export default function ProjectTree({ perms, activeId, onSelect, reloadKey, onCr
       <div className="side-head">
         <h2>Projekty</h2>
         {canWrite && (
-          <button className="sm primary" onClick={() => setCreating((v) => !v)}>
+          <button type="button" className="btn sm primary" onClick={() => setCreating((v) => !v)}>
             {creating ? 'Zrušit' : '+ Nový'}
           </button>
         )}
       </div>
 
       {creating && (
-        <form onSubmit={submit} style={{ display: 'grid', gap: '0.4rem', margin: '0.4rem 0 0.8rem' }}>
+        <form onSubmit={submit}>
           <select value={form.folder_id} required
                   onChange={(e) => setForm({ ...form, folder_id: e.target.value })}>
             <option value="">Vyber složku…</option>
@@ -49,19 +49,19 @@ export default function ProjectTree({ perms, activeId, onSelect, reloadKey, onCr
           </select>
           <input placeholder="Název projektu" value={form.name} required
                  onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <label className="fld" style={{ margin: 0 }}>
+          <label className="f">
             <span>Termín dokončení</span>
             <input type="date" value={form.due_on}
                    onChange={(e) => setForm({ ...form, due_on: e.target.value })} />
           </label>
           {canBudget && (
-            <label className="fld" style={{ margin: 0 }}>
+            <label className="f">
               <span>Plánovaný rozpočet (Kč)</span>
               <input type="number" min="0" value={form.planned_budget_czk}
                      onChange={(e) => setForm({ ...form, planned_budget_czk: e.target.value })} />
             </label>
           )}
-          <button className="primary" type="submit">Založit (vytvoří 5 fází)</button>
+          <button className="btn primary" type="submit">Založit (vytvoří 5 fází)</button>
         </form>
       )}
 

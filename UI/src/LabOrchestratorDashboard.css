@@ -1,27 +1,12 @@
-:root {
-  /* Repointed at the shared DuklaLabs brand palette (theme.css) instead of
-     the old generic blue, while keeping the --portal-* names so the rest
-     of this file doesn't need touching. */
-  --portal-bg: var(--bg);
-  --portal-panel: var(--surface);
-  --portal-border: var(--line);
-  --portal-text: var(--fg);
-  --portal-text-muted: var(--muted);
-  --portal-accent: var(--accent);
-  --portal-accent-text: #ffffff;
-}
-
-* {
-  box-sizing: border-box;
-}
+/* Portal – app-specific layout only. Buttons, cards, panels, pills, inputs and
+   colours come from the shared DuklaLabs library (theme.css + ui.css, see
+   Shared/webui/ui-demo.html); this file just arranges them. */
 
 html,
 body,
 #root {
   margin: 0;
   height: 100%;
-  background: var(--portal-bg);
-  color: var(--portal-text);
   font-family: var(--f-body);
 }
 
@@ -35,8 +20,12 @@ body,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--portal-border);
+  gap: 12px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--glass);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
 }
 
 .portal-brand {
@@ -47,13 +36,14 @@ body,
 
 .portal-logo {
   font-family: var(--f-display);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.01em;
+  color: var(--accent);
 }
 
 .portal-subtitle {
-  color: var(--portal-text-muted);
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -70,74 +60,38 @@ body,
   font-size: 14px;
 }
 
-.portal-role {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--portal-text-muted);
-  background: var(--portal-panel);
-  border: 1px solid var(--portal-border);
-  border-radius: 999px;
-  padding: 2px 8px;
-}
-
-.portal-btn {
-  display: inline-block;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  border: 1px solid transparent;
-  cursor: pointer;
-}
-
-.portal-btn-primary {
-  background: var(--portal-accent);
-  color: var(--portal-accent-text);
-}
-
-.portal-btn-ghost {
-  background: transparent;
-  color: var(--portal-text);
-  border-color: var(--portal-border);
-}
-
 .portal-main {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 48px 24px;
+  padding: 40px 24px;
 }
 
 .portal-hint {
-  color: var(--portal-text-muted);
+  color: var(--muted);
 }
 
 .portal-hint-error {
-  color: #ff8080;
+  color: var(--a);
 }
 
 .portal-login-card {
   max-width: 420px;
   text-align: center;
-  background: var(--portal-panel);
-  border: 1px solid var(--portal-border);
-  border-radius: 16px;
   padding: 32px;
+  justify-items: center;
 }
 
 .portal-login-card h1 {
-  margin: 0 0 12px;
-  font-size: 22px;
-  font-family: var(--f-display);
+  margin: 0;
+  font-size: 24px;
   font-weight: 800;
 }
 
 .portal-login-card p {
-  color: var(--portal-text-muted);
-  margin: 0 0 20px;
+  color: var(--muted);
+  margin: 0;
 }
 
 .portal-grid {
@@ -148,26 +102,14 @@ body,
   gap: 16px;
 }
 
+/* The home tiles are shared .card elements (link / button / div). */
 .portal-tile {
-  display: block;
-  background: var(--portal-panel);
-  border: 1px solid var(--portal-border);
-  border-radius: 14px;
-  padding: 20px;
   text-decoration: none;
-  color: var(--portal-text);
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  color: var(--fg);
+  gap: 6px;
 }
 
-.portal-tile:hover {
-  border-color: var(--portal-accent);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px -6px var(--glow);
-}
-
-/* PortalTile renders the "Generál" tile as a <button> (it switches to the
-   chat view instead of navigating) – reset button chrome back to match
-   the <a> tiles. */
+/* the "Generál" / "Sklad" tiles are <button>s – reset button chrome */
 .portal-tile-button {
   width: 100%;
   text-align: left;
@@ -181,13 +123,12 @@ body,
 }
 
 .portal-tile-disabled:hover {
-  border-color: var(--portal-border);
   transform: none;
+  box-shadow: none;
 }
 
 .portal-tile-icon {
   font-size: 28px;
-  margin-bottom: 10px;
 }
 
 .portal-tile-title {
@@ -197,23 +138,11 @@ body,
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 6px;
-}
-
-.portal-tile-badge {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--portal-text-muted);
-  border: 1px solid var(--portal-border);
-  border-radius: 999px;
-  padding: 2px 8px;
 }
 
 .portal-tile-desc {
   font-size: 13px;
-  color: var(--portal-text-muted);
+  color: var(--muted);
   line-height: 1.4;
 }
 
@@ -224,26 +153,22 @@ body,
   gap: 16px;
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid var(--portal-border);
+  border-top: 1px solid var(--line);
 }
 
 .portal-admin-link {
-  color: var(--portal-text-muted);
+  color: var(--muted);
   font-size: 13px;
   text-decoration: none;
 }
 
 .portal-admin-link:hover {
-  color: var(--portal-text);
+  color: var(--fg);
   text-decoration: underline;
 }
 
-/* ---------------------------------------------------------------------
-   Chat s Generálem (GeneralChat) – dřív vlastní "lab-*" světlý theme ze
-   starého sidebar+chat dashboardu, teď jen chat panel uvnitř portálu:
-   barvy přepsané na --portal-* proměnné, ať to sedí se zbytkem tmavého
-   portálu. Třídy zůstaly "lab-*", ať se JSX nemusí měnit.
-   --------------------------------------------------------------------- */
+/* Chat s Generálem (GeneralChat) a Sklad (InventoryView) – shared .panel +
+   vlastní jen rozložení zpráv / tabulky. */
 
 .portal-chat {
   width: 100%;
@@ -257,51 +182,28 @@ body,
   align-self: flex-start;
 }
 
-.lab-panel {
-  background: var(--portal-panel);
-  border: 1px solid var(--portal-border);
-  border-radius: 16px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-}
-
 .lab-panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   padding-bottom: 10px;
-  border-bottom: 1px solid var(--portal-border);
-  margin-bottom: 10px;
+  border-bottom: 1px solid var(--line);
 }
 
 .lab-panel-title {
-  font-size: 15px;
-  font-weight: 600;
+  font-family: var(--f-display);
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .lab-panel-subtitle {
   font-size: 12px;
-  color: var(--portal-text-muted);
+  color: var(--muted);
   margin-top: 2px;
 }
 
-.lab-status-pill {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  background: var(--portal-accent);
-  color: var(--portal-accent-text);
-  padding: 4px 10px;
-  border-radius: 999px;
-}
-
-.lab-chat-panel {
-  min-width: 0;
-}
-
 .lab-chat-messages {
-  flex: 1;
   max-height: 55vh;
   overflow-y: auto;
   padding: 8px 4px;
@@ -324,23 +226,23 @@ body,
 
 .lab-chat-bubble {
   max-width: 80%;
-  padding: 8px 10px;
-  border-radius: 12px;
+  padding: 8px 12px;
+  border-radius: 14px;
   font-size: 13px;
-  line-height: 1.3;
+  line-height: 1.35;
   white-space: pre-wrap;
 }
 
 .lab-chat-message-user .lab-chat-bubble {
-  background: var(--portal-accent);
-  color: var(--portal-accent-text);
-  border-bottom-right-radius: 2px;
+  background: linear-gradient(135deg, var(--accent), var(--grad-end));
+  color: #fff;
+  border-bottom-right-radius: 3px;
 }
 
 .lab-chat-message-agent .lab-chat-bubble {
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--portal-text);
-  border-bottom-left-radius: 2px;
+  background: var(--surface-2);
+  color: var(--fg);
+  border-bottom-left-radius: 3px;
 }
 
 .lab-chat-label {
@@ -354,9 +256,8 @@ body,
 .lab-chat-input-row {
   display: flex;
   gap: 8px;
-  margin-top: 8px;
   padding-top: 10px;
-  border-top: 1px solid var(--portal-border);
+  border-top: 1px solid var(--line);
 }
 
 .lab-chat-textarea {
@@ -364,42 +265,13 @@ body,
   resize: none;
   min-height: 52px;
   max-height: 96px;
-  font-size: 13px;
-  padding: 8px;
-  border-radius: 10px;
-  border: 1px solid var(--portal-border);
-  background: var(--portal-bg);
-  color: var(--portal-text);
-  font-family: inherit;
-}
-
-.lab-chat-textarea:focus {
-  outline: none;
-  border-color: var(--portal-accent);
 }
 
 .lab-chat-send-btn {
-  background: var(--portal-accent);
-  color: var(--portal-accent-text);
-  border: none;
-  border-radius: 10px;
-  padding: 0 14px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
   min-width: 90px;
 }
 
-.lab-chat-send-btn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
 /* Sklad (InventoryView) */
-
-.lab-status-pill-warn {
-  background: #c0392b;
-}
 
 .lab-table-wrap {
   overflow-x: auto;
@@ -415,23 +287,23 @@ body,
 .lab-table td {
   text-align: left;
   padding: 8px 10px;
-  border-bottom: 1px solid var(--portal-border);
+  border-bottom: 1px solid var(--line);
 }
 
 .lab-table th {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--portal-text-muted);
+  color: var(--muted);
 }
 
 .lab-table-empty {
-  color: var(--portal-text-muted);
+  color: var(--muted);
 }
 
 .lab-row-low td {
-  background: rgba(255, 128, 128, 0.12);
-  color: #ff8080;
+  background: var(--a-soft);
+  color: var(--a);
   font-weight: 600;
 }
 
@@ -439,30 +311,17 @@ body,
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid var(--portal-border);
+  border-top: 1px solid var(--line);
 }
 
-.lab-input {
+.lab-form-row .lab-input {
   width: 110px;
-  font-size: 13px;
-  padding: 8px;
-  border-radius: 10px;
-  border: 1px solid var(--portal-border);
-  background: var(--portal-bg);
-  color: var(--portal-text);
-  font-family: inherit;
 }
 
-.lab-input-grow {
+.lab-form-row .lab-input-grow {
   flex: 1;
   min-width: 160px;
-}
-
-.lab-input:focus {
-  outline: none;
-  border-color: var(--portal-accent);
 }
 
 .lab-order-list,
@@ -474,7 +333,7 @@ body,
 
 .lab-order {
   padding: 10px 0;
-  border-bottom: 1px solid var(--portal-border);
+  border-bottom: 1px solid var(--line);
   font-size: 13px;
 }
 
@@ -486,14 +345,13 @@ body,
 }
 
 .lab-order-items li {
-  color: var(--portal-text-muted);
+  color: var(--muted);
   padding-left: 8px;
 }
 
 @media (max-width: 480px) {
   .portal-header {
     flex-wrap: wrap;
-    gap: 10px;
   }
 
   .portal-main {

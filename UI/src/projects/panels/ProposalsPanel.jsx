@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, userName } from '../api'
+import { Modal } from '../../aila-ui'
 
 export default function ProposalsPanel({ users, onClose, onReviewed, onError }) {
   const [items, setItems] = useState([])
@@ -26,21 +27,19 @@ export default function ProposalsPanel({ users, onClose, onReviewed, onError }) 
   }
 
   return (
-    <div className="pj-modal-scrim" onClick={onClose}>
-      <div className="pj-modal" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} label="Návrhy změn od AI">
         <div className="pj-modal-head">
           <div>
-            <h2 style={{ margin: 0, fontSize: '1rem' }}>Návrhy změn od AI</h2>
-            <span className="muted" style={{ fontSize: '0.82rem' }}>
+            <h3>Návrhy změn od AI</h3>
+            <span className="muted">
               Nevratné / citlivé akce z MCP. Provedou se až po schválení.
             </span>
           </div>
-          <button className="ghost" onClick={onClose}>✕</button>
+          <button type="button" className="btn sm" onClick={onClose}>✕</button>
         </div>
-        <div className="pj-modal-body">
           {items.length === 0 && <div className="empty">Žádné čekající návrhy.</div>}
           {items.map((p) => (
-            <div key={p.id} className="pj-prop">
+            <div key={p.id} className="panel pj-prop">
               <div className="kind">{p.kind} · {p.target_type} #{p.target_id ?? '—'}</div>
               {p.summary && <div style={{ margin: '0.35rem 0' }}>{p.summary}</div>}
               <pre>{JSON.stringify(p.payload, null, 2)}</pre>
@@ -52,24 +51,22 @@ export default function ProposalsPanel({ users, onClose, onReviewed, onError }) 
                   <textarea rows={2} placeholder="Důvod zamítnutí (nepovinné)"
                             value={note} onChange={(e) => setNote(e.target.value)} />
                   <div className="row" style={{ marginTop: '0.4rem' }}>
-                    <button className="danger" disabled={busy === p.id} onClick={() => reject(p.id)}>Zamítnout</button>
-                    <button className="ghost" onClick={() => { setRejecting(null); setNote('') }}>Zpět</button>
+                    <button type="button" className="btn danger" disabled={busy === p.id} onClick={() => reject(p.id)}>Zamítnout</button>
+                    <button type="button" className="btn" onClick={() => { setRejecting(null); setNote('') }}>Zpět</button>
                   </div>
                 </div>
               ) : (
                 <div className="row" style={{ marginTop: '0.5rem' }}>
-                  <button className="primary" disabled={busy === p.id} onClick={() => approve(p.id)}>
+                  <button type="button" className="btn primary" disabled={busy === p.id} onClick={() => approve(p.id)}>
                     Schválit a provést
                   </button>
-                  <button className="danger" disabled={busy === p.id} onClick={() => setRejecting(p.id)}>
+                  <button type="button" className="btn danger" disabled={busy === p.id} onClick={() => setRejecting(p.id)}>
                     Zamítnout
                   </button>
                 </div>
               )}
             </div>
           ))}
-        </div>
-      </div>
-    </div>
+    </Modal>
   )
 }

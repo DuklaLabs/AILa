@@ -190,3 +190,14 @@ input[type=password]:focus, input[type=email]:focus, input[type=number]:focus, i
 input[type=password], input[type=email], input[type=number], input[type=search], input[type=tel], input[type=url] { background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; width: 100%; min-width: 0; font-variant-numeric: tabular-nums; transition: border-color .2s, box-shadow .2s; }
 input[type=password]:focus, input[type=email]:focus, input[type=number]:focus, input[type=search]:focus, input[type=tel]:focus, input[type=url]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
 /* ---- end added by AccessRequest ---- */
+/* ---- added by UI-portal ---- */
+/* link-as-button, compact button */
+a.btn { display: inline-block; text-decoration: none; color: inherit; text-align: center; }
+.btn.sm { padding: 5px 12px; font-size: 13px; border-radius: 10px; }
+.btn.sm::after { border-radius: 9px; }
+.btn.sm:hover::after { border-radius: 8px; }
+/* the remaining text-like input types share the look of text inputs; disabled state */
+input[type=number], input[type=search], input[type=email], input[type=password], input[type=url], input:not([type]) { background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; width: 100%; min-width: 0; font-variant-numeric: tabular-nums; transition: border-color .2s, box-shadow .2s; }
+input[type=number]:focus, input[type=search]:focus, input[type=email]:focus, input[type=password]:focus, input[type=url]:focus, input:not([type]):focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+input:disabled, select:disabled, textarea:disabled { opacity: .6; cursor: not-allowed; }
+@keyframes fill { from { transform: scaleX(0); } }

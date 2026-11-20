@@ -87,15 +87,15 @@ export default function TaskDrawer({ taskId, perms, users, onClose, onChanged, o
       <div className="pj-drawer" role="dialog" aria-label="Detail úkolu">
         <div className="pj-drawer-head">
           <h2>Úkol <span className="muted">#{task.id}</span></h2>
-          <button className="ghost" onClick={onClose} aria-label="Zavřít">✕</button>
+          <button type="button" className="btn sm" onClick={onClose} aria-label="Zavřít">✕</button>
         </div>
 
         <div className="pj-drawer-body">
-          <label className="fld">
+          <label className="f">
             <span>Název úkolu</span>
             <input value={form.title} disabled={ro} onChange={(e) => set('title', e.target.value)} />
           </label>
-          <label className="fld">
+          <label className="f">
             <span>Popis</span>
             <textarea rows={3} value={form.description} disabled={ro}
                       placeholder="Co je potřeba udělat…"
@@ -104,23 +104,23 @@ export default function TaskDrawer({ taskId, perms, users, onClose, onChanged, o
 
           <div className="pj-sec">
             <h3>Stav a plán</h3>
-            <label className="fld">
+            <label className="f">
               <span>Stav (semafor)</span>
               <select value={task.status} disabled={ro} onChange={(e) => changeStatus(e.target.value)}>
                 {STATUSES.map(([s, l]) => <option key={s} value={s}>{l}</option>)}
               </select>
             </label>
-            <div className="grid2">
-              <label className="fld"><span>Od</span>
+            <div className="frow">
+              <label className="f"><span>Od</span>
                 <input type="date" value={form.start_on || ''} disabled={ro}
                        onChange={(e) => set('start_on', e.target.value)} /></label>
-              <label className="fld"><span>Do</span>
+              <label className="f"><span>Do</span>
                 <input type="date" value={form.due_on || ''} disabled={ro}
                        onChange={(e) => set('due_on', e.target.value)} /></label>
-              <label className="fld"><span>Odhad (hodin)</span>
+              <label className="f"><span>Odhad (hodin)</span>
                 <input type="number" step="0.5" min="0" value={form.estimated_hours} disabled={ro}
                        onChange={(e) => set('estimated_hours', e.target.value)} /></label>
-              <label className="fld"><span>Verze prototypu</span>
+              <label className="f"><span>Verze prototypu</span>
                 <input value={form.proto_version} disabled={ro} placeholder="Proto-V1"
                        onChange={(e) => set('proto_version', e.target.value)} /></label>
             </div>
@@ -128,7 +128,7 @@ export default function TaskDrawer({ taskId, perms, users, onClose, onChanged, o
 
           <div className="pj-sec">
             <h3>Řešitel a tým</h3>
-            <label className="fld">
+            <label className="f">
               <span>Hlavní řešitel</span>
               <select value={task.assignee_user_id || ''} disabled={!canAssign}
                       onChange={(e) => changeAssignee(e.target.value)}>
@@ -141,9 +141,9 @@ export default function TaskDrawer({ taskId, perms, users, onClose, onChanged, o
               {collabs.length === 0 && <span className="muted" style={{ fontSize: '0.85rem' }}>nikdo</span>}
               {collabs.map((id) => (
                 <span key={id} className="chip">
-                  <span className="pj-avatar" style={{ width: 16, height: 16, fontSize: '0.6rem' }}>{initials(userName(users, id))}</span>
+                  <span className="avatar pj-avatar" style={{ width: 16, height: 16, fontSize: '0.6rem' }}>{initials(userName(users, id))}</span>
                   {userName(users, id)}
-                  {canAssign && <button onClick={() => setCollabs(collabs.filter((x) => x !== id))} aria-label="Odebrat">✕</button>}
+                  {canAssign && <button type="button" className="copy" onClick={() => setCollabs(collabs.filter((x) => x !== id))} aria-label="Odebrat">✕</button>}
                 </span>
               ))}
             </div>
@@ -157,21 +157,21 @@ export default function TaskDrawer({ taskId, perms, users, onClose, onChanged, o
 
           <div className="pj-sec">
             <h3>Finanční modul (Fáze 3 – Nákupy)</h3>
-            <div className="grid2">
-              <label className="fld"><span>Typ nákladu</span>
+            <div className="frow">
+              <label className="f"><span>Typ nákladu</span>
                 <select value={form.cost_type} disabled={ro} onChange={(e) => set('cost_type', e.target.value)}>
                   <option value="">—</option>
                   {COST_TYPES.map(([s, l]) => <option key={s} value={s}>{l}</option>)}
                 </select></label>
-              <label className="fld"><span>Stav objednávky</span>
+              <label className="f"><span>Stav objednávky</span>
                 <select value={form.order_status} disabled={ro} onChange={(e) => set('order_status', e.target.value)}>
                   <option value="">—</option>
                   {ORDER_STATUSES.map(([s, l]) => <option key={s} value={s}>{l}</option>)}
                 </select></label>
-              <label className="fld"><span>Předpokládaná cena (Kč)</span>
+              <label className="f"><span>Předpokládaná cena (Kč)</span>
                 <input type="number" min="0" value={form.estimated_cost_czk} disabled={ro}
                        onChange={(e) => set('estimated_cost_czk', e.target.value)} /></label>
-              <label className="fld"><span>Skutečná cena (Kč)</span>
+              <label className="f"><span>Skutečná cena (Kč)</span>
                 <input type="number" min="0" value={form.actual_cost_czk}
                        disabled={!canFinance}
                        title={canFinance ? '' : 'Vyžaduje oprávnění projects.finance:write'}
@@ -187,7 +187,7 @@ export default function TaskDrawer({ taskId, perms, users, onClose, onChanged, o
               return (
                 <div key={d} className="row" style={{ justifyContent: 'space-between', padding: '0.2rem 0' }}>
                   <span>⛓ {dt ? dt.title : `úkol #${d}`}</span>
-                  {canWrite && <button className="sm ghost" onClick={() => removeDep(d)}>odebrat</button>}
+                  {canWrite && <button type="button" className="btn sm" onClick={() => removeDep(d)}>odebrat</button>}
                 </div>
               )
             })}
@@ -210,11 +210,11 @@ export default function TaskDrawer({ taskId, perms, users, onClose, onChanged, o
               {confirmDel ? (
                 <div className="pj-inline-confirm">
                   <span>Opravdu smazat tento úkol? Nevratné.</span>
-                  <button className="danger" disabled={busy} onClick={del}>Ano, smazat</button>
-                  <button className="ghost" onClick={() => setConfirmDel(false)}>Zpět</button>
+                  <button type="button" className="btn danger armed" disabled={busy} onClick={del}>Ano, smazat</button>
+                  <button type="button" className="btn" onClick={() => setConfirmDel(false)}>Zpět</button>
                 </div>
               ) : (
-                <button className="danger" onClick={() => setConfirmDel(true)}>Smazat úkol</button>
+                <button type="button" className="btn danger" onClick={() => setConfirmDel(true)}>Smazat úkol</button>
               )}
             </div>
           )}
@@ -223,8 +223,8 @@ export default function TaskDrawer({ taskId, perms, users, onClose, onChanged, o
         {canWrite && (
           <div className="pj-save-bar">
             {dirty && <span className="muted" style={{ marginRight: 'auto', alignSelf: 'center', fontSize: '0.83rem' }}>neuložené změny</span>}
-            <button onClick={load} disabled={!dirty || busy}>Zahodit</button>
-            <button className="primary" onClick={save} disabled={!dirty || busy}>Uložit změny</button>
+            <button type="button" className="btn" onClick={load} disabled={!dirty || busy}>Zahodit</button>
+            <button type="button" className="btn primary" onClick={save} disabled={!dirty || busy}>Uložit změny</button>
           </div>
         )}
       </div>

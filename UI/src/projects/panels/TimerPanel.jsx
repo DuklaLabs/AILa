@@ -33,9 +33,9 @@ export default function RunningTimer({ reloadKey, onChange, onError }) {
 
   const mins = (now - new Date(running.started_at + 'Z')) / 60000
   return (
-    <span className="pj-timer">
+    <span className="pill st-run pj-timer">
       ⏱ {fmt(mins)}
-      <button className="sm" style={{ padding: '0.1rem 0.45rem' }} onClick={stop}>Stop</button>
+      <button type="button" className="btn sm" onClick={stop}>Stop</button>
     </span>
   )
 }
@@ -70,17 +70,17 @@ export function TaskTime({ taskId, perms, onChanged, onError }) {
   return (
     <div>
       <div className="muted" style={{ marginBottom: '0.4rem' }}>
-        Změřeno celkem: <strong style={{ color: 'var(--pj-fg)' }}>{fmt(total)}</strong>
+        Změřeno celkem: <strong style={{ color: 'var(--fg)' }}>{fmt(total)}</strong>
       </div>
       {canLog && (
         <div className="row" style={{ gap: '0.4rem' }}>
           {runningHere
-            ? <button className="danger" onClick={stop}>■ Zastavit stopky</button>
-            : <button onClick={start} disabled={!!running}>▶ Spustit stopky</button>}
+            ? <button type="button" className="btn danger" onClick={stop}>■ Zastavit stopky</button>
+            : <button type="button" className="btn" onClick={start} disabled={!!running}>▶ Spustit stopky</button>}
           <form onSubmit={addManual} className="row" style={{ gap: '0.3rem' }}>
             <input type="number" min="1" placeholder="min" value={mins}
                    onChange={(e) => setMins(e.target.value)} style={{ width: '76px' }} required />
-            <button type="submit">Zapsat ručně</button>
+            <button type="submit" className="btn">Zapsat ručně</button>
           </form>
         </div>
       )}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
+import { Modal } from '../../aila-ui'
 
 function norm(s) { return (s || '').toLowerCase().trim() }
 
@@ -149,19 +150,17 @@ export default function PocketPanel({ users, onClose, onProposed, onError }) {
   }
 
   return (
-    <div className="pj-modal-scrim" onClick={onClose}>
-      <div className="pj-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '720px', width: '95vw' }}>
+    <Modal onClose={onClose} label="Pocket — nahrávky a úkoly" width="min(720px, calc(100vw - 32px))">
         <div className="pj-modal-head">
           <div>
-            <h2 style={{ margin: 0, fontSize: '1rem' }}>Pocket — nahrávky a úkoly</h2>
-            <span className="muted" style={{ fontSize: '0.82rem' }}>
+            <h3>Pocket — nahrávky a úkoly</h3>
+            <span className="muted">
               Nahraj schůzku nebo vyber existující přepis, AI navrhne úkoly ke schválení.
             </span>
           </div>
-          <button className="ghost" onClick={onClose}>✕</button>
+          <button type="button" className="btn sm" onClick={onClose}>✕</button>
         </div>
-        <div className="pj-modal-body">
-          <div className="pj-prop">
+          <div className="panel pj-prop">
             <div className="kind">Nová nahrávka</div>
             <div className="row" style={{ marginTop: '0.5rem', flexWrap: 'wrap' }}>
               <input
@@ -172,15 +171,15 @@ export default function PocketPanel({ users, onClose, onProposed, onError }) {
                 style={{ flex: 1, minWidth: '160px' }}
               />
               {!isRecording ? (
-                <button className="primary" onClick={startRecording} disabled={busy}>● Nahrávat</button>
+                <button type="button" className="btn primary" onClick={startRecording} disabled={busy}>● Nahrávat</button>
               ) : (
-                <button className="danger" onClick={stopAndUpload}>■ Zastavit a nahrát na Pocket</button>
+                <button type="button" className="btn danger" onClick={stopAndUpload}>■ Zastavit a nahrát na Pocket</button>
               )}
             </div>
             {isRecording && <div className="muted" style={{ marginTop: '0.4rem' }}>Nahrávám z mikrofonu…</div>}
           </div>
 
-          <div className="pj-prop">
+          <div className="panel pj-prop">
             <div className="kind">Nahrávky ({recordings.length})</div>
             {loadingList && <div className="empty">Načítám…</div>}
             {!loadingList && recordings.length === 0 && <div className="empty">Zatím žádné nahrávky.</div>}
@@ -188,11 +187,7 @@ export default function PocketPanel({ users, onClose, onProposed, onError }) {
               {recordings.map((r) => (
                 <div
                   key={r.id}
-                  className="row"
-                  style={{
-                    justifyContent: 'space-between', padding: '0.3rem 0.4rem', cursor: 'pointer',
-                    background: recording?.id === r.id ? 'var(--card-bg2)' : 'transparent', borderRadius: '6px',
-                  }}
+                  className={'row pj-rec' + (recording?.id === r.id ? ' active' : '')}
                   onClick={() => openRecording(r)}
                 >
                   <span>{r.title || r.id}</span>
@@ -205,7 +200,7 @@ export default function PocketPanel({ users, onClose, onProposed, onError }) {
           </div>
 
           {recording && (
-            <div className="pj-prop">
+            <div className="panel pj-prop">
               <div className="kind">{recording.title || recording.id}</div>
               {recording.state !== 'completed' ? (
                 <div className="muted" style={{ marginTop: '0.4rem' }}>
@@ -213,26 +208,26 @@ export default function PocketPanel({ users, onClose, onProposed, onError }) {
                 </div>
               ) : !extraction ? (
                 <div style={{ marginTop: '0.5rem' }}>
-                  <button className="primary" onClick={extract} disabled={busy}>
+                  <button type="button" className="btn primary" onClick={extract} disabled={busy}>
                     Extrahovat úkoly (AI)
                   </button>
                 </div>
               ) : (
                 <div style={{ marginTop: '0.5rem' }}>
                   {extraction.rows.map((row, idx) => (
-                    <div key={idx} className="pj-prop" style={{ opacity: row.skip ? 0.5 : 1 }}>
+                    <div key={idx} className="panel pj-prop" style={{ opacity: row.skip ? 0.5 : 1 }}>
                       <div className="row" style={{ justifyContent: 'space-between' }}>
                         <input
                           value={row.title}
                           onChange={(e) => updateRow(idx, { title: e.target.value })}
                           style={{ flex: 1, fontWeight: 700 }}
                         />
-                        <label className="muted" style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+                        <label className="chk">
                           <input
                             type="checkbox"
                             checked={row.skip}
                             onChange={(e) => updateRow(idx, { skip: e.target.checked })}
-                          /> vynechat
+                          /><span>vynechat</span>
                         </label>
                       </div>
                       <textarea
@@ -280,17 +275,15 @@ export default function PocketPanel({ users, onClose, onProposed, onError }) {
                     </div>
                   ))}
                   <div className="row" style={{ marginTop: '0.5rem' }}>
-                    <button className="primary" onClick={submit} disabled={busy}>
+                    <button type="button" className="btn primary" onClick={submit} disabled={busy}>
                       Navrhnout úkoly ke schválení
                     </button>
-                    <button className="ghost" onClick={() => setExtraction(null)}>Zrušit</button>
+                    <button type="button" className="btn" onClick={() => setExtraction(null)}>Zrušit</button>
                   </div>
                 </div>
               )}
             </div>
           )}
-        </div>
-      </div>
-    </div>
+    </Modal>
   )
 }
