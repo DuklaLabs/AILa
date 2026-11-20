@@ -1,16 +1,12 @@
 /* RBAC console — only RBAC-specific layout lives here.
    Buttons, tabs, panels, chips, pills, inputs, dialog, empty state, skeleton
-   all come from the shared library (theme.css + ui.css, Shared/webui/). */
-body { margin: 0; font-family: var(--f-body); }
-
-.rbac { max-width: 1100px; margin: 0 auto; padding: 24px 16px 80px; text-align: left; color: var(--fg); font-family: var(--f-body); display: grid; gap: 14px; align-content: start; }
-.rbac h1 { font-size: 34px; margin: 0; }
-.rbac .sub { color: var(--muted); margin: 0; }
+   all come from the shared library (theme.css + ui.css, Shared/webui/).
+   Page skeleton (header.top / nav.tabs / main > .wrap > .view > .head) is the shared APP SHELL
+   in ui.css; `.rbac` on <main> only scopes the panel styles below. */
+.rbac { text-align: left; }
 .rbac .muted { color: var(--muted); }
-.rbac nav.tabs { padding-block: 0; }
-.rbac nav.tabs .wrap { padding: 0; }
 
-.rbac .stack { display: grid; gap: 14px; }
+.rbac .stack { display: grid; gap: 24px; }
 .rbac .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .rbac .row.between { justify-content: space-between; }
 .rbac .row .grow { flex: 1; min-width: 200px; }
@@ -43,4 +39,3 @@ body { margin: 0; font-family: var(--f-body); }
 /* confirm dialog message (multi-line) */
 dialog .rbac-msg { white-space: pre-line; margin: 0; }
 
-@media (max-width: 640px) { .rbac h1 { font-size: 26px; } }
