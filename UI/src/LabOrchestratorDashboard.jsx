@@ -175,10 +175,10 @@ export default function LabOrchestratorDashboard() {
             <>
               <span className="portal-user">
                 {user.full_name || user.username}
-                <span className="portal-role">{user.role}</span>
+                <span className="nick">{user.role}</span>
               </span>
               <a
-                className="portal-btn portal-btn-ghost"
+                className="btn sm"
                 href={`${ACCESS_ORIGIN}/logout?next=${encodeURIComponent(PORTAL_URL)}`}
               >
                 Odhlásit
@@ -187,7 +187,7 @@ export default function LabOrchestratorDashboard() {
           )}
           {status === "anonymous" && (
             <a
-              className="portal-btn portal-btn-primary"
+              className="btn primary"
               href={`${ACCESS_ORIGIN}/login?next=${encodeURIComponent(PORTAL_URL)}`}
             >
               Přihlásit se
@@ -206,14 +206,14 @@ export default function LabOrchestratorDashboard() {
         )}
 
         {status === "anonymous" && (
-          <div className="portal-login-card">
+          <div className="panel portal-login-card">
             <h1>Přihlas se</h1>
             <p>
               Jedno přihlášení platí pro všechny moduly DuklaLabs – docházku,
               projekty i sklad.
             </p>
             <a
-              className="portal-btn portal-btn-primary"
+              className="btn primary"
               href={`${ACCESS_ORIGIN}/login?next=${encodeURIComponent(PORTAL_URL)}`}
             >
               Přihlásit se
@@ -259,20 +259,20 @@ function PortalTile({ tile, onAction }) {
       <div className="portal-tile-icon">{tile.icon}</div>
       <div className="portal-tile-title">
         {tile.title}
-        {tile.comingSoon && <span className="portal-tile-badge">Připravujeme</span>}
+        {tile.comingSoon && <span className="pill s-x">Připravujeme</span>}
       </div>
       <div className="portal-tile-desc">{tile.description}</div>
     </>
   );
 
   if (tile.comingSoon) {
-    return <div className="portal-tile portal-tile-disabled">{body}</div>;
+    return <div className="card portal-tile portal-tile-disabled">{body}</div>;
   }
   if (tile.action) {
     return (
       <button
         type="button"
-        className="portal-tile portal-tile-button"
+        className="card portal-tile portal-tile-button"
         onClick={() => onAction(tile.action)}
       >
         {body}
@@ -280,7 +280,7 @@ function PortalTile({ tile, onAction }) {
     );
   }
   return (
-    <a className="portal-tile" href={tile.href}>
+    <a className="card portal-tile" href={tile.href}>
       {body}
     </a>
   );
@@ -409,10 +409,10 @@ function GeneralChat({ onBack }) {
 
   return (
     <div className="portal-chat">
-      <button type="button" className="portal-btn portal-btn-ghost portal-back-btn" onClick={onBack}>
+      <button type="button" className="btn portal-back-btn" onClick={onBack}>
         ← Zpět na rozcestník
       </button>
-      <div className="lab-panel lab-chat-panel">
+      <div className="panel lab-chat-panel">
         <div className="lab-panel-header">
           <div>
             <div className="lab-panel-title">Konverzace s Generálem</div>
@@ -420,7 +420,7 @@ function GeneralChat({ onBack }) {
               Hlavní orchestrátor – přijímá příkazy a řídí ostatní agenty.
             </div>
           </div>
-          <span className="lab-status-pill">Online</span>
+          <span className="pill s-p">Online</span>
         </div>
 
         {loadError && <p className="portal-hint portal-hint-error">{loadError}</p>}
@@ -453,7 +453,7 @@ function GeneralChat({ onBack }) {
             disabled={sending}
           />
           <button
-            className="lab-chat-send-btn"
+            className="btn primary lab-chat-send-btn"
             onClick={handleSend}
             disabled={!input.trim() || sending}
           >
@@ -560,23 +560,23 @@ function InventoryView({ onBack }) {
 
   return (
     <div className="portal-chat">
-      <button type="button" className="portal-btn portal-btn-ghost portal-back-btn" onClick={onBack}>
+      <button type="button" className="btn portal-back-btn" onClick={onBack}>
         ← Zpět na rozcestník
       </button>
 
       {loadError && <p className="portal-hint portal-hint-error">{loadError}</p>}
       {loading && !loadError && <p className="portal-hint">Načítám sklad…</p>}
 
-      <div className="lab-panel">
+      <div className="panel">
         <div className="lab-panel-header">
           <div>
             <div className="lab-panel-title">Materiál na skladě</div>
             <div className="lab-panel-subtitle">Aktuální zásoby a minimální stavy.</div>
           </div>
           {lowCount > 0 ? (
-            <span className="lab-status-pill lab-status-pill-warn">Nízká zásoba: {lowCount}</span>
+            <span className="pill s-a">Nízká zásoba: {lowCount}</span>
           ) : (
-            <span className="lab-status-pill">Vše v pořádku</span>
+            <span className="pill s-p">Vše v pořádku</span>
           )}
         </div>
 
@@ -642,7 +642,7 @@ function InventoryView({ onBack }) {
           />
           <button
             type="submit"
-            className="portal-btn portal-btn-primary"
+            className="btn primary"
             disabled={!form.name.trim() || saving}
           >
             {saving ? "Přidávám…" : "Přidat materiál"}
@@ -651,7 +651,7 @@ function InventoryView({ onBack }) {
         {formError && <p className="portal-hint portal-hint-error">{formError}</p>}
       </div>
 
-      <div className="lab-panel">
+      <div className="panel">
         <div className="lab-panel-header">
           <div>
             <div className="lab-panel-title">Objednávky</div>

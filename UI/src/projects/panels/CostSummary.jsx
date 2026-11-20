@@ -17,17 +17,17 @@ export default function CostSummary({ projectId, reloadKey, onError }) {
 
   return (
     <div className="pj-costs">
-      <div><div className="k">Materiál (skutečné ceny)</div><div className="v">{czk(c.material_czk)}</div></div>
-      <div><div className="k">Práce · {c.labor_hours} h × {czk(c.hourly_rate_czk)}</div><div className="v">{czk(c.labor_czk)}</div></div>
-      <div><div className="k">Přímé náklady celkem</div><div className="v">{czk(c.total_czk)}</div></div>
-      <div>
-        <div className="k">Rozpočet {c.planned_budget_czk != null && `· ${czk(c.planned_budget_czk)}`}</div>
-        <div className={'v' + (c.over_budget ? ' over' : '')}>
-          {pct == null ? '—' : `${pct} %`}
+      <div className="tiles">
+        <div className="tile"><span className="k">Materiál (skutečné ceny)</span><span className="v">{czk(c.material_czk)}</span></div>
+        <div className="tile"><span className="k">Práce · {c.labor_hours} h × {czk(c.hourly_rate_czk)}</span><span className="v">{czk(c.labor_czk)}</span></div>
+        <div className="tile"><span className="k">Přímé náklady celkem</span><span className="v">{czk(c.total_czk)}</span></div>
+        <div className={'tile hl' + (c.over_budget ? ' over' : '')}>
+          <span className="k">Rozpočet {c.planned_budget_czk != null && `· ${czk(c.planned_budget_czk)}`}</span>
+          <span className="v">{pct == null ? '—' : `${pct} %`}</span>
         </div>
       </div>
       {pct != null && (
-        <div className="pj-bar"><i className={barClass} style={{ width: `${Math.min(100, pct)}%` }} /></div>
+        <div className="progress"><i className={barClass} style={{ width: `${Math.min(100, pct)}%` }} /></div>
       )}
     </div>
   )

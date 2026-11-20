@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, can, initials, isOverdue, userName, STATUSES } from '../api'
+import { TabBar } from '../../aila-ui'
 
 export default function BoardView({ project, perms, users, reloadKey, onOpenTask, onChanged, onError }) {
   const phases = project.phases || []
@@ -71,19 +72,16 @@ export default function BoardView({ project, perms, users, reloadKey, onOpenTask
   return (
     <div>
       <div className="pj-phases">
-        {phases.map((p) => (
-          <button key={p.id}
-                  className={p.id === phaseId ? 'active' : ''}
-                  onClick={() => setPhaseId(p.id)}>
-            {p.position}. {p.name}
-            {counts[p.id] ? <span className="pcount">{counts[p.id]}</span> : null}
-          </button>
-        ))}
+        <TabBar
+          current={phaseId}
+          onSelect={setPhaseId}
+          items={phases.map((p) => ({ id: p.id, label: `${p.position}. ${p.name}`, badge: counts[p.id] }))}
+        />
       </div>
 
       {canWrite && (
         adding ? (
-          <form onSubmit={addTask} className="pj-card" style={{ cursor: 'default', display: 'grid', gap: '0.4rem', marginBottom: '0.8rem', borderLeftColor: 'var(--pj-accent)' }}>
+          <form onSubmit={addTask} className="card pj-card pj-card-form">
             <input autoFocus placeholder="Název úkolu (např. Návrh napájecí kaskády 5V/3.3V)"
                    value={form.title} required
                    onChange={(e) => setForm({ ...form, title: e.target.value })} />
@@ -94,12 +92,12 @@ export default function BoardView({ project, perms, users, reloadKey, onOpenTask
                   {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               )}
-              <button className="primary" type="submit">Přidat</button>
-              <button type="button" className="ghost" onClick={() => setAdding(false)}>Zrušit</button>
+              <button className="btn sm primary" type="submit">Přidat</button>
+              <button type="button" className="btn sm" onClick={() => setAdding(false)}>Zrušit</button>
             </div>
           </form>
         ) : (
-          <button className="ghost" style={{ marginBottom: '0.8rem' }} onClick={() => setAdding(true)}>
+          <button type="button" className="btn sm pj-add" onClick={() => setAdding(true)}>
             + Přidat úkol do fáze
           </button>
         )
@@ -108,7 +106,7 @@ export default function BoardView({ project, perms, users, reloadKey, onOpenTask
       <div className="pj-board">
         {STATUSES.map(([s, label]) => (
           <div key={s}
-               className={'pj-col' + (dropCol === s && draggingId ? ' drop-target' : '')}
+               className={'panel pj-col' + (dropCol === s && draggingId ? ' drop-target' : '')}
                onDragOver={(e) => { if (draggingId != null) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropCol(s) } }}
                onDrop={(e) => {
                  e.preventDefault()
@@ -117,14 +115,14 @@ export default function BoardView({ project, perms, users, reloadKey, onOpenTask
                  if (id) move(id, s)
                }}>
             <div className="pj-col-head">
-              <span className="pj-dot" style={{ background: `var(--st-${s})`, '--sd': `var(--st-${s})` }} />
+              <i className="dot" style={{ '--c': `var(--st-${s})`, '--cs': `var(--st-${s})` }} />
               {label}
               <span className="n">{byStatus[s]?.length || 0}</span>
             </div>
             <div className="pj-col-scroll">
               {(byStatus[s] || []).map((t, i) => (
                 <div key={t.id}
-                     className={'pj-card' + (draggingId === t.id ? ' dragging' : '')}
+                     className={'card pj-card' + (draggingId === t.id ? ' dragging' : '')}
                      style={{ '--st': `var(--st-${t.status})`, '--i': i }}
                      draggable={canWrite}
                      onDragStart={(e) => {
@@ -137,11 +135,11 @@ export default function BoardView({ project, perms, users, reloadKey, onOpenTask
                   <div className="t">{t.title}</div>
                   <div className="row">
                     {t.assignee_user_id
-                      ? <span className="pj-avatar" title={userName(users, t.assignee_user_id)}>{initials(userName(users, t.assignee_user_id))}</span>
-                      : <span className="pj-tag">bez řešitele</span>}
-                    {t.proto_version && <span className="pj-tag">{t.proto_version}</span>}
-                    {t.due_on && <span className={'pj-tag' + (isOverdue(t.due_on, t.status) ? ' due-over' : '')}>do {t.due_on}</span>}
-                    {t.estimated_hours ? <span className="pj-tag">{t.estimated_hours} h</span> : null}
+                      ? <span className="avatar pj-avatar" title={userName(users, t.assignee_user_id)}>{initials(userName(users, t.assignee_user_id))}</span>
+                      : <span className="chip">bez řešitele</span>}
+                    {t.proto_version && <span className="chip">{t.proto_version}</span>}
+                    {t.due_on && <span className={isOverdue(t.due_on, t.status) ? 'pill s-a' : 'chip'}>do {t.due_on}</span>}
+                    {t.estimated_hours ? <span className="chip">{t.estimated_hours} h</span> : null}
                   </div>
                   {canWrite && (
                     <div className="pj-card-move" onClick={(e) => e.stopPropagation()}>
@@ -153,7 +151,7 @@ export default function BoardView({ project, perms, users, reloadKey, onOpenTask
                 </div>
               ))}
               {(byStatus[s] || []).length === 0 && (
-                <div className="muted" style={{ fontSize: '0.8rem', padding: '0.3rem 0.15rem' }}>—</div>
+                <div className="muted pj-col-empty">—</div>
               )}
             </div>
           </div>

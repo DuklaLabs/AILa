@@ -129,8 +129,8 @@ export default function GanttView({ project, onOpenTask, onSelectProject, onErro
           {mode === 'tasks' ? 'Úkoly projektu na časové ose – šipky = závislosti, ▶ = lze spustit' : 'Projekty na časové ose'}
         </span>
         <div className="row" style={{ marginLeft: 'auto', gap: '0.3rem' }}>
-          <button className="sm" disabled={zoom === 0} onClick={() => setZoom((z) => Math.max(0, z - 1))}>−</button>
-          <button className="sm" disabled={zoom === ZOOMS.length - 1} onClick={() => setZoom((z) => Math.min(ZOOMS.length - 1, z + 1))}>+</button>
+          <button type="button" className="btn sm" disabled={zoom === 0} onClick={() => setZoom((z) => Math.max(0, z - 1))}>−</button>
+          <button type="button" className="btn sm" disabled={zoom === ZOOMS.length - 1} onClick={() => setZoom((z) => Math.min(ZOOMS.length - 1, z + 1))}>+</button>
         </div>
       </div>
 
@@ -206,15 +206,15 @@ export default function GanttView({ project, onOpenTask, onSelectProject, onErro
         </div>
       </div>
 
-      <div className="pj-gantt-legend">
+      <div className="legend pj-gantt-legend">
         {mode === 'tasks'
           ? STATUSES.map(([s, l]) => (
-              <span key={s}><i style={{ background: `var(--st-${s})` }} />{l}</span>
+              <span key={s}><i className="dot" style={{ '--c': `var(--st-${s})`, '--cs': `var(--st-${s})` }} />{l}</span>
             ))
           : Object.entries(FOLDER_LABELS).map(([k, l]) => (
-              <span key={k}><i style={{ background: `var(--cat-${k})` }} />{l}</span>
+              <span key={k}><i className="dot" style={{ '--c': `var(--cat-${k})`, '--cs': `var(--cat-${k})` }} />{l}</span>
             ))}
-        <span><i className="pj-ready-dot" />lze spustit</span>
+        <span><i className="dot" style={{ '--c': 'var(--p)', '--cs': 'transparent' }} />lze spustit</span>
         <span><i className="pj-today-dot" />dnes</span>
       </div>
     </div>

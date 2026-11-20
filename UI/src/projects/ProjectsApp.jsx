@@ -8,6 +8,7 @@ import ProposalsPanel from './panels/ProposalsPanel'
 import PocketPanel from './panels/PocketPanel'
 import RunningTimer from './panels/TimerPanel'
 import GanttView from './panels/GanttView'
+import { Switch } from '../aila-ui'
 
 export default function ProjectsApp() {
   const [me, setMe] = useState(null)
@@ -56,7 +57,8 @@ export default function ProjectsApp() {
     <div className="pj" style={{ '--fc': fc }}>
       <div className="pj-top">
         <button
-          className="pj-hamburger ghost"
+          type="button"
+          className="btn sm pj-hamburger"
           aria-label="Menu"
           onClick={() => setSideOpen((v) => !v)}
         >☰</button>
@@ -64,18 +66,19 @@ export default function ProjectsApp() {
         <RunningTimer reloadKey={reloadKey} users={users} onChange={bump} onError={setError} />
         <div className="spacer" />
         {canUseAi && (
-          <button className="ghost" onClick={() => setShowPocket(true)}>🎙 Pocket</button>
+          <button type="button" className="btn sm" onClick={() => setShowPocket(true)}>🎙 Pocket</button>
         )}
         {canReviewProposals && (
-          <button className="ghost" onClick={() => setShowProposals(true)}>⚑ Návrhy AI</button>
+          <button type="button" className="btn sm" onClick={() => setShowProposals(true)}>⚑ Návrhy AI</button>
         )}
         {me?.user && <span className="who">{me.user.full_name || me.user.username}</span>}
-        <a href="/logout" className="ghost" style={{ padding: '0.45rem 0.7rem', border: '1px solid transparent' }}>Odhlásit</a>
+        <a href="/logout" className="btn sm">Odhlásit</a>
       </div>
 
       {error && (
-        <div style={{ padding: '0 1rem' }}>
-          <div className="err"><span>{error}</span><button className="sm ghost" onClick={() => setError('')}>×</button></div>
+        <div className="toast pj-toast-err" role="alert">
+          <span>{error}</span>
+          <button type="button" className="copy" aria-label="Zavřít" onClick={() => setError('')}>×</button>
         </div>
       )}
 
@@ -95,18 +98,20 @@ export default function ProjectsApp() {
 
         <div className="pj-main">
           <div className="pj-viewbar">
-            <div className="pj-seg">
-              <button className={view === 'board' ? 'on' : ''} onClick={() => setView('board')}>Nástěnka</button>
-              <button className={view === 'timeline' ? 'on' : ''} onClick={() => setView('timeline')}>Timeline</button>
-            </div>
-            {project && <span className="pj-status-pill">{project.name}</span>}
+            <Switch
+              label="Zobrazení"
+              value={view}
+              onChange={setView}
+              options={[['board', 'Nástěnka'], ['timeline', 'Timeline']]}
+            />
+            {project && <span className="chip">{project.name}</span>}
           </div>
 
           {project && (
             <div className="pj-proj-head" style={{ marginBottom: '0.2rem' }}>
               <h1>{project.name}</h1>
-              <span className="pj-status-pill">{project.status}</span>
-              {project.due_on && <span className="pj-status-pill">termín {project.due_on}</span>}
+              <span className="pill s-x">{project.status}</span>
+              {project.due_on && <span className="pill st-run">termín {project.due_on}</span>}
             </div>
           )}
           {project?.description && view === 'board' && (
