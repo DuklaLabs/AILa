@@ -9,9 +9,8 @@ function mlEsc(s) {
 }
 
 function mlStatus(s) {
-    const color = { OK: "#1a7f37", ERROR: "#b42318", DRY_RUN: "#9a6700",
-                    DISABLED: "#777" }[s] || "#333";
-    return `<strong style="color:${color}">${mlEsc(s)}</strong>`;
+    const cls = { OK: "s-p", ERROR: "s-a", DRY_RUN: "s-u", DISABLED: "s-x" }[s] || "s-x";
+    return `<span class="pill ${cls}">${mlEsc(s)}</span>`;
 }
 
 async function loadMailLog() {
@@ -41,7 +40,7 @@ async function loadMailLog() {
         const redir = r.delivered_to
             ? `<br><span class="hint">→ doručeno na ${mlEsc(r.delivered_to)}</span>` : "";
         const err = r.error
-            ? `<br><span style="color:#b42318">${mlEsc(r.error)}</span>` : "";
+            ? `<br><span style="color:var(--a)">${mlEsc(r.error)}</span>` : "";
         html += `<tr>
             <td style="white-space:nowrap">${mlEsc(r.created_at)}</td>
             <td>${mlEsc(to)}${redir}</td>
@@ -54,10 +53,10 @@ async function loadMailLog() {
     document.getElementById("mailLogList").innerHTML = html + "</table>";
 }
 
-document.querySelectorAll("#mailLogCard .week-toggle button").forEach(b => {
+document.querySelectorAll("#mailLogCard .grp button").forEach(b => {
     b.addEventListener("click", () => {
-        document.querySelectorAll("#mailLogCard .week-toggle button")
-            .forEach(x => x.classList.toggle("active", x === b));
+        document.querySelectorAll("#mailLogCard .grp button")
+            .forEach(x => x.setAttribute("aria-pressed", String(x === b)));
         mailLogState.flt = b.dataset.flt;
         loadMailLog();
     });

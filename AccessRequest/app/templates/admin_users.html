@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css" />
+    <link rel="stylesheet" href="{{ BASE }}/static/css/ui.css" />
     <script src="{{ BASE }}/static/js/theme-toggle.js"></script>
     <link rel="stylesheet" href="{{ BASE }}/static/css/base.css" />
     <link rel="stylesheet" href="{{ BASE }}/static/css/layout.css" />
@@ -24,14 +25,14 @@
 <main class="container">
 
     <!-- SPRÁVA RBAC (sdílená konzole z ailacore) -->
-    <section class="card">
+    <section class="panel">
         <h2>🔑 Role a oprávnění</h2>
         <p class="hint">Správa rolí, katalogu oprávnění a přiřazení uživatelům (jen pro adminy).</p>
-        <a class="btn-primary" href="{{ BASE }}/admin/rbac/">Otevřít konzoli</a>
+        <a class="btn primary" href="{{ BASE }}/admin/rbac/">Otevřít konzoli</a>
     </section>
 
     <!-- ČEKAJÍCÍ NA SCHVÁLENÍ UVOLŇOVÁNÍ -->
-    <section class="card" id="releaseCard" style="display:none;">
+    <section class="panel" id="releaseCard" style="display:none;">
         <h2>🎓 Souhlas s uvolňováním z výuky (<span id="releaseCount">0</span>)</h2>
         <p class="hint">
             Dokud nedá souhlas třídní učitel i koordinátor, student se nemůže

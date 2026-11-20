@@ -39,13 +39,13 @@ function machineCard(m) {
     const actions = canManage
         ? `<div class="mch-actions">
              ${STATUS_ORDER.filter(s => s !== m.status).map(s =>
-                 `<button class="btn-ghost" onclick="setStatus(${m.id}, '${s}')">${STATUS_LABEL[s]}</button>`
+                 `<button class="btn" onclick="setStatus(${m.id}, '${s}')">${STATUS_LABEL[s]}</button>`
              ).join("")}
-             <button class="delete-btn" onclick="removeMachine(${m.id}, '${esc(m.name)}')">Vyřadit</button>
+             <button class="btn danger" onclick="removeMachine(${m.id}, '${esc(m.name)}')">Vyřadit</button>
            </div>`
         : "";
     return `
-        <div class="mch-card">
+        <div class="card mch-card">
             <div class="mch-card-head">
                 <div>
                     <div class="mch-name">${esc(m.name)}</div>
@@ -53,7 +53,7 @@ function machineCard(m) {
                 </div>
             </div>
             ${m.location ? `<div class="mch-location">📍 ${esc(m.location)}</div>` : ""}
-            <div class="mch-status mch-status-${esc(m.status)}">
+            <div class="pill mch-status mch-status-${esc(m.status)}">
                 <span class="mch-status-dot"></span>${esc(label)}
             </div>
             ${m.status_note ? `<div class="mch-note">${esc(m.status_note)}</div>` : ""}

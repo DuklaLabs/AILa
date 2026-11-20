@@ -20,9 +20,10 @@ async function renderGrid() {
     const from = isoDate(monday);
     const to = isoDate(addDays(monday, 4));
 
-    document.querySelectorAll(".week-toggle button").forEach(b => {
-        b.classList.toggle("active", Number(b.dataset.week) === state.weekOffset);
+    document.querySelectorAll(".grp button").forEach(b => {
+        b.setAttribute("aria-pressed", String(Number(b.dataset.week) === state.weekOffset));
     });
+    document.querySelectorAll(".grp").forEach(g => AilaUI.knob(g));
 
     const [slots, periods, myIds, lessons] = await Promise.all([
         fetch(`${BASE}/api/open-hours/list?from=${from}&to=${to}`).then(r => r.json()).catch(() => []),
@@ -56,7 +57,7 @@ function cellHtml(date, hour) {
             <div class="tt-slot tt-free tt-mine">
                 <div class="tt-spots">✓ Přihlášen/a</div>
                 ${slot.note ? `<div class="tt-note">${esc(slot.note)}</div>` : ""}
-                <button class="tt-book tt-cancel-book" onclick="cancelHour(${slot.id})">Odhlásit</button>
+                <button class="btn danger tt-book" onclick="cancelHour(${slot.id})">Odhlásit</button>
             </div>
         `;
     }
@@ -67,7 +68,7 @@ function cellHtml(date, hour) {
             <div class="tt-slot tt-full" title="Podle rozvrhu tu máš výuku. Zápis bude možný až po schválení uvolňování z výuky (třídní učitel + koordinátor).">
                 <div class="tt-spots">Máš výuku</div>
                 ${slot.note ? `<div class="tt-note">${esc(slot.note)}</div>` : ""}
-                <button class="btn-primary tt-book" disabled>Zamčeno</button>
+                <button class="btn primary tt-book" disabled>Zamčeno</button>
             </div>
         `;
     }
@@ -77,7 +78,7 @@ function cellHtml(date, hour) {
         <div class="tt-slot ${full ? "tt-full" : "tt-free"}">
             <div class="tt-spots">${full ? "Obsazeno" : slot.free_spots + " volných"}</div>
             ${slot.note ? `<div class="tt-note">${esc(slot.note)}</div>` : ""}
-            <button class="btn-primary tt-book" onclick="bookHour(${slot.id})" ${full ? "disabled" : ""}>
+            <button class="btn primary tt-book" onclick="bookHour(${slot.id})" ${full ? "disabled" : ""}>
                 ${full ? "—" : "Registrovat"}
             </button>
         </div>
@@ -118,7 +119,7 @@ async function cancelHour(id) {
     renderGrid();
 }
 
-document.querySelectorAll(".week-toggle button").forEach(b => {
+document.querySelectorAll(".grp button").forEach(b => {
     b.addEventListener("click", () => {
         state.weekOffset = Number(b.dataset.week);
         renderGrid();

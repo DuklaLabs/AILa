@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/ui.css">
   <script src="{{ BASE }}/static/js/theme-toggle.js"></script>
   <link rel="stylesheet" href="{{ BASE }}/static/css/base.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/forms.css">
@@ -21,7 +22,7 @@
 
 <body>
 <div class="center-page">
-  <div class="card" style="max-width:420px;">
+  <div class="panel" style="max-width:420px;">
     <h1>Registrace studenta</h1>
     <p class="subtitle">Zadej své údaje pro registraci do systému DuklaLabs.</p>
 
@@ -31,20 +32,24 @@
       </div>
     {% endif %}
 
-    <form id="studentForm" method="POST" onsubmit="return validateStudentForm();">
-      <label for="first_name">Jméno</label>
-      <input id="first_name" name="first_name" required />
+    <form id="studentForm" class="form-stack" method="POST" onsubmit="return validateStudentForm();">
+      <label class="f">Jméno
+        <input id="first_name" name="first_name" type="text" required />
+      </label>
 
-      <label for="last_name">Příjmení</label>
-      <input id="last_name" name="last_name" required />
+      <label class="f">Příjmení
+        <input id="last_name" name="last_name" type="text" required />
+      </label>
 
-      <label for="email">Školní e-mail</label>
-      <input id="email" name="email" type="email" required />
+      <label class="f">Školní e-mail
+        <input id="email" name="email" type="email" required />
+      </label>
 
-      <label for="password">Heslo</label>
-      <input id="password" name="password" type="password" minlength="8" required />
+      <label class="f">Heslo
+        <input id="password" name="password" type="password" minlength="8" required />
+      </label>
 
-      <label for="class_group">Třída</label>
+      <label class="f">Třída
       <select id="class_group" name="class_group" required>
           <option value="">-- vyber třídu --</option>
           <option value="1.EM">1.EM</option>
@@ -64,10 +69,9 @@
           <option value="4.EE">4.EE</option>
           <option value="4.S">4.S</option>
       </select>
+      </label>
 
-
-
-      <button class="btn btn-primary" style="width:100%; margin-top:10px;">Odeslat registraci</button>
+      <button class="btn primary block">Odeslat registraci</button>
     </form>
 
     <div id="loader" class="loader hidden"></div>

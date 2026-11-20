@@ -15,7 +15,7 @@ async function loadPendingStudents() {
         card.style.display = "none";
         return;
     }
-    card.style.display = "block";
+    card.style.display = "";
 
     let html = `
         <table>
@@ -36,8 +36,8 @@ async function loadPendingStudents() {
                 <td>${s.email}</td>
                 <td>${s.registration_date}</td>
                 <td>
-                    <button class="btn-primary" onclick="approveStudent(${s.user_id})">✔ Schválit</button>
-                    <button class="delete-btn" onclick="rejectStudent(${s.user_id})">✘ Zamítnout</button>
+                    <button class="btn primary" onclick="approveStudent(${s.user_id})">✔ Schválit</button>
+                    <button class="btn danger" onclick="rejectStudent(${s.user_id})">✘ Zamítnout</button>
                 </td>
             </tr>
         `;

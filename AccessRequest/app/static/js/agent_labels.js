@@ -25,12 +25,3 @@ function agentLabel(name) {
 function kindLabel(kind) {
     return KIND_LABEL[kind] || kind || "—";
 }
-
-// confidence 0..1 → mini proužek
-function confBar(value) {
-    if (value == null || isNaN(value)) return "";
-    const pct = Math.round(Math.max(0, Math.min(1, Number(value))) * 100);
-    return `<span class="conf-bar" title="jistota ${pct} %">
-        <span class="conf-fill" style="width:${pct}%"></span></span>
-        <span class="conf-num">${pct} %</span>`;
-}

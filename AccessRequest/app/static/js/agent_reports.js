@@ -10,7 +10,7 @@ async function loadAgentReports() {
     const card = document.getElementById("agentReportsCard");
     const list = document.getElementById("agentReportsList");
     if (!rows.length) { card.style.display = "none"; return; }
-    card.style.display = "block";
+    card.style.display = "";
 
     let html = `<table><tr><th>Období</th><th>Vygenerováno</th><th>Shrnutí</th><th></th></tr>`;
     rows.forEach(r => {
@@ -18,7 +18,7 @@ async function loadAgentReports() {
             <td>${esc((r.period || "").toString().slice(0, 7))}</td>
             <td>${esc(r.generated_at ?? "")}</td>
             <td>${esc((r.summary ?? "").slice(0, 160))}</td>
-            <td><button class="btn-ghost" onclick="showAgentReport(${r.id})">Detail</button></td>
+            <td><button class="btn" onclick="showAgentReport(${r.id})">Detail</button></td>
         </tr>`;
     });
     list.innerHTML = html + "</table>";
@@ -29,7 +29,7 @@ async function showAgentReport(id) {
     const modal = document.getElementById("ohModal");
     if (!body || !modal) return;
     body.innerHTML = `<p>Načítám…</p>`;
-    modal.style.display = "flex";
+    openOhModal();
 
     const res = await fetch(`${BASE}/api/agents/reports/${id}`);
     if (!res.ok) { body.innerHTML = `<p class="oh-empty">Nepodařilo se načíst.</p>`; return; }
