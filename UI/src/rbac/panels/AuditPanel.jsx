@@ -14,25 +14,33 @@ export default function AuditPanel({ onError }) {
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div>
-      <button className="btn" onClick={load} disabled={loading}>Obnovit</button>
-      <table style={{ marginTop: '0.75rem' }}>
-        <thead>
-          <tr><th>Kdy</th><th>Kdo</th><th>Akce</th><th>Cíl</th><th>Detail</th></tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id}>
-              <td className="muted" style={{ whiteSpace: 'nowrap' }}>{r.created_at}</td>
-              <td>{r.actor_name || r.actor_id || '—'}</td>
-              <td><code>{r.action}</code></td>
-              <td>{r.target_type} <code>{r.target_id}</code></td>
-              <td><pre>{JSON.stringify(r.detail)}</pre></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {rows.length === 0 && !loading && <p className="muted">Zatím žádné záznamy.</p>}
+    <div className="panel">
+      <div className="row between">
+        <h3>Auditní log</h3>
+        <button className="btn" onClick={load} disabled={loading}>Obnovit</button>
+      </div>
+      {rows.length === 0 && !loading ? (
+        <div className="empty"><b>Zatím nic</b><span>Zatím žádné záznamy.</span></div>
+      ) : (
+        <div className="tbl">
+          <table>
+            <thead>
+              <tr><th>Kdy</th><th>Kdo</th><th>Akce</th><th>Cíl</th><th>Detail</th></tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id}>
+                  <td className="muted" style={{ whiteSpace: 'nowrap' }}>{r.created_at}</td>
+                  <td>{r.actor_name || r.actor_id || '—'}</td>
+                  <td><code>{r.action}</code></td>
+                  <td>{r.target_type} <code>{r.target_id}</code></td>
+                  <td><pre>{JSON.stringify(r.detail)}</pre></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

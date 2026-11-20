@@ -36,22 +36,19 @@ function UserCard({ user, roles, permissions, onError, refresh }) {
   }
 
   return (
-    <div className="card">
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h3>{user.full_name || user.username} <span className="muted">#{user.id} · {user.username}</span></h3>
-      </div>
+    <div className="panel">
+      <h3>{user.full_name || user.username} <span className="nick">#{user.id} · {user.username}</span></h3>
 
-      <div className="row" style={{ marginBottom: '0.5rem' }}>
-        <label>Primární role:&nbsp;
-          <select value={primary} onChange={(e) => setPrimary(e.target.value)}>
-            {roles.map((r) => <option key={r.name} value={r.name}>{r.name}</option>)}
-          </select>
-        </label>
-      </div>
+      <label className="f" style={{ maxWidth: 320 }}>
+        Primární role
+        <select value={primary} onChange={(e) => setPrimary(e.target.value)}>
+          {roles.map((r) => <option key={r.name} value={r.name}>{r.name}</option>)}
+        </select>
+      </label>
 
-      <div style={{ marginBottom: '0.4rem' }}>
+      <div style={{ display: 'grid', gap: 6 }}>
         <div className="muted">Sekundární role</div>
-        <div className="row">
+        <div className="chips">
           {roles.filter((r) => r.name !== primary).map((r) => (
             <label key={r.name} className="chip">
               <input type="checkbox" checked={secondary.has(r.name)}
@@ -60,11 +57,13 @@ function UserCard({ user, roles, permissions, onError, refresh }) {
           ))}
         </div>
       </div>
-      <button className="btn primary" disabled={busy} onClick={saveRoles}>Uložit role</button>
+      <div className="row">
+        <button className="btn primary" disabled={busy} onClick={saveRoles}>Uložit role</button>
+      </div>
 
-      <details style={{ marginTop: '0.75rem' }}>
-        <summary>Přímé granty ({grants.size})</summary>
-        <div className="perm-grid" style={{ marginTop: '0.4rem' }}>
+      <details>
+        <summary>Přímé granty <span className="cls">{grants.size}</span></summary>
+        <div className="perm-grid">
           {permissions.filter((p) => p.name !== '*').map((p) => (
             <label key={p.name} title={p.description || ''}>
               <input type="checkbox" checked={grants.has(p.name)}
@@ -73,8 +72,9 @@ function UserCard({ user, roles, permissions, onError, refresh }) {
             </label>
           ))}
         </div>
-        <button className="btn primary" disabled={busy} onClick={saveGrants}
-                style={{ marginTop: '0.4rem' }}>Uložit granty</button>
+        <div className="row" style={{ marginTop: 10 }}>
+          <button className="btn primary" disabled={busy} onClick={saveGrants}>Uložit granty</button>
+        </div>
       </details>
     </div>
   )
@@ -94,13 +94,15 @@ export default function UsersPanel({ roles, permissions, onError }) {
   useEffect(() => { search() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div>
-      <form className="card row" onSubmit={(e) => { e.preventDefault(); search() }}>
-        <input type="text" placeholder="hledat jméno / username" value={q}
-               onChange={(e) => setQ(e.target.value)} style={{ flex: 1 }} />
+    <div className="stack">
+      <form className="panel row" onSubmit={(e) => { e.preventDefault(); search() }}>
+        <input type="text" className="grow" placeholder="hledat jméno / username" value={q}
+               onChange={(e) => setQ(e.target.value)} />
         <button className="btn" disabled={loading}>Hledat</button>
       </form>
-      {users.length === 0 && !loading && <p className="muted">Nic nenalezeno.</p>}
+      {users.length === 0 && !loading && (
+        <div className="empty"><b>Nic nenalezeno</b><span>Zkus jiný hledaný výraz.</span></div>
+      )}
       {users.map((u) => (
         <UserCard key={u.id} user={u} roles={roles} permissions={permissions}
                   onError={onError} refresh={search} />
