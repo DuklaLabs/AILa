@@ -475,9 +475,12 @@ function renderFamilies() {
     <article class="famcard" id="fam-${s.id}">
       <div class="top"><b>${esc(s.surname)}</b> <span>${esc(s.first)}</span>${s.nick ? `<span class="nick">${esc(s.nick)}</span>` : ""}
         <button class="btn" type="button" data-card="${s.id}">Karta</button><button class="btn" type="button" data-stu="${s.id}">Upravit</button></div>
-      ${block("Žák", f.contact)}${block("Rodič 1", f.parent1)}${block("Rodič 2", f.parent2)}
+      ${migrBlock(s)}${block("Žák", f.contact)}${block("Rodič 1", f.parent1)}${block("Rodič 2", f.parent2)}
     </article>`; }).join("")}</div>` : `<div class="empty"><b>Žádní studenti</b></div>`;
 }
+// where a ZŠ student goes to secondary school (entered in the student dialog)
+const migrText = s => [s.toSchool, s.toField, s.toYear ? `od ${s.toYear}` : ""].filter(Boolean).join(" · ");
+const migrBlock = s => `<div class="who"><span>Střední škola</span>${migrText(s) ? `<div class="pname">${esc(migrText(s))}</div>` : `<div class="hint">Nevyplněno</div>`}</div>`;
 
 function render() {
   renderHero(); renderTiles(); renderChart(); renderRank(); renderMiniProjects(); renderCalendar(); renderMatrix(); renderProjects(); renderRoster(); renderContacts(); renderFamilies();
@@ -862,7 +865,7 @@ function openCard(id) {
   const r = stats(id), f = S.family.get(id) || {};
   photoBox($("#cardPhoto"), s, f.photo);
   $("#cardName").innerHTML = `${esc(s.surname)} <span style="font-weight:500">${esc(s.first)}</span>`;
-  $("#cardMeta").innerHTML = [s.nick ? `„${esc(s.nick)}“` : "", drop() && s.cls ? esc(s.cls) : "", s.role ? esc(s.role) : "", s.inactive ? "neaktivní" : "", GROUP[G].short].filter(Boolean).join(" · ");
+  $("#cardMeta").innerHTML = [s.nick ? `„${esc(s.nick)}“` : "", drop() && s.cls ? esc(s.cls) : "", s.role ? esc(s.role) : "", s.inactive ? "neaktivní" : "", !drop() && s.toSchool ? `→ ${esc(s.toSchool)}` : "", GROUP[G].short].filter(Boolean).join(" · ");
   const offs = fridays().filter(x => x.state === "off").length;
   $("#cardStats").innerHTML = drop()
     ? `<div><b>${r.p}×</b><span>na kroužku</span></div><div><b>${r.last ? fmtDate(r.last) : "—"}</b><span>naposledy</span></div><div><b>${esc(s.cls || "—")}</b><span>${s.teacher ? "třídní: " + esc(s.teacher) : "třída"}</span></div>`
@@ -894,7 +897,7 @@ function showCardContacts(on) {
   };
   $("#cardContacts").innerHTML = drop()
     ? `<div class="who"><span>Třídní učitel</span>${s.teacher ? `<div class="pname">${esc(s.teacher)}</div>` : `<div class="hint">Nevyplněno</div>`}</div>${block("Student", f.contact)}`
-    : block("Žák", f.contact) + block("Rodič 1", f.parent1) + block("Rodič 2", f.parent2);
+    : migrBlock(s) + block("Žák", f.contact) + block("Rodič 1", f.parent1) + block("Rodič 2", f.parent2);
 }
 $("#cardEdit").onclick = () => { const id = cardStu; $("#dlgCard").close(); openStudent(id); };
 $("#cardContact").onclick = () => showCardContacts($("#cardContacts").hidden);
@@ -920,7 +923,10 @@ function openStudent(id) {
   $("#sInactive").checked = !!s?.inactive;
   $("#sSchool").hidden = !drop(); $("#fStudent").querySelectorAll("[data-parent]").forEach(f => f.hidden = drop());
   $("#sCls").value = s?.cls || ""; $("#sTeacher").value = s?.teacher || "";
+  $("#sMigr").hidden = drop();
+  $("#sToSchool").value = s?.toSchool || ""; $("#sToField").value = s?.toField || ""; $("#sToYear").value = s?.toYear || "";
   const all = allStudents();
+  $("#toSchoolList").innerHTML = [...new Set(all.map(x => x.toSchool).filter(Boolean))].sort(coll.compare).map(c => `<option value="${esc(c)}"></option>`).join("");
   $("#clsList").innerHTML = [...new Set(all.map(x => x.cls).filter(Boolean))].sort(byCls).map(c => `<option value="${esc(c)}"></option>`).join("");
   $("#teachList").innerHTML = [...new Set(all.map(x => x.teacher).filter(Boolean))].sort(coll.compare).map(c => `<option value="${esc(c)}"></option>`).join("");
   const f = (id && S.family.get(id)) || {};
@@ -947,6 +953,7 @@ $("#fStudent").addEventListener("submit", e => {
     parent2: { name: v("#p2Name"), phone: v("#p2Phone"), email: v("#p2Email") },
     photo: stuPhoto || null };
   const data = { surname: v("#sSur"), first: v("#sFirst"), nick: v("#sNick"), role: v("#sRole"), note: v("#sNote"), inactive: $("#sInactive").checked };
+  if (!drop()) { data.toSchool = v("#sToSchool"); data.toField = v("#sToField"); data.toYear = v("#sToYear"); }
   if (drop()) { data.cls = v("#sCls"); data.teacher = v("#sTeacher"); const old = (editStu && S.family.get(editStu)) || {}; if (old.parent1) fam.parent1 = old.parent1; if (old.parent2) fam.parent2 = old.parent2; if (!old.parent1 && !old.parent2) { delete fam.parent1; delete fam.parent2; } }
   let id = editStu;
   if (!id) { id = slug(data.surname); while (S.students.has(id)) id += "-" + Math.random().toString(36).slice(2, 5); }

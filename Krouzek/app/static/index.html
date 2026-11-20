@@ -232,6 +232,14 @@
       <label class="f">E-mail<input type="text" id="p2Email" inputmode="email"></label>
     </div>
   </fieldset>
+  <fieldset class="cset" data-zsonly id="sMigr"><legend>Přechod na střední školu</legend>
+    <div class="frow">
+      <label class="f">Střední škola<input type="text" id="sToSchool" list="toSchoolList" placeholder="Např. SPŠ Dukelská"></label>
+      <label class="f">Obor<input type="text" id="sToField" placeholder="Např. Elektronika"></label>
+    </div>
+    <label class="f">Nástup od školního roku<input type="text" id="sToYear" inputmode="numeric" placeholder="Např. 2027/2028"></label>
+    <datalist id="toSchoolList"></datalist>
+  </fieldset>
   <label class="f">Poznámka<textarea id="sNote"></textarea></label>
   <div class="photo-field" id="sPhotoField">
     <div class="card-photo sm" id="sPhotoPrev"></div>
