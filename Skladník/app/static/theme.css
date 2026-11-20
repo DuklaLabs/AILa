@@ -1,0 +1,93 @@
+/* DuklaLabs brand palette/typography — the single shared source of truth for
+   visual style across AILa, ported from the "Kroužek DuklaLabs" prototype
+   (Krouzek/app/static/krouzek.css). Every app draws from THIS file, copied
+   in at build time rather than duplicated by hand:
+     - Krouzek:            Dockerfile COPYs it to app/static/theme.css
+     - AccessRequest/Projects (server-rendered pages): Dockerfile COPYs it
+       to app/static/css/theme.css
+     - UI/ React builds (RBAC, Portal, Projects SPA): `npm run dev`/`build`
+       regenerate UI/src/theme.css from here via scripts/sync-theme.mjs
+       (see UI/package.json's pre* hooks) — don't edit UI/src/theme.css
+       directly, it's a generated copy.
+   Edit this file, nothing else, to change the brand look everywhere. */
+@property --ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+:root {
+  /* barvy z loga: karmínový blesk + grafitové ozubené kolo */
+  --bg: #f3f3f4;
+  --bg-glow-1: rgba(172, 31, 41, .13);
+  --bg-glow-2: rgba(48, 48, 52, .10);
+  --surface: #ffffff;
+  --surface-2: #ebebed;
+  --glass: rgba(255, 255, 255, .74);
+  --fg: #1c1d20;
+  --muted: #64666c;
+  --line: #e0e0e3;
+  --accent: #ac1f29;
+  --accent-2: #33353a;
+  --grad-end: #33353a;   /* where red gradients fade to */
+  --ring-2: #33353a;     /* second colour of the running light */
+  --logo-gear: #303033;
+  --accent-soft: #f7e0e2;
+  --glow: rgba(172, 31, 41, .32);
+  --p: #1f9d63;  --p-soft: #d6f2e3;
+  --a: #d6384a;  --a-soft: #fadde0;
+  --u: #d99a14;  --u-soft: #fbefcf;
+  --x: #8a8580;  --x-soft: #e7e4df;
+  --shadow: 0 1px 2px rgba(40,30,20,.06), 0 6px 18px rgba(40,30,20,.06);
+  --line-soft: rgba(20, 20, 25, .10);
+  --hover: rgba(20, 20, 25, .05);
+  --overlay: rgba(20, 20, 25, .45);
+  --fg-2: #3f4147;
+  --on-accent: #ffffff;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111214; --bg-glow-1: rgba(229, 65, 76, .17); --bg-glow-2: rgba(160, 166, 178, .07);
+  --surface: #1a1b1e; --surface-2: #26272b; --glass: rgba(26, 27, 30, .74); --fg: #f0f0f2; --muted: #a0a2a9; --line: #2e3034;
+  --accent: #dd2c3a; --accent-2: #9ba0aa; --grad-end: #6e1019; --ring-2: #ff7a84; --accent-soft: #3a1418; --glow: rgba(221, 44, 58, .5); --logo-gear: #e2e3e8;
+  --p: #3fcf8e; --p-soft: #133325; --a: #ff6b7a; --a-soft: #3a1b22; --u: #f0bb3c; --u-soft: #372c12; --x: #8a91a3; --x-soft: #252a37;
+  --line-soft: rgba(255, 255, 255, .12); --hover: rgba(255, 255, 255, .08); --overlay: rgba(0, 0, 0, .6); --fg-2: #d1d5db;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111214; --bg-glow-1: rgba(229, 65, 76, .17); --bg-glow-2: rgba(160, 166, 178, .07);
+  --surface: #1a1b1e; --surface-2: #26272b; --glass: rgba(26, 27, 30, .74); --fg: #f0f0f2; --muted: #a0a2a9; --line: #2e3034;
+  --accent: #dd2c3a; --accent-2: #9ba0aa; --grad-end: #6e1019; --ring-2: #ff7a84; --accent-soft: #3a1418; --glow: rgba(221, 44, 58, .5); --logo-gear: #e2e3e8;
+  --p: #3fcf8e; --p-soft: #133325; --a: #ff6b7a; --a-soft: #3a1b22; --u: #f0bb3c; --u-soft: #372c12; --x: #8a91a3; --x-soft: #252a37;
+  --line-soft: rgba(255, 255, 255, .12); --hover: rgba(255, 255, 255, .08); --overlay: rgba(0, 0, 0, .6); --fg-2: #d1d5db;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35); color-scheme: dark; }
+
+/* Base reset shared by every app so focus rings, box-sizing and default
+   heading/form fonts match, regardless of which app-specific stylesheet
+   loads on top of this one. */
+* { box-sizing: border-box; }
+h1, h2, h3 { font-family: var(--f-display); letter-spacing: -.01em; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Page background shared by every app: flat --bg with the brand glow on top,
+   so light and dark both follow the palette instead of a hardcoded gradient. */
+body { background: radial-gradient(circle at top, var(--bg-glow-1), transparent 60%), var(--bg); background-attachment: fixed; color: var(--fg); }
+
+/* Light/dark switch (injected by theme-toggle.js unless the page has its own
+   #theme control, like Krouzek). Fixed bottom-right pill, same look as the
+   Krouzek one: knob slides under the active icon. */
+.aila-theme { position: fixed; right: 16px; bottom: 16px; z-index: 2147483000; display: inline-flex; padding: 3px; border-radius: 99px; cursor: pointer; background: var(--surface-2); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.aila-theme button { position: relative; z-index: 1; width: 34px; height: 28px; border: 0; border-radius: 99px; background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; transition: color .25s; }
+.aila-theme button[aria-pressed="true"] { color: #fff; }
+.aila-theme .knob { position: absolute; top: 3px; left: 3px; width: 34px; height: 28px; border-radius: 99px; background: linear-gradient(135deg, var(--accent), var(--grad-end)); box-shadow: 0 4px 14px var(--glow); transition: transform .35s cubic-bezier(.3,1.4,.5,1); }
+.aila-theme[data-mode="dark"] .knob { transform: translateX(34px); }
+.aila-theme svg { width: 16px; height: 16px; }
+
+/* Logo menu (theme-toggle.js): click on any .logo -> dropdown listing all modules. */
+.logo[data-menu] { cursor: pointer; border-radius: 16px; }
+.logo[data-menu]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.aila-menu { position: fixed; z-index: 2147482000; min-width: 220px; max-width: calc(100vw - 16px); padding: 6px; display: grid; gap: 2px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); animation: aila-menu-in .18s cubic-bezier(.3,1.3,.5,1); transform-origin: top left; }
+@keyframes aila-menu-in { from { opacity: 0; transform: translateY(-6px) scale(.96); } }
+.aila-menu-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 11px; color: var(--fg); text-decoration: none; font: 600 14px var(--f-body); cursor: pointer; transition: background .15s, color .15s; }
+.aila-menu-item svg { width: 17px; height: 17px; flex: none; color: var(--muted); }
+.aila-menu-item:hover, .aila-menu-item:focus-visible { background: color-mix(in srgb, var(--accent) 12%, transparent); outline: none; }
+.aila-menu-item:hover svg, .aila-menu-item:focus-visible svg { color: var(--accent); }
+.aila-menu-item[aria-current="page"] { background: linear-gradient(135deg, var(--accent), var(--grad-end)); color: #fff; }
+.aila-menu-item[aria-current="page"] svg { color: #fff; }
