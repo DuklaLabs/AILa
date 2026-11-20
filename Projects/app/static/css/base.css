@@ -1,17 +1,6 @@
-/* App-specific base only. Tokens/reset/page background come from theme.css,
-   components (.btn, .card, inputs, ...) from ui.css — both copied in from
-   Shared/webui/ at build time. */
-body {
-    margin: 0;
-    font-family: var(--f-body);
-    min-height: 100vh;
-}
-
-.subtitle {
-    font-size: 14px;
-    color: var(--muted);
-    margin: 0;
-}
+/* App-specific base only. Tokens/reset from theme.css, page skeleton and
+   components from ui.css — both copied in from Shared/webui/ at build time. */
+body { margin: 0; }
 
 .hidden {
     display: none !important;
