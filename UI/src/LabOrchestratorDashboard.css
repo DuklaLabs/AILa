@@ -2,7 +2,7 @@
    colours come from the shared DuklaLabs library (theme.css + ui.css, see
    Shared/webui/ui-demo.html); this file just arranges them. */
 
-/* page skeleton (header.top / nav.tabs / main > .wrap > .view) comes from the
+/* page skeleton (header.top / main > .wrap > .view) comes from the
    shared APP SHELL in ui.css; only the shell-less base reset lives here. */
 body {
   margin: 0;
@@ -54,7 +54,7 @@ body {
   gap: 6px;
 }
 
-/* the "Generál" / "Sklad" tiles are <button>s – reset button chrome */
+/* tiles with an `action` (the chat tile) are <button>s – reset button chrome */
 .portal-tile-button {
   width: 100%;
   text-align: left;
@@ -109,12 +109,11 @@ body {
   text-decoration: underline;
 }
 
-/* Chat s Generálem (GeneralChat) a Sklad (InventoryView) – shared .panel +
-   vlastní jen rozložení zpráv / tabulky. */
+/* Chat s AIla (GeneralChat) – shared .panel + vlastní jen rozložení zpráv. */
 
 .portal-chat {
   width: 100%;
-  max-width: 820px; /* readable chat / table column inside the shell's .wrap */
+  max-width: 820px; /* readable chat column inside the shell's .wrap */
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -207,82 +206,4 @@ body {
 
 .lab-chat-send-btn {
   min-width: 90px;
-}
-
-/* Sklad (InventoryView) */
-
-.lab-table-wrap {
-  overflow-x: auto;
-}
-
-.lab-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.lab-table th,
-.lab-table td {
-  text-align: left;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--line);
-}
-
-.lab-table th {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-}
-
-.lab-table-empty {
-  color: var(--muted);
-}
-
-.lab-row-low td {
-  background: var(--a-soft);
-  color: var(--a);
-  font-weight: 600;
-}
-
-.lab-form-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-}
-
-.lab-form-row .lab-input {
-  width: 110px;
-}
-
-.lab-form-row .lab-input-grow {
-  flex: 1;
-  min-width: 160px;
-}
-
-.lab-order-list,
-.lab-order-items {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.lab-order {
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line);
-  font-size: 13px;
-}
-
-.lab-order-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.lab-order-items li {
-  color: var(--muted);
-  padding-left: 8px;
 }
