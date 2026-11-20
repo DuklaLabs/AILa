@@ -19,5 +19,9 @@ FROM caddy:2-alpine
 
 COPY Gateway/Caddyfile /etc/caddy/Caddyfile
 COPY --from=portal-ui /ui/dist-portal /srv/portal
+# Statické moduly (bare-skeleton stránky): /vyuka/, /rocnikove-prace/ ...
+COPY Gateway/modules/ /srv/portal/
+# Sdílené UI (jediný zdroj pravdy je Shared/webui) pro statické moduly
+COPY Shared/webui/theme.css Shared/webui/ui.css Shared/webui/ui.js Shared/webui/theme-toggle.js /srv/portal/shared/
 
 EXPOSE 80
