@@ -6,6 +6,15 @@
     padding: 20px;
 }
 
+.center-page .panel {
+    gap: 14px;
+    padding: 24px;
+}
+
+.center-page .panel h1 {
+    margin: 0;
+}
+
 .logo-pill {
     display: inline-flex;
     align-items: center;
@@ -13,12 +22,12 @@
     width: 60px;
     height: 60px;
     border-radius: 999px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: white;
+    background: linear-gradient(135deg, var(--accent), var(--grad-end));
+    color: #fff;
     font-size: 22px;
     font-weight: 800;
-    box-shadow: 0 16px 40px rgba(221, 44, 58,0.45);
-    margin: 0 auto 12px;
+    box-shadow: 0 8px 22px var(--glow);
+    margin: 0 auto;
 }
 
 .container-narrow {

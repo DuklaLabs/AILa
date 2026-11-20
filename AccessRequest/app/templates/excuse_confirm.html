@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/ui.css">
   <script src="{{ BASE }}/static/js/theme-toggle.js"></script>
   <link rel="stylesheet" href="{{ BASE }}/static/css/base.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/forms.css">
@@ -17,7 +18,7 @@
 <body>
 
   <div class="center-page">
-    <div class="card" style="max-width:440px; text-align:center;">
+    <div class="panel" style="max-width:440px; text-align:center;">
       <div class="logo-pill">DL</div>
       <h1>Žádost o omluvenku</h1>
 
@@ -35,10 +36,10 @@
         </p>
 
         <form method="POST" action="{{ BASE }}/excuse-requests/{{ token }}/approve" style="margin-top:16px;">
-          <button type="submit" class="btn btn-primary" style="width:100%;">Uvolnit</button>
+          <button type="submit" class="btn primary block">Uvolnit</button>
         </form>
         <form method="POST" action="{{ BASE }}/excuse-requests/{{ token }}/deny" style="margin-top:8px;">
-          <button type="submit" class="btn" style="width:100%;">Zamítnout</button>
+          <button type="submit" class="btn block">Zamítnout</button>
         </form>
       {% endif %}
     </div>

@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css" />
+    <link rel="stylesheet" href="{{ BASE }}/static/css/ui.css" />
     <script src="{{ BASE }}/static/js/theme-toggle.js"></script>
     <link rel="stylesheet" href="{{ BASE }}/static/css/base.css" />
     <link rel="stylesheet" href="{{ BASE }}/static/css/layout.css" />
@@ -27,13 +28,13 @@
 <main class="container">
 
     <!-- ČEKAJÍCÍ REGISTRACE -->
-    <section class="card" id="pendingCard" style="display:none;">
+    <section class="panel" id="pendingCard" style="display:none;">
         <h2>🔔 Čekající registrace (<span id="pendingCount">0</span>)</h2>
         <div id="pendingList">Načítám...</div>
     </section>
 
     <!-- ROZESLÁNÍ E-MAILŮ K UVOLNĚNÍ -->
-    <section class="card" id="digestCard">
+    <section class="panel" id="digestCard">
         <h2>✉️ Žádosti o uvolnění z výuky</h2>
         <p class="hint">
             <strong>Učitelům</strong> rozešle rozhodovací e-mail se studenty, které
@@ -41,13 +42,15 @@
             nenajde, spadne to na dozora).
             <strong>Dozorům</strong> rozešle denní přehled docházky.
         </p>
-        <button type="button" class="btn-primary" id="sendDigestBtn">Rozeslat učitelům (žádosti)</button>
-        <button type="button" class="btn-primary" id="sendRosterBtn">Rozeslat dozorům (docházka)</button>
-        <span id="digestResult" class="hint"></span>
+        <div class="row">
+            <button type="button" class="btn primary" id="sendDigestBtn">Rozeslat učitelům (žádosti)</button>
+            <button type="button" class="btn primary" id="sendRosterBtn">Rozeslat dozorům (docházka)</button>
+            <span id="digestResult" class="hint"></span>
+        </div>
     </section>
 
     <!-- BĚHY A SPOUŠTĚNÍ AGENTŮ -->
-    <section class="card" id="agentRunsCard" style="display:none;">
+    <section class="panel" id="agentRunsCard" style="display:none;">
         <h2>🛠️ Běhy a spouštění agentů</h2>
         <p class="hint">
             „Spustit teď“ zavolá agenta mimo plánovač – běh je synchronní a přes
@@ -58,12 +61,13 @@
     </section>
 
     <!-- TÝDENNÍ MŘÍŽKA -->
-    <section class="card" id="openHoursCard">
+    <section class="panel" id="openHoursCard">
         <div class="card-head">
             <h2>Otevřené hodiny</h2>
-            <div class="week-toggle">
-                <button type="button" data-week="0" class="active">Tento týden</button>
-                <button type="button" data-week="1">Příští týden</button>
+            <div class="grp" data-ui role="group" aria-label="Týden">
+                <span class="knob"></span>
+                <button type="button" data-week="0" aria-pressed="true">Tento týden</button>
+                <button type="button" data-week="1" aria-pressed="false">Příští týden</button>
             </div>
         </div>
         <p class="hint" id="gridHint"></p>
@@ -74,25 +78,27 @@
 </main>
 
 <!-- Detail rezervací na jednu otevřenou hodinu (přehled „tento týden") -->
-<div id="ohModal" class="oh-modal" style="display:none;" onclick="if(event.target===this)closeOhModal()">
-    <div class="oh-modal-box">
-        <button type="button" class="oh-modal-close" onclick="closeOhModal()">×</button>
+<dialog id="ohModal" class="oh-modal" onclick="if(event.target===this)closeOhModal()">
+    <div class="oh-modal-body">
+        <button type="button" class="oh-modal-close" aria-label="Zavřít" onclick="closeOhModal()">×</button>
         <div id="ohModalBody"></div>
     </div>
-</div>
+</dialog>
 
 <div id="toastHost" class="toast-host"></div>
 
-<!-- Celoobrazovkové okno pro chyby / potvrzení -->
-<div id="appDialog" class="app-dialog" style="display:none;">
-    <div class="app-dialog-box">
-        <div class="app-dialog-title" id="appDialogTitle"></div>
+<!-- Okno pro chyby / potvrzení -->
+<dialog id="appDialog">
+    <form onsubmit="return false">
+        <h3 id="appDialogTitle"></h3>
         <div class="app-dialog-msg" id="appDialogMsg"></div>
-        <div class="app-dialog-actions" id="appDialogActions"></div>
-    </div>
-</div>
+        <div class="dlg-actions" id="appDialogActions"></div>
+    </form>
+</dialog>
 
 <script>window.BASE_PATH = "{{ BASE }}";</script>
+<script src="{{ BASE }}/static/js/ui.js"></script>
+<script>AilaUI.auto();</script>
 <script src="{{ BASE }}/static/js/ui_common.js"></script>
 <script src="{{ BASE }}/static/js/timetable.js?v=15"></script>
 <script src="{{ BASE }}/static/js/pending_students.js"></script>

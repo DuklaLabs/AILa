@@ -1,29 +1,6 @@
-label {
-    display: block;
-    margin-bottom: 4px;
-    font-size: 14px;
-    color: var(--muted);
-}
-
-input,
-select,
-textarea {
-    width: 100%;
-    padding: 10px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--line-soft);
-    background: var(--surface-2);
-    color: var(--text);
-    outline: none;
-    font-size: 14px;
-    transition: 150ms;
-    margin-bottom: 10px;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(221, 44, 58,0.3);
-    background: var(--surface-2);
+/* Pole, výběry a popisky (label.f) jsou sdílené v ui.css; tady jen rozestup
+   polí ve formuláři. */
+.form-stack {
+    display: grid;
+    gap: 12px;
 }

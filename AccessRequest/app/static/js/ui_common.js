@@ -7,7 +7,7 @@ function esc(s) {
     ));
 }
 
-// krátké nenáročné potvrzení v rohu (úspěch) – vyžaduje #toastHost na stránce.
+// krátké nenáročné potvrzení dole uprostřed (sdílený .toast) – vyžaduje #toastHost na stránce.
 function toast(message, type = "success") {
     const host = document.getElementById("toastHost");
     if (!host) return;
@@ -20,13 +20,15 @@ function toast(message, type = "success") {
     setTimeout(remove, 2500);
 }
 
-// Obecný detailní modal (#ohModal) – obsah si naplní volající karta
-// (open_hours.js, agent_reports.js), tohle jen zavírá.
-function closeOhModal() {
+// Obecný detailní dialog (<dialog id="ohModal">) – obsah si naplní volající
+// karta (open_hours.js, agent_reports.js), tohle ho jen otevírá / zavírá.
+// Escape zavírá nativní <dialog>.
+function openOhModal() {
     const modal = document.getElementById("ohModal");
-    if (modal) modal.style.display = "none";
+    if (modal && !modal.open) modal.showModal();
 }
 
-document.addEventListener("keydown", e => {
-    if (e.key === "Escape") closeOhModal();
-});
+function closeOhModal() {
+    const modal = document.getElementById("ohModal");
+    if (modal && modal.open) modal.close();
+}

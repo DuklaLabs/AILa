@@ -8,25 +8,23 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/ui.css">
   <script src="{{ BASE }}/static/js/theme-toggle.js"></script>
   <link rel="stylesheet" href="{{ BASE }}/static/css/base.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/layout.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/buttons.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/forms.css">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/common.css">
 
   <style>
     .booking-chips { display:flex; flex-wrap:wrap; gap:4px; }
-    .booking-chip {
-      display:inline-flex; align-items:center; gap:6px; padding:2px 8px;
-      border-radius:999px; font-size:12px; background:rgba(34,197,94,0.18);
-      border:1px solid rgba(34,197,94,0.45); color:var(--p); white-space:nowrap;
-    }
+    .booking-chip { display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+    #studentsTable { overflow-x:auto; }
     .booking-none { color:var(--muted); font-size:13px; }
     .chip-cancel {
       border:none; background:transparent; color:var(--a); cursor:pointer;
       font-size:14px; line-height:1; padding:0; margin:0;
     }
-    .chip-cancel:hover { color:var(--a); }
     .chip-cancel:disabled { opacity:0.4; cursor:default; }
   </style>
 
@@ -36,42 +34,42 @@
 
 <body>
   <div class="center-page">
-    <div class="card" style="max-width:800px; width:100%;">
+    <div class="panel" style="max-width:800px; width:100%;">
       <h1>Studentský dashboard</h1>
       <p class="subtitle">Seznam registrovaných studentů v databázi (Postgres).</p>
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="reloadStudents()">🔄 Aktualizovat</button>
-        <a href="{{ BASE }}/student-register" class="btn btn-ghost">✍️ Registrovat dalšího studenta</a>
+        <button class="btn primary" onclick="reloadStudents()">🔄 Aktualizovat</button>
+        <a href="{{ BASE }}/student-register" class="btn">✍️ Registrovat dalšího studenta</a>
       </div>
 
       <div id="loader" class="loader hidden"></div>
 
       <div id="studentsTable" style="margin-top:10px;">
         {% if students and students|length > 0 %}
-          <table style="width:100%; border-collapse:collapse; font-size:14px;">
+          <table>
             <thead>
-              <tr style="border-bottom:1px solid var(--line-soft);">
-                <th style="text-align:left; padding:6px;">ID</th>
-                <th style="text-align:left; padding:6px;">Jméno</th>
-                <th style="text-align:left; padding:6px;">E-mail</th>
-                <th style="text-align:left; padding:6px;">Registrace</th>
-                <th style="text-align:left; padding:6px;">Třída</th>
-                <th style="text-align:left; padding:6px;">Přihlášen na</th>
+              <tr>
+                <th>ID</th>
+                <th>Jméno</th>
+                <th>E-mail</th>
+                <th>Registrace</th>
+                <th>Třída</th>
+                <th>Přihlášen na</th>
               </tr>
             </thead>
             <tbody>
               {% for s in students %}
-                <tr style="border-bottom:1px solid var(--line-soft);">
-                  <td style="padding:6px;">{{ s.student_id }}</td>
-                  <td style="padding:6px;">{{ s.first_name }} {{ s.last_name }}</td>
-                  <td style="padding:6px;">{{ s.email }}</td>
-                  <td style="padding:6px;">{{ s.registration_date }}</td>
-                  <td style="padding:6px;">{{ s.class_group }}</td>
-                  <td style="padding:6px;">
+                <tr>
+                  <td>{{ s.student_id }}</td>
+                  <td>{{ s.first_name }} {{ s.last_name }}</td>
+                  <td>{{ s.email }}</td>
+                  <td>{{ s.registration_date }}</td>
+                  <td>{{ s.class_group }}</td>
+                  <td>
                     {% if s.bookings %}
                       <div class="booking-chips">
-                        {% for b in s.bookings %}<span class="booking-chip">{{ b.label }}{% if my_student_id is not none and s.student_id == my_student_id %}<button class="chip-cancel" title="Odhlásit se z této hodiny" onclick="cancelBooking({{ b.open_hour_id }}, this)">✕</button>{% endif %}</span>{% endfor %}
+                        {% for b in s.bookings %}<span class="pill s-p booking-chip">{{ b.label }}{% if my_student_id is not none and s.student_id == my_student_id %}<button class="chip-cancel" title="Odhlásit se z této hodiny" onclick="cancelBooking({{ b.open_hour_id }}, this)">✕</button>{% endif %}</span>{% endfor %}
                       </div>
                     {% else %}
                       <span class="booking-none">není přihlášen</span>
@@ -130,15 +128,15 @@ async function reloadStudents() {
         }
 
         let html = `
-          <table style="width:100%; border-collapse:collapse; font-size:14px;">
+          <table>
             <thead>
-              <tr style="border-bottom:1px solid var(--line-soft);">
-                <th style="text-align:left; padding:6px;">ID</th>
-                <th style="text-align:left; padding:6px;">Jméno</th>
-                <th style="text-align:left; padding:6px;">E-mail</th>
-                <th style="text-align:left; padding:6px;">Registrace</th>
-                <th style="text-align:left; padding:6px;">Třída</th>
-                <th style="text-align:left; padding:6px;">Přihlášen na</th>
+              <tr>
+                <th>ID</th>
+                <th>Jméno</th>
+                <th>E-mail</th>
+                <th>Registrace</th>
+                <th>Třída</th>
+                <th>Přihlášen na</th>
               </tr>
             </thead>
             <tbody>
@@ -152,18 +150,18 @@ async function reloadStudents() {
             const mine = MY_STUDENT_ID !== null && s.student_id === MY_STUDENT_ID;
             const bookingsHtml = bookings.length
                 ? `<div class="booking-chips">${bookings.map(b =>
-                      `<span class="booking-chip">${escHtml(b.label)}${mine
+                      `<span class="pill s-p booking-chip">${escHtml(b.label)}${mine
                           ? `<button class="chip-cancel" title="Odhlásit se z této hodiny" onclick="cancelBooking(${Number(b.open_hour_id)}, this)">✕</button>`
                           : ""}</span>`).join("")}</div>`
                 : `<span class="booking-none">není přihlášen</span>`;
             html += `
-              <tr style="border-bottom:1px solid var(--line-soft);">
-                <td style="padding:6px;">${s.student_id}</td>
-                <td style="padding:6px;">${escHtml(s.first_name)} ${escHtml(s.last_name)}</td>
-                <td style="padding:6px;">${escHtml(s.email)}</td>
-                <td style="padding:6px;">${escHtml(s.registration_date)}</td>
-                <td style="padding:6px;">${escHtml(s.class_group)}</td>
-                <td style="padding:6px;">${bookingsHtml}</td>
+              <tr>
+                <td>${s.student_id}</td>
+                <td>${escHtml(s.first_name)} ${escHtml(s.last_name)}</td>
+                <td>${escHtml(s.email)}</td>
+                <td>${escHtml(s.registration_date)}</td>
+                <td>${escHtml(s.class_group)}</td>
+                <td>${bookingsHtml}</td>
               </tr>
             `;
         });

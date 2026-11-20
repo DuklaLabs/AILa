@@ -14,7 +14,7 @@ async function loadPendingRelease() {
     const list = document.getElementById("releaseList");
     document.getElementById("releaseCount").textContent = rows.length;
     if (!rows.length) { card.style.display = "none"; return; }
-    card.style.display = "block";
+    card.style.display = "";
 
     let html = `<table><tr><th>Student</th><th>Třída</th><th>Třídní učitel</th>
         <th>Třídní</th><th>Koordinátor</th><th></th></tr>`;
@@ -26,9 +26,9 @@ async function loadPendingRelease() {
             <td>${relState(s.release_teacher_ok)}</td>
             <td>${relState(s.release_coord_ok)}</td>
             <td>
-              <button class="btn-primary" onclick="coordRelease(${s.student_id}, true)">Schválit</button>
-              <button class="delete-btn" onclick="coordRelease(${s.student_id}, false)">Zamítnout</button>
-              <button class="btn-ghost" onclick="resendRelease(${s.student_id})">Poslat žádost</button>
+              <button class="btn primary" onclick="coordRelease(${s.student_id}, true)">Schválit</button>
+              <button class="btn danger" onclick="coordRelease(${s.student_id}, false)">Zamítnout</button>
+              <button class="btn" onclick="resendRelease(${s.student_id})">Poslat žádost</button>
             </td></tr>`;
     });
     list.innerHTML = html + "</table>";

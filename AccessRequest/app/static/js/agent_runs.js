@@ -14,7 +14,7 @@ async function loadAgentRuns() {
         if (rr.ok) registry = await rr.json();
     } catch (e) { /* služba nedostupná */ }
 
-    card.style.display = "block";
+    card.style.display = "";
     const btnHost = document.getElementById("agentRunButtons");
     const agents = registry.agents || [];
     if (!agents.length) {
@@ -22,7 +22,7 @@ async function loadAgentRuns() {
             ruční spuštění je teď mimo provoz.</p>`;
     } else {
         btnHost.innerHTML = `<div class="agent-run-buttons">` + agents.map(a =>
-            `<button class="btn-primary" onclick="runAgentNow('${esc(a)}', this)">
+            `<button class="btn primary" onclick="runAgentNow('${esc(a)}', this)">
                 ▶ ${esc(agentLabel(a))}</button>`).join("") + `</div>`;
     }
 

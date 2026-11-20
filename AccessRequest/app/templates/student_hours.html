@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css">
+    <link rel="stylesheet" href="{{ BASE }}/static/css/ui.css">
     <script src="{{ BASE }}/static/js/theme-toggle.js"></script>
     <link rel="stylesheet" href="{{ BASE }}/static/css/base.css">
     <link rel="stylesheet" href="{{ BASE }}/static/css/layout.css">
@@ -24,12 +25,13 @@
 
 <main class="container">
 
-    <section class="card">
+    <section class="panel">
         <div class="card-head">
             <h2>Volné hodiny</h2>
-            <div class="week-toggle">
-                <button type="button" data-week="0" class="active">Tento týden</button>
-                <button type="button" data-week="1">Příští týden</button>
+            <div class="grp" data-ui role="group" aria-label="Týden">
+                <span class="knob"></span>
+                <button type="button" data-week="0" aria-pressed="true">Tento týden</button>
+                <button type="button" data-week="1" aria-pressed="false">Příští týden</button>
             </div>
         </div>
         <p class="hint">Zeleně ✓ jsou hodiny, na které už jsi přihlášený/á.</p>
@@ -39,6 +41,8 @@
 </main>
 
 <script>window.BASE_PATH = "{{ BASE }}";</script>
+<script src="{{ BASE }}/static/js/ui.js"></script>
+<script>AilaUI.auto();</script>
 <script src="{{ BASE }}/static/js/timetable.js?v=14"></script>
 <script src="{{ BASE }}/static/js/student_hours.js?v=14"></script>
 </body>

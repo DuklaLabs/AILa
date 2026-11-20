@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css">
+  <link rel="stylesheet" href="{{ BASE }}/static/css/ui.css">
   <script src="{{ BASE }}/static/js/theme-toggle.js"></script>
   <link rel="stylesheet" href="{{ BASE }}/static/css/base.css">
   <link rel="stylesheet" href="{{ BASE }}/static/css/layout.css">
@@ -16,14 +17,14 @@
 <body>
 
   <div class="center-page">
-    <div class="card" style="max-width: 520px; text-align: center;">
+    <div class="panel" style="max-width: 520px; text-align: center;">
       <div class="logo-pill">DL</div>
       <h1>DuklaLabs</h1>
       <p class="subtitle">Interní přístupový systém a správa studentů</p>
 
       <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
-        <a class="btn btn-primary" href="{{ BASE }}/login">🔐 Přihlášení</a>
-        <a class="btn btn-ghost" href="{{ BASE }}/student-register">✍️ Registrace studenta</a>
+        <a class="btn primary" href="{{ BASE }}/login">🔐 Přihlášení</a>
+        <a class="btn" href="{{ BASE }}/student-register">✍️ Registrace studenta</a>
       </div>
     </div>
   </div>

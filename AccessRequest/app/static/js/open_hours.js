@@ -28,8 +28,7 @@ function appDialog({ title, message, variant = "info", buttons }) {
             alert(message);
             return resolve(true);
         }
-        const box = wrap.querySelector(".app-dialog-box");
-        box.className = `app-dialog-box app-dialog-${variant}`;
+        wrap.className = `app-dialog-${variant}`;
         document.getElementById("appDialogTitle").textContent = title || "";
         document.getElementById("appDialogMsg").textContent = message || "";
 
@@ -37,9 +36,10 @@ function appDialog({ title, message, variant = "info", buttons }) {
         actions.innerHTML = "";
 
         function done(value) {
-            wrap.style.display = "none";
+            if (wrap.open) wrap.close();
             document.removeEventListener("keydown", onKey);
             wrap.onclick = null;
+            wrap.oncancel = null;
             resolve(value);
         }
         function onKey(e) {
@@ -50,15 +50,17 @@ function appDialog({ title, message, variant = "info", buttons }) {
         (buttons || [{ label: "Rozumím", value: true, primary: true }]).forEach(b => {
             const el = document.createElement("button");
             el.textContent = b.label;
-            el.className = b.primary ? "btn-primary" : "app-dialog-cancel";
+            el.type = "button";
+            el.className = b.primary ? "btn primary" : "btn";
             el.onclick = () => done(b.value);
             actions.appendChild(el);
         });
 
         wrap.onclick = e => { if (e.target === wrap) done(false); };
+        wrap.oncancel = e => { e.preventDefault(); done(false); };
         document.addEventListener("keydown", onKey);
-        wrap.style.display = "flex";
-        (actions.querySelector(".btn-primary") || actions.firstChild || {}).focus?.();
+        wrap.showModal();
+        (actions.querySelector(".btn.primary") || actions.firstChild || {}).focus?.();
     });
 }
 
@@ -93,9 +95,10 @@ async function renderGrid() {
     const from = isoDate(monday);
     const to = isoDate(addDays(monday, 4));
 
-    document.querySelectorAll(".week-toggle button").forEach(b => {
-        b.classList.toggle("active", Number(b.dataset.week) === state.weekOffset);
+    document.querySelectorAll(".grp button").forEach(b => {
+        b.setAttribute("aria-pressed", String(Number(b.dataset.week) === state.weekOffset));
     });
+    document.querySelectorAll(".grp").forEach(g => AilaUI.knob(g));
 
     const week = state.weekOffset === 1 ? "next" : "actual";
     const [slots, periods, sups, names] = await Promise.all([
@@ -150,7 +153,7 @@ function renderSupFilter() {
     box.style.display = "flex";
     box.innerHTML = `<span class="sup-filter-label">Dozor:</span>` + supNames.map((name, i) => {
         const on = state.activeSupervisors.has(name);
-        return `<button class="sup-chip ${on ? "on" : ""}" style="--sup:${supColor(name)}"
+        return `<button class="chip sup-chip ${on ? "on" : ""}" style="--sup:${supColor(name)}"
                         onclick="toggleSupervisor(${i})">
                     <span class="sup-dot"></span>${esc(name)}
                 </button>`;
@@ -262,7 +265,7 @@ async function showBookings(id, date, hour) {
     ].filter(Boolean).join(" · ");
     const header = `<h3>${esc(head)}</h3>${meta ? `<p class="oh-meta">${esc(meta)}</p>` : ""}`;
     body.innerHTML = `${header}<p>Načítám…</p>`;
-    modal.style.display = "flex";
+    openOhModal();
 
     let rows;
     try {
@@ -323,8 +326,8 @@ function inlineForm({ capacity, note, supervisors, blocked, onSave }) {
             ${supOptions}
             <input type="text" class="tt-note" placeholder="Poznámka" value="${esc(note)}">
             <div class="tt-inline-actions">
-                <button class="btn-primary" onclick="${onSave}">Uložit</button>
-                <button class="tt-cancel" onclick="renderGrid()">Zrušit</button>
+                <button class="btn primary" onclick="${onSave}">Uložit</button>
+                <button class="btn" onclick="renderGrid()">Zrušit</button>
             </div>
         </div>
     `;
@@ -446,7 +449,7 @@ function findSlotById(id) {
 
 // --- přepínač týdnů -------------------------------------------------
 
-document.querySelectorAll(".week-toggle button").forEach(b => {
+document.querySelectorAll(".grp button").forEach(b => {
     b.addEventListener("click", () => {
         state.weekOffset = Number(b.dataset.week);
         renderGrid();
