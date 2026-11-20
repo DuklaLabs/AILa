@@ -2,55 +2,10 @@
    colours come from the shared DuklaLabs library (theme.css + ui.css, see
    Shared/webui/ui-demo.html); this file just arranges them. */
 
-html,
-body,
-#root {
+/* page skeleton (header.top / nav.tabs / main > .wrap > .view) comes from the
+   shared APP SHELL in ui.css; only the shell-less base reset lives here. */
+body {
   margin: 0;
-  height: 100%;
-  font-family: var(--f-body);
-}
-
-.portal-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.portal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 24px;
-  border-bottom: 1px solid var(--line);
-  background: var(--glass);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-}
-
-.portal-brand {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-}
-
-.portal-logo {
-  font-family: var(--f-display);
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: var(--accent);
-}
-
-.portal-subtitle {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.portal-account {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 
 .portal-user {
@@ -58,14 +13,6 @@ body,
   align-items: center;
   gap: 8px;
   font-size: 14px;
-}
-
-.portal-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 40px 24px;
 }
 
 .portal-hint {
@@ -81,10 +28,10 @@ body,
   text-align: center;
   padding: 32px;
   justify-items: center;
+  justify-self: center;
 }
 
-.portal-login-card h1 {
-  margin: 0;
+.portal-login-card h2 {
   font-size: 24px;
   font-weight: 800;
 }
@@ -95,8 +42,6 @@ body,
 }
 
 .portal-grid {
-  width: 100%;
-  max-width: 980px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
@@ -147,11 +92,8 @@ body,
 }
 
 .portal-admin-row {
-  width: 100%;
-  max-width: 980px;
   display: flex;
   gap: 16px;
-  margin-top: 24px;
   padding-top: 20px;
   border-top: 1px solid var(--line);
 }
@@ -172,14 +114,10 @@ body,
 
 .portal-chat {
   width: 100%;
-  max-width: 820px;
+  max-width: 820px; /* readable chat / table column inside the shell's .wrap */
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.portal-back-btn {
-  align-self: flex-start;
 }
 
 .lab-panel-header {
@@ -347,14 +285,4 @@ body,
 .lab-order-items li {
   color: var(--muted);
   padding-left: 8px;
-}
-
-@media (max-width: 480px) {
-  .portal-header {
-    flex-wrap: wrap;
-  }
-
-  .portal-main {
-    padding: 24px 16px;
-  }
 }

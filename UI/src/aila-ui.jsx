@@ -46,19 +46,30 @@ export function Switch({ value, options, onChange, label, className = '' }) {
   )
 }
 
-// Sliding tab bar (nav.tabs > .tabbar > .ind). items: [{ id, label, badge? }]
-export function TabBar({ items, current, onSelect, className = '' }) {
+// Stroke icon in the shared 24x24 style used by the app shell tabs and header buttons.
+export function Icon({ children }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
+  )
+}
+
+// App-shell tab bar: <nav.tabs><.wrap><.tabbar><.ind/> a[aria-current] icon + span</.tabbar></.wrap></nav>
+// (sticky band, see "APP SHELL" in Shared/webui/ui.css).
+// items: [{ id, label, icon?, badge? }]; `icon` is an <Icon>…</Icon> element.
+export function TabBar({ items, current, onSelect, label = 'Sekce', className = '', style }) {
   const ref = useRef(null)
   useSlider(ref, '.ind', 'a[aria-current]')
   return (
-    <nav className={'tabs ' + className}>
+    <nav className={('tabs ' + className).trim()} aria-label={label} style={style}>
       <div className="wrap">
         <div className="tabbar" ref={ref}>
           <span className="ind" />
           {items.map((it) => (
-            <a key={it.id} href="#" aria-current={it.id === current ? 'page' : undefined}
+            <a key={it.id} href={'#' + it.id} aria-current={it.id === current ? 'page' : undefined}
                onClick={(e) => { e.preventDefault(); onSelect(it.id) }}>
-              {it.label}
+              {it.icon}
+              <span>{it.label}</span>
               {it.badge ? <small className="tab-badge">{it.badge}</small> : null}
             </a>
           ))}

@@ -20,10 +20,10 @@
   --ease: cubic-bezier(.2, .8, .2, 1);
 }
 
-body { display: block; margin: 0; font-family: var(--f-body); }
-#root { max-width: none; width: 100%; padding: 0; margin: 0; text-align: left; }
+/* Page skeleton (header.top, nav.tabs, main > .wrap > .view) is the shared APP SHELL
+   in ui.css. Only the app-specific layout lives below. */
+body { margin: 0; }
 
-.pj { font-size: 14px; line-height: 1.5; min-height: 100vh; }
 .pj a:not(.btn) { color: var(--accent); text-decoration: none; }
 .pj a:not(.btn):hover { text-decoration: underline; }
 .pj .muted { color: var(--muted); }
@@ -31,22 +31,7 @@ body { display: block; margin: 0; font-family: var(--f-body); }
 .pj .chip { display: inline-flex; align-items: center; gap: 6px; }
 .pj .copy { padding: 2px 6px; }
 
-/* ---- top bar ---- */
-.pj-top {
-  display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 1rem;
-  position: sticky; top: 0; z-index: 20; flex-wrap: wrap;
-  background: var(--glass); border-bottom: 1px solid var(--line);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4);
-}
-.pj-top .brand { font-family: var(--f-display); font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 0.55rem; }
-.pj-top .brand .logo {
-  width: 30px; height: 30px; border-radius: 10px; color: #fff; font-size: 0.78rem; font-weight: 800;
-  display: grid; place-items: center;
-  background: linear-gradient(135deg, var(--accent), var(--grad-end));
-  box-shadow: 0 4px 14px var(--glow);
-}
-.pj-top .spacer { flex: 1; }
-.pj-top .who { color: var(--muted); font-size: 0.85rem; }
+.pj-who { color: var(--muted); font-size: 0.85rem; }
 .pj-hamburger { display: none; }
 
 .pj-timer { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.83rem; padding-block: 2px; }
@@ -59,12 +44,12 @@ body { display: block; margin: 0; font-family: var(--f-body); }
 }
 .pj-toast-err .copy { color: var(--a); font-size: 16px; line-height: 1; }
 
-/* ---- body layout ---- */
-.pj-body { display: grid; grid-template-columns: 268px 1fr; align-items: start; }
+/* ---- body layout: project sidebar + board/timeline side by side inside main > .wrap ---- */
+.pj-body { grid-template-columns: 268px minmax(0, 1fr); align-items: start; }
 .pj-side {
-  padding: 0.9rem; min-height: calc(100vh - 55px); position: sticky; top: 55px;
-  max-height: calc(100vh - 55px); overflow-y: auto;
-  background: var(--surface); border-right: 1px solid var(--line);
+  padding: 0.9rem; position: sticky; top: 84px;
+  max-height: calc(100vh - 100px); overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow);
 }
 .pj-side .side-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
 .pj-side .side-head h2 { font-size: 0.95rem; margin: 0; }
@@ -90,26 +75,19 @@ body { display: block; margin: 0; font-family: var(--f-body); }
 }
 .pj-proj .count { font-size: 0.75rem; color: var(--muted); }
 
-.pj-main { padding: 1.2rem 1.35rem 3rem; min-width: 0; }
-.pj-proj-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
-.pj-proj-head h1 {
-  font-size: 1.35rem; margin: 0; padding-bottom: 0.18rem;
-  border-bottom: 2px solid color-mix(in srgb, var(--fc) 60%, transparent);
-}
+.pj-main { min-width: 0; align-content: start; }
+.pj-proj-title { padding-bottom: 0.18rem; border-bottom: 2px solid color-mix(in srgb, var(--fc) 60%, transparent); }
+.pj-main .head .grp { margin-top: 0; }
 
-/* ---- view switcher (shared .grp) ---- */
-.pj-viewbar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
-.pj-viewbar .grp { margin-top: 0; }
-
-/* ---- phase tabs (shared nav.tabs > .tabbar, indicator tinted with the folder colour) ---- */
-.pj-phases { margin: 1.1rem 0 0.9rem; }
-.pj-phases nav.tabs { position: static; padding-block: 0; }
-.pj-phases nav.tabs a { flex: none; }
+/* ---- phase tabs (shared nav.tabs band, indicator tinted with the folder colour) ---- */
+nav.tabs.pj-phases a { flex: none; }
+nav.tabs.pj-phases a span { display: inline; }
+.pj-phases .tabbar { overflow-x: auto; scrollbar-width: thin; }
 .pj-phases .tabbar .ind {
   background: linear-gradient(135deg, var(--fc), color-mix(in srgb, var(--fc) 55%, #000));
   box-shadow: 0 6px 20px color-mix(in srgb, var(--fc) 45%, transparent);
 }
-.pj-phases .tab-badge { opacity: .75; margin-left: 0.4rem; font-size: 0.8rem; }
+.pj-phases .tab-badge { opacity: .75; font-size: 0.8rem; }
 
 /* ---- board ---- */
 .pj-board {
@@ -233,27 +211,25 @@ body { display: block; margin: 0; font-family: var(--f-body); }
 /* ================= responsive ================= */
 @media (max-width: 900px) {
   .pj-hamburger { display: inline-block; }
-  .pj-body { grid-template-columns: 1fr; }
+  .pj-body { grid-template-columns: minmax(0, 1fr); }
   .pj-side {
     position: fixed; top: 0; bottom: 0; left: 0; width: 82vw; max-width: 320px; z-index: 45;
     transform: translateX(-102%); transition: transform .24s var(--ease);
-    min-height: 100vh; max-height: none;
+    max-height: none; border-radius: 0 18px 18px 0;
   }
   .pj-body.side-open .pj-side { transform: translateX(0); }
   .pj-side-scrim { position: fixed; inset: 0; z-index: 44; background: var(--overlay); }
-  .pj-main { padding: 0.9rem 0.9rem 3rem; }
-  .pj-proj-head h1 { font-size: 1.15rem; }
   .pj-board { grid-auto-columns: 85vw; scroll-snap-type: x mandatory; }
   .pj-card-move { display: block; margin-top: 0.45rem; }
   .pj-card-move select { padding: 0.32rem 0.4rem; font-size: 0.8rem; }
   .pj-drawer { width: 100vw; border-left: 0; }
-  .pj-top { gap: 0.5rem; }
-  .pj-top .who { display: none; }
-  /* phase tabs scroll sideways instead of squeezing */
-  .pj-phases .tabbar { overflow-x: auto; scrollbar-width: thin; }
+  .pj-who { display: none; }
 }
 @media (max-width: 640px) {
-  .pj-phases nav.tabs a { flex-direction: row; font-size: 13px; padding: 9px 12px; letter-spacing: normal; line-height: 1.3; }
+  .pj .tools { flex-wrap: wrap; }
+  /* phase labels are long: keep them in a sideways-scrolling row instead of squeezing into columns */
+  nav.tabs.pj-phases a { flex-direction: row; font-size: 13px; padding: 9px 12px; letter-spacing: normal; line-height: 1.3; }
+  nav.tabs.pj-phases a svg { width: 17px; height: 17px; }
 }
 
 /* ================= reduced motion ================= */
