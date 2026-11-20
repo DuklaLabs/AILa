@@ -50,7 +50,7 @@ function buildTiles(role) {
         },
     {
       id: "assistant",
-      title: "Generál",
+      title: "Chat s AIla",
       description: "Chat s AI asistentem laborky – sklad, objednávky, dotazy.",
       icon: "🤖",
       action: "chat",
@@ -193,7 +193,7 @@ const TABS = [
   },
   {
     id: "chat",
-    label: "Generál",
+    label: "Chat s AIla",
     icon: (
       <Icon>
         <path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z" />
@@ -214,7 +214,7 @@ const TABS = [
 
 const HEADS = {
   home: { title: "Rozcestník", hint: "Vyber modul laborky." },
-  chat: { title: "Generál", hint: "Chat s hlavním AI asistentem laborky." },
+  chat: { title: "Chat s AIla", hint: "Chat s hlavním AI asistentem laborky." },
   inventory: { title: "Sklad", hint: "Materiál, zásoby a objednávky." },
   orders: { title: "Objednávky", hint: "Objednávky materiálu a schvalování." },
   wiki: { title: "DuklaWiki", hint: "Návody, troubleshooting a znalostní báze laborky." },
@@ -398,7 +398,7 @@ function PortalTile({ tile, onAction }) {
 // přihlášení z jiného zařízení.
 // ----------------------------------------------------------------------
 
-const WELCOME_MESSAGE = { from: "agent", text: "Zdravím, jsem Generál. Jak ti dnes můžu pomoct v laboratoři?" };
+const WELCOME_MESSAGE = { from: "agent", text: "Zdravím, jsem AIla. Jak ti dnes můžu pomoct v laboratoři?" };
 
 // Odpověď z POST /general je {reply, data?} – "reply" je vždy volný text
 // (Generál umí i běžný pokec, ne jen CHECK_STOCK/CREATE_ORDER), "data" jsou
@@ -457,7 +457,7 @@ function GeneralChat() {
         const history = await res.json();
         if (!cancelled) setMessages(history.length > 0 ? history : [WELCOME_MESSAGE]);
       } catch {
-        if (!cancelled) setLoadError("Nepodařilo se spojit s Generálem (General/Gateway neběží?).");
+        if (!cancelled) setLoadError("Nepodařilo se spojit s AIla (General/Gateway neběží?).");
       }
     })();
     return () => {
@@ -498,7 +498,7 @@ function GeneralChat() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { from: "agent", text: "⚠️ Nepodařilo se spojit s Generálem (General/Gateway neběží?)." },
+        { from: "agent", text: "⚠️ Nepodařilo se spojit s AIla (General/Gateway neběží?)." },
       ]);
     } finally {
       setSending(false);
@@ -517,7 +517,7 @@ function GeneralChat() {
       <div className="panel lab-chat-panel">
         <div className="lab-panel-header">
           <div>
-            <div className="lab-panel-title">Konverzace s Generálem</div>
+            <div className="lab-panel-title">Konverzace s AIla</div>
             <div className="lab-panel-subtitle">
               Hlavní orchestrátor – přijímá příkazy a řídí ostatní agenty.
             </div>
@@ -537,7 +537,7 @@ function GeneralChat() {
               }
             >
               <div className="lab-chat-bubble">
-                <div className="lab-chat-label">{m.from === "user" ? "Ty" : "Generál"}</div>
+                <div className="lab-chat-label">{m.from === "user" ? "Ty" : "AIla"}</div>
                 <div>{m.from === "user" ? m.text : formatAssistantReply({ reply: m.text, data: m.data })}</div>
               </div>
             </div>

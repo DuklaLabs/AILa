@@ -26,7 +26,7 @@
   var MODULES = [
     { title: "Rozcestník", href: "/", on: function (p, h) { return /^\/(index\.html)?$/.test(p) && !PORTAL_HASH.test(h); }, icon: svg('<path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/>') },
     { title: "Volné hodiny", href: "/access/", on: function (p) { return /^\/access(\/|$)/.test(p) && !/^\/access\/(machines|admin\/(analytics|users))(\/|$)/.test(p); }, icon: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>') },
-    { title: "Generál", href: "/#chat", on: portal("#chat"), icon: svg('<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/>') },
+    { title: "Chat s AIla", href: "/#chat", on: portal("#chat"), icon: svg('<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/>') },
     { title: "Projekty", href: "/projects/app/projects/", on: function (p) { return /^\/projects(\/|$)/.test(p); }, icon: svg('<rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/>') },
     { title: "Kroužek", href: "/krouzek/", on: function (p) { return /^\/krouzek(\/|$)/.test(p); }, icon: svg('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>') },
     { title: "Stroje", href: "/access/machines", on: function (p) { return /^\/access\/machines(\/|$)/.test(p); }, icon: svg('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>') },
