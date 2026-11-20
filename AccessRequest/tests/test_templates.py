@@ -46,7 +46,7 @@ def _skeleton(html):
 
 @pytest.mark.parametrize("name,href", TABBED.items())
 def test_tabbed_pages(name, href):
-    html = render(name, {})
+    html = render(name, {"is_staff": True})
     _skeleton(html)
     assert '<nav class="tabs"' in html and 'class="tabbar" data-ui' in html
     assert '<span class="ind"></span>' in html
@@ -59,5 +59,11 @@ def test_tabbed_pages(name, href):
 @pytest.mark.parametrize("name,ctx", PLAIN.items())
 def test_plain_pages(name, ctx):
     html = render(name, ctx)
+    _skeleton(html)
+    assert '<nav class="tabs"' not in html
+
+
+def test_machines_hides_staff_tabs_for_students():
+    html = render("machines.html", {"is_staff": False})
     _skeleton(html)
     assert '<nav class="tabs"' not in html

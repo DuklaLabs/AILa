@@ -15,7 +15,7 @@
 <body>
 
 {{ shell.header("Stroje", "Provozní stav strojů v laborce") }}
-{{ shell.tabs("machines") }}
+{{ shell.tabs("machines", is_staff) }}
 
 <main>
 <div class="wrap">
