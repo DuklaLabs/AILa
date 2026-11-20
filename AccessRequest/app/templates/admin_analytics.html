@@ -1,16 +1,11 @@
+{%- import "_shell.html" as shell -%}
 <!DOCTYPE html>
 <html lang="cs">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DuklaLabs – Analytika</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
-    <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css" />
-    <link rel="stylesheet" href="{{ BASE }}/static/css/ui.css" />
-    <script src="{{ BASE }}/static/js/theme-toggle.js"></script>
-    <link rel="stylesheet" href="{{ BASE }}/static/css/base.css" />
-    <link rel="stylesheet" href="{{ BASE }}/static/css/layout.css" />
+    {{ shell.assets() }}
     <link rel="stylesheet" href="{{ BASE }}/static/css/buttons.css" />
     <link rel="stylesheet" href="{{ BASE }}/static/css/forms.css" />
     <link rel="stylesheet" href="{{ BASE }}/static/css/common.css" />
@@ -21,11 +16,16 @@
 
 <body>
 
-<header class="topbar">
-    <h1>📊 DuklaLabs – Analytika</h1>
-</header>
+{{ shell.header("Analytika", "Reporty a log odeslaných e-mailů") }}
+{{ shell.tabs("analytics") }}
 
-<main class="container">
+<main>
+<div class="wrap">
+<section class="view">
+<div class="head">
+    <h2>Přehled provozu</h2>
+    <p>Měsíční reporty o laborce a historie rozeslané pošty.</p>
+</div>
 
     <!-- MĚSÍČNÍ REPORTY -->
     <section class="panel" id="agentReportsCard" style="display:none;">
@@ -47,6 +47,8 @@
         <div id="mailLogList">Načítám…</div>
     </section>
 
+</section>
+</div>
 </main>
 
 <!-- Detail měsíčního reportu -->

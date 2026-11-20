@@ -1,0 +1,56 @@
+{#- Společná kostra stránek AccessRequestu – stejná jako v Kroužku:
+      header.top > .wrap > .brand + .tools
+      nav.tabs  > .wrap > .tabbar[data-ui] (.ind + a[aria-current])
+      main      > .wrap > section.view > .head
+    Styly jsou ve sdílené knihovně (ui.css, sekce APP SHELL).
+
+    Použití na stránce:
+      {% import "_shell.html" as shell %}
+      <head> … {{ shell.assets() }} … </head>
+      <body>
+      {{ shell.header("Název", "Podtitul") }}
+      {{ shell.tabs("hours") }}          (jen stránky pro učitele/adminy)
+      <main><div class="wrap"> … </div></main>
+-#}
+
+{# Společné <link>/<script> (písma, theme, ui, přepínač režimu, base). Zbytek CSS si stránka přidá sama. #}
+{% macro assets() -%}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="{{ BASE }}/static/css/theme.css">
+<link rel="stylesheet" href="{{ BASE }}/static/css/ui.css">
+<script src="{{ BASE }}/static/js/theme-toggle.js"></script>
+<link rel="stylesheet" href="{{ BASE }}/static/css/base.css">
+{%- endmacro %}
+
+{# Hlavička. Obsah z {% call shell.header(...) %}…{% endcall %} jde do .tools (vpravo). #}
+{% macro header(title, subtitle="") -%}
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo" role="img" aria-label="Logo DuklaLabs"><svg viewBox="0 0 192 192" aria-hidden="true"><defs><mask id="logoMask"><rect width="192" height="192" fill="#fff"/><polygon points="24,0 69,0 40,74 76,74 14,188 27,110 4,110" fill="#000" stroke="#000" stroke-width="18"/><circle cx="95" cy="96" r="38" fill="#000"/></mask></defs><g mask="url(#logoMask)"><path class="gear" d="M164.2 76.2 L186.6 79.9 L186.6 112.1 L164.2 115.8 L163.2 119 L162.1 122 L160.9 125.1 L159.5 128 L158 130.9 L171.2 149.3 L148.3 172.2 L129.9 159 L127 160.5 L124.1 161.9 L121 163.1 L118 164.2 L114.8 165.2 L111.1 187.6 L78.9 187.6 L75.2 165.2 L72 164.2 L69 163.1 L65.9 161.9 L63 160.5 L60.1 159 L41.7 172.2 L18.8 149.3 L32 130.9 L30.5 128 L29.1 125.1 L27.9 122 L26.8 119 L25.8 115.8 L3.4 112.1 L3.4 79.9 L25.8 76.2 L26.8 73 L27.9 70 L29.1 66.9 L30.5 64 L32 61.1 L18.8 42.7 L41.7 19.8 L60.1 33 L63 31.5 L65.9 30.1 L69 28.9 L72 27.8 L75.2 26.8 L78.9 4.4 L111.1 4.4 L114.8 26.8 L118 27.8 L121 28.9 L124.1 30.1 L127 31.5 L129.9 33 L148.3 19.8 L171.2 42.7 L158 61.1 L159.5 64 L160.9 66.9 L162.1 70 L163.2 73Z"/></g><polygon class="bolt" points="24,0 69,0 40,74 76,74 14,188 27,110 4,110"/></svg></div>
+      <div>
+        <h1>{{ title }} <span>DuklaLabs</span></h1>
+        {% if subtitle %}<p>{{ subtitle }}</p>{% endif %}
+      </div>
+      {% if caller is defined %}<div class="tools">{{ caller() }}</div>{% endif %}
+    </div>
+  </div>
+</header>
+{%- endmacro %}
+
+{# Záložky mezi stránkami pro učitele/adminy – skutečné odkazy, aktivní má aria-current="page".
+   Klíče: hours | analytics | users | machines. Pozici .ind nastaví AilaUI.auto() (ui.js). #}
+{% macro tabs(active, staff=true) -%}
+{% if staff %}<nav class="tabs" aria-label="Sekce">
+  <div class="wrap">
+    <div class="tabbar" data-ui>
+      <span class="ind"></span>
+      <a href="{{ BASE }}/admin"{% if active == "hours" %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Otevřené hodiny</span></a>
+      <a href="{{ BASE }}/admin/analytics"{% if active == "analytics" %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Analytika</span></a>
+      <a href="{{ BASE }}/admin/users"{% if active == "users" %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg><span>Uživatelé</span></a>
+      <a href="{{ BASE }}/machines"{% if active == "machines" %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg><span>Stroje</span></a>
+    </div>
+  </div>
+</nav>{% endif %}
+{%- endmacro %}

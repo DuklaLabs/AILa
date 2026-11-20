@@ -1,16 +1,11 @@
+{%- import "_shell.html" as shell -%}
 <!DOCTYPE html>
 <html lang="cs">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DuklaLabs – Uživatelé</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
-    <link rel="stylesheet" href="{{ BASE }}/static/css/theme.css" />
-    <link rel="stylesheet" href="{{ BASE }}/static/css/ui.css" />
-    <script src="{{ BASE }}/static/js/theme-toggle.js"></script>
-    <link rel="stylesheet" href="{{ BASE }}/static/css/base.css" />
-    <link rel="stylesheet" href="{{ BASE }}/static/css/layout.css" />
+    {{ shell.assets() }}
     <link rel="stylesheet" href="{{ BASE }}/static/css/buttons.css" />
     <link rel="stylesheet" href="{{ BASE }}/static/css/forms.css" />
     <link rel="stylesheet" href="{{ BASE }}/static/css/common.css" />
@@ -18,11 +13,16 @@
 
 <body>
 
-<header class="topbar">
-    <h1>⚙️ DuklaLabs – Uživatelé</h1>
-</header>
+{{ shell.header("Uživatelé", "Role, oprávnění a souhlasy s uvolňováním") }}
+{{ shell.tabs("users") }}
 
-<main class="container">
+<main>
+<div class="wrap">
+<section class="view">
+<div class="head">
+    <h2>Správa uživatelů</h2>
+    <p>Role a oprávnění, souhlasy s uvolňováním z výuky.</p>
+</div>
 
     <!-- SPRÁVA RBAC (sdílená konzole z ailacore) -->
     <section class="panel">
@@ -41,9 +41,13 @@
         <div id="releaseList">Načítám…</div>
     </section>
 
+</section>
+</div>
 </main>
 
 <script>window.BASE_PATH = "{{ BASE }}";</script>
+<script src="{{ BASE }}/static/js/ui.js"></script>
+<script>AilaUI.auto();</script>
 <script src="{{ BASE }}/static/js/pending_release.js"></script>
 </body>
 </html>

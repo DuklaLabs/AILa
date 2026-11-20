@@ -1,27 +1,9 @@
-/* Sdílená "kostra" přihlášené appky (admin, analytika, uživatelé, studentské
-   hodiny). Komponenty (.btn, .panel, .card, .grp, .pill, dialog, .toast,
-   formuláře) jsou v ui.css; tady jen rozložení stránky a drobnosti
+/* Drobnosti sdílené stránkami přihlášené appky (admin, analytika, uživatelé,
+   stroje, studentské hodiny). Kostra stránky (header.top, nav.tabs, main .wrap,
+   .view, .head) je ve sdíleném ui.css. Komponenty (.btn, .panel, .card, .grp, .pill, dialog, .toast,
+   formuláře) jsou v ui.css; tady jen drobnosti
    specifické pro AccessRequest. open_hours.css obsahuje věci specifické pro
    mřížku hodin (.timetable*, .tt-*, .sup-*, .oh-*, .agent-*). */
-
-.topbar {
-    padding: 20px 28px;
-    border-bottom: 1px solid var(--line);
-}
-
-.topbar h1 {
-    margin: 0;
-    font-size: 20px;
-}
-
-.container {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 24px 28px 60px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
 
 .panel h2 {
     margin: 0;

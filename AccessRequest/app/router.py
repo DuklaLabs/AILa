@@ -66,9 +66,12 @@ async def render_machines(request: Request):
     # Otevřené pro kohokoli přihlášeného (i studenta) – vidět stav stroje se
     # může hodit každému. Měnit stav může jen kdo má lab.machine:manage
     # (ověřuje API, tlačítka v šabloně se podle toho schovají).
-    if await _require_any_login(request) is None:
+    user = await _require_any_login(request)
+    if user is None:
         return RedirectResponse(url=f"{PREFIX}/login")
-    return templates.TemplateResponse(request, "machines.html")
+    # Záložky vedou na stránky jen pro zaměstnance – studentovi je neukazujeme.
+    is_staff = await user_has_permission(user, "internal.open_hours:read")
+    return templates.TemplateResponse(request, "machines.html", {"is_staff": is_staff})
 
 
 router.include_router(bookings_router)
