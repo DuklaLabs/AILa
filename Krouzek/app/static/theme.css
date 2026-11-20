@@ -80,7 +80,7 @@ body { background: radial-gradient(circle at top, var(--bg-glow-1), transparent 
 .aila-theme[data-mode="dark"] .knob { transform: translateX(34px); }
 .aila-theme svg { width: 16px; height: 16px; }
 
-/* Logo menu (theme-toggle.js): click on any .logo -> dropdown with "Rozcestník" first, then the page's sections. */
+/* Logo menu (theme-toggle.js): click on any .logo -> dropdown listing all modules. */
 .logo[data-menu] { cursor: pointer; border-radius: 16px; }
 .logo[data-menu]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .aila-menu { position: fixed; z-index: 2147482000; min-width: 220px; max-width: calc(100vw - 16px); padding: 6px; display: grid; gap: 2px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); animation: aila-menu-in .18s cubic-bezier(.3,1.3,.5,1); transform-origin: top left; }
@@ -91,4 +91,3 @@ body { background: radial-gradient(circle at top, var(--bg-glow-1), transparent 
 .aila-menu-item:hover svg, .aila-menu-item:focus-visible svg { color: var(--accent); }
 .aila-menu-item[aria-current="page"] { background: linear-gradient(135deg, var(--accent), var(--grad-end)); color: #fff; }
 .aila-menu-item[aria-current="page"] svg { color: #fff; }
-.aila-menu-sep { border: 0; border-top: 1px solid var(--line); margin: 4px 6px; }

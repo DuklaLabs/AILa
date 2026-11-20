@@ -16,10 +16,17 @@
 
   var SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
   var MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
-  /* Logo menu: a click anywhere inside any .logo opens a dropdown — first "Rozcestník" (the hub at "/"),
-     then the page's own sections, read from the links currently in nav.tabs (so it follows tabs that
-     appear later, e.g. React). Picking a section clicks the original tab link. */
-  var HOME_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>';
+  /* Logo menu: a click anywhere inside any .logo opens a dropdown listing ALL modules of AILa (one place
+     to edit the list — the Gateway routes are path prefixes on one origin). The module's own navigation
+     (nav.tabs) is untouched and stays on the page. The module the visitor is in is highlighted. */
+  function svg(path) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + path + '</svg>'; }
+  var MODULES = [
+    { title: "Rozcestník", href: "/", match: /^\/(index\.html)?$/, icon: svg('<path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/>') },
+    { title: "Volné hodiny", href: "/access/", match: /^\/access(?!\/machines)(\/|$)/, icon: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>') },
+    { title: "Projekty", href: "/projects/app/projects/", match: /^\/projects(\/|$)/, icon: svg('<rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/>') },
+    { title: "Kroužek", href: "/krouzek/", match: /^\/krouzek(\/|$)/, icon: svg('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>') },
+    { title: "Stroje", href: "/access/machines", match: /^\/access\/machines(\/|$)/, icon: svg('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>') }
+  ];
   var menu = null, menuFor = null;
   function closeMenu() {
     if (!menu) return;
@@ -39,16 +46,9 @@
     closeMenu();
     menu = document.createElement("div");
     menu.className = "aila-menu"; menu.setAttribute("role", "menu"); menu.setAttribute("aria-label", "Menu");
-    var home = item("Rozcestník", HOME_ICON, location.pathname === "/" || location.pathname === "/index.html");
-    home.href = "/";
-    menu.appendChild(home);
-    var tabs = document.querySelectorAll("nav.tabs a");
-    if (tabs.length) menu.appendChild(Object.assign(document.createElement("hr"), { className: "aila-menu-sep" }));
-    tabs.forEach(function (t) {
-      var svg = t.querySelector("svg"), label = (t.textContent || t.getAttribute("aria-label") || "").trim();
-      var el = item(label, svg ? svg.outerHTML : "", t.getAttribute("aria-current") === "page");
-      if (t.getAttribute("href")) el.href = t.getAttribute("href"); else el.setAttribute("tabindex", "0");
-      el.addEventListener("click", function (e) { e.preventDefault(); closeMenu(); t.click(); });
+    MODULES.forEach(function (m) {
+      var el = item(m.title, m.icon, m.match.test(location.pathname));
+      el.href = m.href;
       menu.appendChild(el);
     });
     document.body.appendChild(menu);
