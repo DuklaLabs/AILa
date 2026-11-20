@@ -297,3 +297,5 @@ Jednotný vzhled DuklaLabs (převzatý z Kroužku). Jediný zdroj pravdy — sou
 - `ui-demo.html` — katalog všech komponent (otevři přímo v prohlížeči).
 
 Krouzek `ui.css` už používá. AccessRequest/Projects mají kolizní vlastní `.btn*` (`buttons.css`), proto je `ui.css` zatím jen nakopírovaný (`static/css/ui.css`), nelinkovaný — stránka přejde po výměně lokálních tlačítek.
+
+**App shell** (`ui.css`, sekce „APP SHELL“): každá stránka má stejnou kostru jako Kroužek — `header.top > .wrap` (`.brand` s `.logo`/`h1`/`p` + `.tools`), `nav.tabs > .wrap > .tabbar[data-ui]` (sticky záložky) a `main > .wrap > section.view` (hlavička sekce `.head`). Všechny tři pásy mají stejný levý/pravý okraj.

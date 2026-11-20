@@ -196,3 +196,46 @@ input[type=number], input[type=search], input[type=email], input[type=password],
 input[type=number]:focus, input[type=search]:focus, input[type=email]:focus, input[type=password]:focus, input[type=url]:focus, input:not([type]):focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
 input:disabled, select:disabled, textarea:disabled { opacity: .6; cursor: not-allowed; }
 @keyframes fill { from { transform: scaleX(0); } }
+
+/* ================= APP SHELL (single source for every AILa app) =================
+   Three full-width bands, each holding its own centred column (.wrap):
+     <header class="top"><div class="wrap"> .brand (.logo, h1, p) + .tools </div></header>
+     <nav class="tabs" aria-label="Sekce"><div class="wrap"><div class="tabbar" data-ui> .ind + a[aria-current] </div></div></nav>
+     <main><div class="wrap"> <section class="view"> <div class="head"><h2/><div class="actions"/><p/></div> …panels… </section> </div></main>
+   Same left/right edge in all three bands, 24px rhythm between blocks in main. */
+body { background: var(--bg); color: var(--fg); font: 15px/1.5 var(--f-body); transition: background-color .3s, color .3s; }
+/* soft colour glow behind the page on its own fixed layer, so scrolling never repaints it */
+body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background-image: radial-gradient(900px 500px at 8% -10%, var(--bg-glow-1), transparent 60%), radial-gradient(800px 500px at 100% 0%, var(--bg-glow-2), transparent 60%); }
+/* while the page scrolls, nothing reacts to the passing cursor */
+html.scrolling body * { pointer-events: none !important; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 1440px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -.01em; }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+header.top .wrap { padding-block: 28px 8px; display: grid; gap: 14px; }
+.brand { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+/* vector logo: gear in the text tone turns slowly, the bolt flashes now and then */
+.logo { width: 58px; height: 58px; display: grid; place-items: center; flex: none; cursor: default; }
+.logo svg { width: 54px; height: 54px; overflow: visible; }
+.logo .gear { fill: var(--logo-gear); transform-origin: 95px 96px; animation: gearturn 16s linear infinite; }
+.logo .bolt { fill: var(--accent); animation: zap 6s ease-in-out infinite, strike .6s cubic-bezier(.3,1.5,.5,1) both; transform-origin: 40px 94px; }
+.logo:hover .gear { animation-duration: 3s; }
+@keyframes gearturn { to { transform: rotate(360deg); } }
+@keyframes zap {
+  0%, 82%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  85% { filter: drop-shadow(0 0 8px var(--accent)) brightness(1.5); }
+  88% { filter: drop-shadow(0 0 2px var(--accent)); }
+  91% { filter: drop-shadow(0 0 12px var(--accent)) brightness(1.7); }
+}
+@keyframes strike { from { transform: translateY(-30px) scale(.6); opacity: 0; } }
+.brand h1 { font-size: clamp(26px, 4.4vw, 38px); font-weight: 800; color: var(--fg); }
+.brand h1 span { color: var(--accent); }
+.brand p { margin: 0; color: var(--muted); font-size: 14px; }
+.tools { margin-left: auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+main .wrap { padding-block: 24px 64px; display: grid; gap: 24px; }
+.view { display: grid; gap: 24px; animation: fadeup .3s ease-out; }
+.head { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; }
+.head h2 { font-size: 22px; font-weight: 700; }
+.head p { margin: 0; color: var(--muted); font-size: 14px; flex-basis: 100%; }
+.head .actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 640px) { .tools { width: 100%; margin-left: 0; flex-wrap: nowrap; } }
