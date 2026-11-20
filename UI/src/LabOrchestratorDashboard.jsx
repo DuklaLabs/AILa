@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./LabOrchestratorDashboard.css";
+import { Icon, TabBar } from "./aila-ui.jsx";
 
 // Portálový shell na kořeni domény (localhost) – navigační rozcestník pod
 // jednotným přihlášením. Všechny moduly běží na stejném originu jako podcesty
@@ -159,97 +160,175 @@ function useCurrentUser() {
   return state;
 }
 
+const LOGO = (
+  <svg viewBox="0 0 192 192" aria-hidden="true">
+    <defs>
+      <mask id="logoMask">
+        <rect width="192" height="192" fill="#fff" />
+        <polygon points="24,0 69,0 40,74 76,74 14,188 27,110 4,110" fill="#000" stroke="#000" strokeWidth="18" />
+        <circle cx="95" cy="96" r="38" fill="#000" />
+      </mask>
+    </defs>
+    <g mask="url(#logoMask)">
+      <path className="gear" d="M164.2 76.2 L186.6 79.9 L186.6 112.1 L164.2 115.8 L163.2 119 L162.1 122 L160.9 125.1 L159.5 128 L158 130.9 L171.2 149.3 L148.3 172.2 L129.9 159 L127 160.5 L124.1 161.9 L121 163.1 L118 164.2 L114.8 165.2 L111.1 187.6 L78.9 187.6 L75.2 165.2 L72 164.2 L69 163.1 L65.9 161.9 L63 160.5 L60.1 159 L41.7 172.2 L18.8 149.3 L32 130.9 L30.5 128 L29.1 125.1 L27.9 122 L26.8 119 L25.8 115.8 L3.4 112.1 L3.4 79.9 L25.8 76.2 L26.8 73 L27.9 70 L29.1 66.9 L30.5 64 L32 61.1 L18.8 42.7 L41.7 19.8 L60.1 33 L63 31.5 L65.9 30.1 L69 28.9 L72 27.8 L75.2 26.8 L78.9 4.4 L111.1 4.4 L114.8 26.8 L118 27.8 L121 28.9 L124.1 30.1 L127 31.5 L129.9 33 L148.3 19.8 L171.2 42.7 L158 61.1 L159.5 64 L160.9 66.9 L162.1 70 L163.2 73Z" />
+    </g>
+    <polygon className="bolt" points="24,0 69,0 40,74 76,74 14,188 27,110 4,110" />
+  </svg>
+);
+
+// Sekce portálu = záložky app shellu (nav.tabs). Dlaždice "Generál" / "Sklad"
+// na rozcestníku přepínají na stejné záložky.
+const TABS = [
+  {
+    id: "home",
+    label: "Rozcestník",
+    icon: (
+      <Icon>
+        <rect x="3" y="3" width="7" height="9" rx="2" />
+        <rect x="14" y="3" width="7" height="5" rx="2" />
+        <rect x="14" y="12" width="7" height="9" rx="2" />
+        <rect x="3" y="16" width="7" height="5" rx="2" />
+      </Icon>
+    ),
+  },
+  {
+    id: "chat",
+    label: "Generál",
+    icon: (
+      <Icon>
+        <path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z" />
+      </Icon>
+    ),
+  },
+  {
+    id: "inventory",
+    label: "Sklad",
+    icon: (
+      <Icon>
+        <path d="M21 8l-9-5-9 5 9 5 9-5z" />
+        <path d="M3 8v8l9 5 9-5V8M12 13v8" />
+      </Icon>
+    ),
+  },
+];
+
+const HEADS = {
+  home: { title: "Rozcestník", hint: "Vyber modul laborky." },
+  chat: { title: "Generál", hint: "Chat s hlavním AI asistentem laborky." },
+  inventory: { title: "Sklad", hint: "Materiál, zásoby a objednávky." },
+};
+
 export default function LabOrchestratorDashboard() {
   const { status, user } = useCurrentUser();
   const [view, setView] = useState("home"); // "home" | "chat" | "inventory"
 
+  const head = status === "ok" ? HEADS[view] : null;
+
   return (
-    <div className="portal-shell">
-      <header className="portal-header">
-        <div className="portal-brand">
-          <span className="portal-logo">AILa</span>
-          <span className="portal-subtitle">DuklaLabs – portál</span>
-        </div>
-        <div className="portal-account">
-          {status === "ok" && user && (
-            <>
-              <span className="portal-user">
-                {user.full_name || user.username}
-                <span className="nick">{user.role}</span>
-              </span>
-              <a
-                className="btn sm"
-                href={`${ACCESS_ORIGIN}/logout?next=${encodeURIComponent(PORTAL_URL)}`}
-              >
-                Odhlásit
-              </a>
-            </>
-          )}
-          {status === "anonymous" && (
-            <a
-              className="btn primary"
-              href={`${ACCESS_ORIGIN}/login?next=${encodeURIComponent(PORTAL_URL)}`}
-            >
-              Přihlásit se
-            </a>
-          )}
+    <>
+      <header className="top">
+        <div className="wrap">
+          <div className="brand">
+            <div className="logo" role="img" aria-label="Logo DuklaLabs">{LOGO}</div>
+            <div>
+              <h1>
+                AILa <span>DuklaLabs</span>
+              </h1>
+              <p>Portál laboratoře</p>
+            </div>
+            <div className="tools">
+              {status === "ok" && user && (
+                <>
+                  <span className="portal-user">
+                    {user.full_name || user.username}
+                    <span className="nick">{user.role}</span>
+                  </span>
+                  <a
+                    className="btn sm"
+                    href={`${ACCESS_ORIGIN}/logout?next=${encodeURIComponent(PORTAL_URL)}`}
+                  >
+                    Odhlásit
+                  </a>
+                </>
+              )}
+              {status === "anonymous" && (
+                <a
+                  className="btn primary"
+                  href={`${ACCESS_ORIGIN}/login?next=${encodeURIComponent(PORTAL_URL)}`}
+                >
+                  Přihlásit se
+                </a>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
-      <main className="portal-main">
-        {status === "loading" && <p className="portal-hint">Zjišťuji přihlášení…</p>}
+      {status === "ok" && (
+        <TabBar items={TABS} current={view} onSelect={setView} label="Sekce portálu" />
+      )}
 
-        {status === "error" && (
-          <p className="portal-hint portal-hint-error">
-            Nepodařilo se ověřit přihlášení ({ACCESS_ORIGIN} neodpovídá). Zkus to prosím znovu.
-          </p>
-        )}
-
-        {status === "anonymous" && (
-          <div className="panel portal-login-card">
-            <h1>Přihlas se</h1>
-            <p>
-              Jedno přihlášení platí pro všechny moduly DuklaLabs – docházku,
-              projekty i sklad.
-            </p>
-            <a
-              className="btn primary"
-              href={`${ACCESS_ORIGIN}/login?next=${encodeURIComponent(PORTAL_URL)}`}
-            >
-              Přihlásit se
-            </a>
-          </div>
-        )}
-
-        {status === "ok" && view === "chat" && (
-          <GeneralChat onBack={() => setView("home")} />
-        )}
-
-        {status === "ok" && view === "inventory" && (
-          <InventoryView onBack={() => setView("home")} />
-        )}
-
-        {status === "ok" && view === "home" && (
-          <>
-            <div className="portal-grid">
-              {buildTiles(user?.role).map((tile) => (
-                <PortalTile key={tile.id} tile={tile} onAction={setView} />
-              ))}
-            </div>
-
-            {user?.role === "admin" || user?.role === "staff" ? (
-              <div className="portal-admin-row">
-                {ADMIN_LINKS.map((link) => (
-                  <a key={link.id} className="portal-admin-link" href={link.href}>
-                    {link.title}
-                  </a>
-                ))}
+      <main>
+        <div className="wrap">
+          <section className="view" key={status === "ok" ? view : status}>
+            {head && (
+              <div className="head">
+                <h2>{head.title}</h2>
+                <p>{head.hint}</p>
               </div>
-            ) : null}
-          </>
-        )}
+            )}
+
+            {status === "loading" && <p className="portal-hint">Zjišťuji přihlášení…</p>}
+
+            {status === "error" && (
+              <p className="portal-hint portal-hint-error">
+                Nepodařilo se ověřit přihlášení ({ACCESS_ORIGIN} neodpovídá). Zkus to prosím znovu.
+              </p>
+            )}
+
+            {status === "anonymous" && (
+              <div className="panel portal-login-card">
+                <h2>Přihlas se</h2>
+                <p>
+                  Jedno přihlášení platí pro všechny moduly DuklaLabs – docházku,
+                  projekty i sklad.
+                </p>
+                <a
+                  className="btn primary"
+                  href={`${ACCESS_ORIGIN}/login?next=${encodeURIComponent(PORTAL_URL)}`}
+                >
+                  Přihlásit se
+                </a>
+              </div>
+            )}
+
+            {status === "ok" && view === "chat" && <GeneralChat />}
+
+            {status === "ok" && view === "inventory" && <InventoryView />}
+
+            {status === "ok" && view === "home" && (
+              <>
+                <div className="portal-grid">
+                  {buildTiles(user?.role).map((tile) => (
+                    <PortalTile key={tile.id} tile={tile} onAction={setView} />
+                  ))}
+                </div>
+
+                {user?.role === "admin" || user?.role === "staff" ? (
+                  <div className="portal-admin-row">
+                    {ADMIN_LINKS.map((link) => (
+                      <a key={link.id} className="portal-admin-link" href={link.href}>
+                        {link.title}
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
+              </>
+            )}
+          </section>
+        </div>
       </main>
-    </div>
+    </>
   );
 }
 
@@ -329,7 +408,7 @@ function formatAssistantReply(data) {
   return parts.length ? parts.join("\n\n") : JSON.stringify(data, null, 2);
 }
 
-function GeneralChat({ onBack }) {
+function GeneralChat() {
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [loadError, setLoadError] = useState(null);
   const [input, setInput] = useState("");
@@ -409,9 +488,6 @@ function GeneralChat({ onBack }) {
 
   return (
     <div className="portal-chat">
-      <button type="button" className="btn portal-back-btn" onClick={onBack}>
-        ← Zpět na rozcestník
-      </button>
       <div className="panel lab-chat-panel">
         <div className="lab-panel-header">
           <div>
@@ -477,7 +553,7 @@ function formatDate(value) {
   return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString("cs-CZ");
 }
 
-function InventoryView({ onBack }) {
+function InventoryView() {
   const [materials, setMaterials] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loadError, setLoadError] = useState(null);
@@ -560,10 +636,6 @@ function InventoryView({ onBack }) {
 
   return (
     <div className="portal-chat">
-      <button type="button" className="btn portal-back-btn" onClick={onBack}>
-        ← Zpět na rozcestník
-      </button>
-
       {loadError && <p className="portal-hint portal-hint-error">{loadError}</p>}
       {loading && !loadError && <p className="portal-hint">Načítám sklad…</p>}
 

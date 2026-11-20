@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, can, initials, isOverdue, userName, STATUSES } from '../api'
-import { TabBar } from '../../aila-ui'
 
-export default function BoardView({ project, perms, users, reloadKey, onOpenTask, onChanged, onError }) {
-  const phases = project.phases || []
-  const [phaseId, setPhaseId] = useState(phases[0]?.id ?? null)
+// Aktivní fáze (záložky nav.tabs) vybírá ProjectsApp, deska ukazuje její úkoly.
+export default function BoardView({ phaseId, perms, users, reloadKey, onOpenTask, onChanged, onError }) {
   const [tasks, setTasks] = useState([])
-  const [counts, setCounts] = useState({})
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState({ title: '', assignee: '' })
   const [draggingId, setDraggingId] = useState(null)
@@ -19,17 +16,6 @@ export default function BoardView({ project, perms, users, reloadKey, onOpenTask
     if (!phaseId) return
     api.listPhaseTasks(phaseId).then(setTasks).catch((e) => onError(e.message))
   }, [phaseId, reloadKey, onError])
-
-  // počty úkolů na fázi (pro odznaky v záložkách)
-  useEffect(() => {
-    api.listProjectTasks(project.id)
-      .then((all) => {
-        const c = {}
-        all.forEach((t) => { c[t.phase_id] = (c[t.phase_id] || 0) + 1 })
-        setCounts(c)
-      })
-      .catch(() => {})
-  }, [project.id, reloadKey])
 
   const byStatus = useMemo(() => {
     const m = Object.fromEntries(STATUSES.map(([s]) => [s, []]))
@@ -71,14 +57,6 @@ export default function BoardView({ project, perms, users, reloadKey, onOpenTask
 
   return (
     <div>
-      <div className="pj-phases">
-        <TabBar
-          current={phaseId}
-          onSelect={setPhaseId}
-          items={phases.map((p) => ({ id: p.id, label: `${p.position}. ${p.name}`, badge: counts[p.id] }))}
-        />
-      </div>
-
       {canWrite && (
         adding ? (
           <form onSubmit={addTask} className="card pj-card pj-card-form">
