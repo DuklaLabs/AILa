@@ -216,11 +216,30 @@ const HEADS = {
   home: { title: "Rozcestník", hint: "Vyber modul laborky." },
   chat: { title: "Generál", hint: "Chat s hlavním AI asistentem laborky." },
   inventory: { title: "Sklad", hint: "Materiál, zásoby a objednávky." },
+  orders: { title: "Objednávky", hint: "Objednávky materiálu a schvalování." },
+  wiki: { title: "DuklaWiki", hint: "Návody, troubleshooting a znalostní báze laborky." },
+};
+
+// Pohledy portálu žijí v hashi (#chat, #inventory, #orders, #wiki) – odkazy z menu u loga
+// (Shared/webui/theme-toggle.js) tak otevřou rovnou správný pohled.
+const VIEW_IDS = Object.keys(HEADS);
+const viewFromHash = () => {
+  const id = window.location.hash.replace(/^#/, "");
+  return VIEW_IDS.includes(id) ? id : "home";
 };
 
 export default function LabOrchestratorDashboard() {
   const { status, user } = useCurrentUser();
-  const [view, setView] = useState("home"); // "home" | "chat" | "inventory"
+  const [view, setViewState] = useState(viewFromHash); // "home" | "chat" | "inventory" | "orders" | "wiki"
+  const setView = (id) => {
+    window.history.replaceState(null, "", id === "home" ? window.location.pathname : `#${id}`);
+    setViewState(id);
+  };
+  useEffect(() => {
+    const onHash = () => setViewState(viewFromHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
 
   const head = status === "ok" ? HEADS[view] : null;
 
@@ -265,7 +284,7 @@ export default function LabOrchestratorDashboard() {
       </header>
 
       {status === "ok" && (
-        <TabBar items={TABS} current={view} onSelect={setView} label="Sekce portálu" />
+        <TabBar items={TABS} current={TABS.some((t) => t.id === view) ? view : "home"} onSelect={setView} label="Sekce portálu" />
       )}
 
       <main>
@@ -305,6 +324,13 @@ export default function LabOrchestratorDashboard() {
             {status === "ok" && view === "chat" && <GeneralChat />}
 
             {status === "ok" && view === "inventory" && <InventoryView />}
+
+            {status === "ok" && (view === "orders" || view === "wiki") && (
+              <div className="empty">
+                <b>Připravujeme</b>
+                <span>{HEADS[view].title} zatím nemá backend – tady se objeví, až bude hotový.</span>
+              </div>
+            )}
 
             {status === "ok" && view === "home" && (
               <>
